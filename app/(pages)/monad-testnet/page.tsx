@@ -339,13 +339,13 @@ function MonadTestnetStats() {
         
         {/* Open Graph / Facebook */}
         <meta property="og:type" content="website" />
-        <meta property="og:url" content="https://cryptowalletsx.com/monad-testnet-stats" />
+        <meta property="og:url" content="https://cryptowalletsx.com/monad-testnet" />
         <meta property="og:title" content="Monad Testnet Stats & Wallet Checker | Transaction Analysis Tool" />
         <meta property="og:description" content="Check your Monad wallet status, rank, and transaction history. Free Monad Testnet stats checker with detailed activity scoring." />
         
         {/* Twitter */}
         <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:url" content="https://cryptowalletsx.com/monad-testnet-stats" />
+        <meta name="twitter:url" content="https://cryptowalletsx.com/monad-testnet" />
         <meta name="twitter:title" content="Monad Testnet Stats & Wallet Checker | Transaction Analysis Tool" />
         <meta name="twitter:description" content="Check your Monad wallet status, rank, and transaction history. Free Monad Testnet stats checker with detailed activity scoring." />
         
@@ -355,7 +355,7 @@ function MonadTestnetStats() {
             "@context": "https://schema.org",
             "@type": "WebApplication",
             "name": "Monad Testnet Stats Checker",
-            "url": "https://cryptowalletsx.com/monad-testnet-stats",
+            "url": "https://cryptowalletsx.com/monad-testnet",
             "description": "Comprehensive tool for checking Monad wallet status, testnet rank, and transaction history with detailed analytics",
             "applicationCategory": "Web Tool",
             "offers": {
@@ -379,7 +379,7 @@ function MonadTestnetStats() {
               "@type": "SearchAction",
               "target": {
                 "@type": "EntryPoint",
-                "urlTemplate": "https://cryptowalletsx.com/monad-testnet-stats?address={wallet_address}"
+                "urlTemplate": "https://cryptowalletsx.com/monad-testnet?address={wallet_address}"
               },
               "query-input": "required name=wallet_address"
             }
