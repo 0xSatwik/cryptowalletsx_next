@@ -3,9 +3,11 @@
 import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import { Search, ArrowRight, BarChart2, Gift, Zap, Coins, ChevronDown, ChevronUp, Check, Globe, Layers, Shield, Activity, Wallet, Wrench } from 'lucide-react';
 
 export default function Home() {
+  const router = useRouter();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedChain, setSelectedChain] = useState<string | null>(null);
@@ -15,12 +17,27 @@ export default function Home() {
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setIsDropdownOpen(false);
+      // Only close dropdown if clicking outside the dropdown area
+      if (
+        dropdownRef.current && 
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
+        // Add a small delay to allow navigation to complete first
+        setTimeout(() => {
+          setIsDropdownOpen(false);
+        }, 100);
       }
       
-      if (searchInputRef.current && !searchInputRef.current.contains(event.target as Node)) {
-        setIsSearchFocused(false);
+      // Only unfocus search if clicking outside the search area and dropdown
+      if (
+        searchInputRef.current && 
+        !searchInputRef.current.contains(event.target as Node) &&
+        !dropdownRef.current?.contains(event.target as Node)
+      ) {
+        // Add a small delay to allow navigation to complete first
+        setTimeout(() => {
+          setIsSearchFocused(false);
+        }, 100);
       }
     }
     document.addEventListener('mousedown', handleClickOutside);
@@ -186,14 +203,24 @@ export default function Home() {
                 </div>
                   
                   {isSearchFocused && (
-                    <div className="mt-2 max-h-64 overflow-y-auto rounded-lg bg-white shadow-lg border border-gray-200 animate-fadeIn">
+                    <div 
+                      className="mt-2 max-h-64 overflow-y-auto rounded-lg bg-white shadow-lg border border-gray-200 animate-fadeIn"
+                      onClick={(e) => {
+                        // Prevent clicks within the dropdown from closing it
+                        e.stopPropagation();
+                      }}
+                    >
                       {filteredTools.length > 0 ? (
                         <ul className="divide-y divide-gray-200">
                           {filteredTools.map((tool) => (
                             <li key={tool.path}>
-                  <Link
-                                href={tool.path}
-                                className="block px-4 py-3 hover:bg-gray-50 transition-colors duration-150"
+                              <div
+                                className="block px-4 py-3 hover:bg-gray-50 transition-colors duration-150 cursor-pointer"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  // Navigate using the router instead of Link
+                                  router.push(tool.path);
+                                }}
                               >
                                 <div className="flex items-center">
                                   <div className={`flex-shrink-0 h-8 w-8 rounded-md ${tool.logoColor} flex items-center justify-center`}>
@@ -201,9 +228,10 @@ export default function Home() {
                                   </div>
                                   <div className="ml-3">
                                     <p className="text-sm font-medium text-gray-900">{tool.name}</p>
+                                    <p className="text-xs text-gray-500">{tool.description}</p>
                                   </div>
                                 </div>
-                  </Link>
+                              </div>
                             </li>
                           ))}
                         </ul>

@@ -5,17 +5,6 @@ const nextConfig = {
   images: {
     domains: ['cdn.example.com'], // Add any external image domains here
   },
-  // Add proper font handling configuration
-  webpack(config) {
-    config.module.rules.push({
-      test: /\.(woff|woff2|eot|ttf|otf)$/i,
-      type: 'asset/resource',
-      generator: {
-        filename: 'static/media/[name].[hash][ext]',
-      },
-    });
-    return config;
-  },
   async redirects() {
     return [
       {
