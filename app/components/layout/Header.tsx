@@ -233,7 +233,7 @@ const Header = () => {
           {/* Desktop CTA button */}
           <div className="hidden md:flex items-center justify-end md:flex-1 lg:w-0">
             <a
-              href="https://t.me/walletsxgroup"
+              href="https://t.me/cwxstats"
               target="_blank"
               rel="noopener noreferrer"
               className={`ml-4 whitespace-nowrap inline-flex items-center justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-base font-medium ${
@@ -342,7 +342,7 @@ const Header = () => {
               {/* Mobile CTA */}
               <div className="mt-6 pt-6 border-t border-gray-200">
                 <a
-                  href="https://t.me/walletsxgroup"
+                  href="https://t.me/cwxstats"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="w-full flex items-center justify-center px-4 py-3 border border-transparent rounded-md shadow-sm text-base font-medium text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
