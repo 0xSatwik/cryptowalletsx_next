@@ -7,6 +7,7 @@ const nextConfig = {
   },
   async redirects() {
     return [
+      // Original redirects
       {
         source: '/zora',
         destination: '/',
@@ -30,6 +31,18 @@ const nextConfig = {
       {
         source: '/mito/bulk',
         destination: '/mitosis-rank',
+        permanent: true,
+      },
+      
+      // New redirects
+      {
+        source: '/monad',
+        destination: '/monad-testnet',
+        permanent: true,
+      },
+      {
+        source: '/how-monad-stats-score-works',
+        destination: '/post/monad-testnet-score-calculation',
         permanent: true,
       },
     ];

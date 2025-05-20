@@ -1,0 +1,35 @@
+# Netlify Configuration File
+
+# Domain-level redirects
+[[redirects]]
+  from = "https://cryptowalletsx.netlify.app/*"
+  to = "https://cryptowalletsx.com/:splat"
+  status = 301
+  force = true
+
+# Fallback for path-based redirects (in case Next.js doesn't handle them)
+[[redirects]]
+  from = "/monad"
+  to = "/monad-testnet"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/how-monad-stats-score-works"
+  to = "/post/monad-testnet-score-calculation"
+  status = 301
+  force = true
+
+# Netlify settings
+[build]
+  publish = ".next"
+  command = "npm run build"
+
+# Custom headers
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-XSS-Protection = "1; mode=block"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin" 
