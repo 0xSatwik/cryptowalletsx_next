@@ -1,9 +1,0 @@
-# Redirect domain
-https://cryptowalletsx.netlify.app/* https://cryptowalletsx.com/:splat 301!
-
-# Path redirects (backup to Next.js redirects)
-/monad /monad-testnet 301!
-/how-monad-stats-score-works /post/monad-testnet-score-calculation 301!
-
-# Catch all for SPA
-/* /index.html 200 

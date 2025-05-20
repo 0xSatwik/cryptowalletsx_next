@@ -1,24 +1,12 @@
 # Netlify Configuration File
 
-# Domain-level redirects
+# Redirect old domain
 [[redirects]]
   from = "https://cryptowalletsx.netlify.app/*"
   to = "https://cryptowalletsx.com/:splat"
   status = 301
   force = true
 
-# Fallback for path-based redirects (in case Next.js doesn't handle them)
-[[redirects]]
-  from = "/monad"
-  to = "/monad-testnet"
-  status = 301
-  force = true
-
-[[redirects]]
-  from = "/how-monad-stats-score-works"
-  to = "/post/monad-testnet-score-calculation"
-  status = 301
-  force = true
 
 # Netlify settings
 [build]
