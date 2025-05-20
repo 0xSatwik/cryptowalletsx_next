@@ -326,7 +326,7 @@ async function fetchAlchemyTransactions(
     let pageKey: string | undefined = undefined;
     let page = 1;
     const pageSize = 1000; // Maximum allowed by Alchemy
-    const maxPages = 20; // Limit to 20,000 transactions (20 pages of 1000 each)
+    const maxPages = 45; // Limit to 45,000 transactions (45 pages of 1000 each)
     
     // Track unique dates, weeks, and months
     const uniqueDates = new Set<string>();
@@ -349,7 +349,7 @@ async function fetchAlchemyTransactions(
     let totalVolume = 0;
     
     while (page <= maxPages) {
-      statusCallback(`Fetching transactions page ${page} of max ${maxPages}...`);
+      statusCallback(`Fetching transactions page ${page} of max ${maxPages} (${page * 1000} of max ${maxPages * 1000} transactions)...`);
       
       const requestBody = {
         id: 1,
@@ -583,19 +583,20 @@ function MonadTestnetStats() {
         const rpcUrl = getMonadRpcUrl();
         const provider = new JsonRpcProvider(rpcUrl);
         const txCount = await provider.getTransactionCount(address);
+        console.log(`Transaction count for address ${address}: ${txCount}`);
         
         // Use Alchemy API if transaction count is high (above 9900)
         if (txCount > 9900) {
-          statusCallback('High transaction count detected, using specialized API...');
+          statusCallback(`High transaction count detected (${txCount.toLocaleString()} transactions), using Alchemy API...`);
           
           // Use Alchemy API to fetch detailed transaction data
           const alchemyData = await fetchAlchemyTransactions(address, statusCallback);
           
-                  // Construct the stats object with the Alchemy data
-        statsData = {
-          address: address,
-          transactions: alchemyData.transactions || [],
-          totalTransactions: alchemyData.transactions.length,
+                            // Construct the stats object with the Alchemy data
+          statsData = {
+            address: address,
+            transactions: alchemyData.transactions || [],
+            totalTransactions: txCount, // Use the actual transaction count instead of just the fetched transactions
           contractsCreated: { 
             addresses: [], 
             timestamps: {}, 
@@ -984,10 +985,11 @@ const getTotalInteractions = () => {
                   <div 
                     className="h-full bg-gradient-to-r from-purple-500 to-indigo-600 rounded-full transition-all duration-300"
                     style={{ 
-                      width: `${loadingStatus.includes('Fetching pages') ? 
-                        parseInt(loadingStatus.split('of')[0].split('pages')[1].trim().split('-')[1] || '0') / 
-                        parseInt(loadingStatus.split('of')[1].trim().split('...')[0] || '20') * 100 : 
-                        loadingStatus.includes('Found') ? '100' : '30'}%` 
+                      width: `${loadingStatus.includes('Fetching transactions page') ? 
+                        parseInt(loadingStatus.split('page')[1].split('of')[0].trim()) / 
+                        parseInt(loadingStatus.split('of max')[1].split('(')[0].trim()) * 100 : 
+                        loadingStatus.includes('Found') || loadingStatus.includes('Checking NFT') ? '100' : 
+                        loadingStatus.includes('High transaction count') ? '50' : '30'}%` 
                     }}
                   ></div>
                 </div>
@@ -1557,11 +1559,11 @@ const getTotalInteractions = () => {
                   </div>
                   <div>
                     <h2 className="text-2xl font-bold text-gray-900">Transactions</h2>
-                    <p className="text-gray-600">
-                      {stats.totalTransactions > stats.transactions?.length ? 
-                        `Showing ${stats.transactions?.length || 0} of ${stats.totalTransactions} total transactions` : 
-                        `${stats.transactions?.length || 0} transactions`}
-                    </p>
+                              <p className="text-gray-600">
+            {stats.totalTransactions > stats.transactions?.length ? 
+              `Showing ${stats.transactions?.length.toLocaleString()} of ${stats.totalTransactions.toLocaleString()} total transactions` : 
+              `${stats.transactions?.length.toLocaleString()} transactions`}
+          </p>
                   </div>
                 </div>
                 <button
