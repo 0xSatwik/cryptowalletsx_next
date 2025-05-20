@@ -57,107 +57,69 @@ function getAlchemyNftApiUrl(): string {
   return `https://monad-testnet.g.alchemy.com/nft/v3/${apiKey}`;
 }
 
-// Load multiple ThirdWeb client IDs from environment variables (supporting up to 18 keys)
-const THIRDWEB_CLIENT_ID_1 = process.env.VITE_THIRDWEB_CLIENT_ID_1 || '';
-const THIRDWEB_CLIENT_ID_2 = process.env.VITE_THIRDWEB_CLIENT_ID_2 || '';
-const THIRDWEB_CLIENT_ID_3 = process.env.VITE_THIRDWEB_CLIENT_ID_3 || '';
+// Load all available ThirdWeb client IDs from environment variables (1-17 excluding 13)
+const ALL_THIRDWEB_CLIENT_IDS = [
+  process.env.VITE_THIRDWEB_CLIENT_ID_1,
+  process.env.VITE_THIRDWEB_CLIENT_ID_2,
+  process.env.VITE_THIRDWEB_CLIENT_ID_3,
+  process.env.VITE_THIRDWEB_CLIENT_ID_4,
+  process.env.VITE_THIRDWEB_CLIENT_ID_5,
+  process.env.VITE_THIRDWEB_CLIENT_ID_6,
+  process.env.VITE_THIRDWEB_CLIENT_ID_7,
+  process.env.VITE_THIRDWEB_CLIENT_ID_8,
+  process.env.VITE_THIRDWEB_CLIENT_ID_9,
+  process.env.VITE_THIRDWEB_CLIENT_ID_10,
+  process.env.VITE_THIRDWEB_CLIENT_ID_11,
+  process.env.VITE_THIRDWEB_CLIENT_ID_12,
+  // Skip 13 as requested by user
+  process.env.VITE_THIRDWEB_CLIENT_ID_14,
+  process.env.VITE_THIRDWEB_CLIENT_ID_15,
+  process.env.VITE_THIRDWEB_CLIENT_ID_16,
+  process.env.VITE_THIRDWEB_CLIENT_ID_17,
+].filter(id => id && id.trim() !== '') as string[];
 
-const THIRDWEB_CLIENT_ID_7 = process.env.VITE_THIRDWEB_CLIENT_ID_7 || '';
-
-const THIRDWEB_CLIENT_ID_9 = process.env.VITE_THIRDWEB_CLIENT_ID_9 || '';
-const THIRDWEB_CLIENT_ID_10 = process.env.VITE_THIRDWEB_CLIENT_ID_10 || '';
-const THIRDWEB_CLIENT_ID_11 = process.env.VITE_THIRDWEB_CLIENT_ID_11 || '';
-const THIRDWEB_CLIENT_ID_12 = process.env.VITE_THIRDWEB_CLIENT_ID_12 || '';
-const THIRDWEB_CLIENT_ID_13 = process.env.VITE_THIRDWEB_CLIENT_ID_13 || '';
-const THIRDWEB_CLIENT_ID_14 = process.env.VITE_THIRDWEB_CLIENT_ID_14 || '';
-const THIRDWEB_CLIENT_ID_15 = process.env.VITE_THIRDWEB_CLIENT_ID_15 || '';
-const THIRDWEB_CLIENT_ID_16 = process.env.VITE_THIRDWEB_CLIENT_ID_16 || '';
-const THIRDWEB_CLIENT_ID_17 = process.env.VITE_THIRDWEB_CLIENT_ID_17 || '';
-const THIRDWEB_CLIENT_ID_18 = process.env.VITE_THIRDWEB_CLIENT_ID_18 || '';
-
-// For backward compatibility - if individual IDs aren't set but the old variable is
+// For backward compatibility - if no client IDs are set but legacy variable exists
 const LEGACY_CLIENT_ID = process.env.VITE_THIRDWEB_CLIENT_ID || '';
-
-// Create an array of token-specific client IDs (first 3 keys)
-const TOKEN_CLIENT_IDS = [
-  THIRDWEB_CLIENT_ID_1, 
-  THIRDWEB_CLIENT_ID_2, 
-  THIRDWEB_CLIENT_ID_3
-].filter(id => id !== '');
-
-// Create an array of transaction-specific client IDs (excluding problematic ones)
-const TRANSACTION_CLIENT_IDS = [
-  // Skip client IDs 4, 5, 6, and 8 as they're causing timeouts
-  THIRDWEB_CLIENT_ID_7,
-  THIRDWEB_CLIENT_ID_9,
-  THIRDWEB_CLIENT_ID_10,
-  THIRDWEB_CLIENT_ID_11,
-  THIRDWEB_CLIENT_ID_12,
-  THIRDWEB_CLIENT_ID_13,
-  THIRDWEB_CLIENT_ID_14,
-  THIRDWEB_CLIENT_ID_15,
-  THIRDWEB_CLIENT_ID_16,
-  THIRDWEB_CLIENT_ID_17,
-  THIRDWEB_CLIENT_ID_18
-].filter(id => id !== '');
-
-// If we don't have enough client IDs in either category, use fallbacks
-if (TOKEN_CLIENT_IDS.length === 0) {
-  // If no token IDs, try to use transaction IDs first, then legacy
-  if (TRANSACTION_CLIENT_IDS.length > 0) {
-    // Take the first transaction ID for tokens if available
-    TOKEN_CLIENT_IDS.push(TRANSACTION_CLIENT_IDS[0]);
-  } else if (LEGACY_CLIENT_ID) {
-    TOKEN_CLIENT_IDS.push(LEGACY_CLIENT_ID);
-  }
+if (ALL_THIRDWEB_CLIENT_IDS.length === 0 && LEGACY_CLIENT_ID) {
+  ALL_THIRDWEB_CLIENT_IDS.push(LEGACY_CLIENT_ID);
 }
 
-if (TRANSACTION_CLIENT_IDS.length === 0) {
-  // If no transaction IDs, try to use token IDs first, then legacy
-  if (TOKEN_CLIENT_IDS.length > 0) {
-    // Use a token ID for transactions if available
-    TRANSACTION_CLIENT_IDS.push(...TOKEN_CLIENT_IDS);
-  } else if (LEGACY_CLIENT_ID) {
-    TRANSACTION_CLIENT_IDS.push(LEGACY_CLIENT_ID);
-  }
+// Divide the IDs into groups based on their optimal use cases
+// We'll use the first set (1-6) for token-related operations
+const TOKEN_CLIENT_IDS = ALL_THIRDWEB_CLIENT_IDS.slice(0, 6).filter(Boolean);
+// And the rest (7-17 excluding 13) for transaction-related operations which tend to be more intensive
+const TRANSACTION_CLIENT_IDS = ALL_THIRDWEB_CLIENT_IDS.slice(6).filter(Boolean);
+
+// If either group is empty, use IDs from the other group
+if (TOKEN_CLIENT_IDS.length === 0 && TRANSACTION_CLIENT_IDS.length > 0) {
+  TOKEN_CLIENT_IDS.push(...TRANSACTION_CLIENT_IDS);
+} else if (TRANSACTION_CLIENT_IDS.length === 0 && TOKEN_CLIENT_IDS.length > 0) {
+  TRANSACTION_CLIENT_IDS.push(...TOKEN_CLIENT_IDS);
 }
 
-// Track the last used token client ID index to rotate through them
-let lastTokenClientIdIndex = -1;
-// Track usage frequency of each client ID to prioritize less-used ones
+// Track usage count for each client ID to distribute load evenly
 const clientIdUsageCount: Record<string, number> = {};
-
-// Initialize usage count for all client IDs
-[...TOKEN_CLIENT_IDS, ...TRANSACTION_CLIENT_IDS].forEach(id => {
+ALL_THIRDWEB_CLIENT_IDS.forEach(id => {
   clientIdUsageCount[id] = 0;
 });
 
-// Function to get the next client ID for token/NFT requests (rotating through the first 3)
+// Function to get a client ID for token-related operations
 function getTokenClientId(forceRotate = false): string {
   if (TOKEN_CLIENT_IDS.length === 0) {
-    throw new Error("No ThirdWeb client ID configured for token requests");
+    throw new Error("No ThirdWeb client IDs configured for token requests");
   }
   
-  if (forceRotate || lastTokenClientIdIndex === -1) {
-    // Find the least used client ID
-    const sortedIds = [...TOKEN_CLIENT_IDS].sort((a, b) => 
-      (clientIdUsageCount[a] || 0) - (clientIdUsageCount[b] || 0)
-    );
-    
-    const clientId = sortedIds[0];
-    lastTokenClientIdIndex = TOKEN_CLIENT_IDS.indexOf(clientId);
-    clientIdUsageCount[clientId] = (clientIdUsageCount[clientId] || 0) + 1;
-    return clientId;
-  }
+  // Get the least used client ID from the token group
+  const sortedIds = [...TOKEN_CLIENT_IDS].sort((a, b) => 
+    (clientIdUsageCount[a] || 0) - (clientIdUsageCount[b] || 0)
+  );
   
-  // Regular rotation
-  const clientId = TOKEN_CLIENT_IDS[lastTokenClientIdIndex];
+  const clientId = sortedIds[0];
   clientIdUsageCount[clientId] = (clientIdUsageCount[clientId] || 0) + 1;
   return clientId;
 }
 
-// Function to get a client ID for transaction requests
-// Optional index parameter to get a specific client ID for parallel requests
+// Function to get a client ID for transaction-related operations
 function getTransactionClientId(index?: number, forceRotate = false): string {
   if (TRANSACTION_CLIENT_IDS.length === 0) {
     throw new Error("No ThirdWeb client IDs configured for transaction requests");

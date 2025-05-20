@@ -24,7 +24,7 @@ export default function Home() {
       ) {
         // Add a small delay to allow navigation to complete first
         setTimeout(() => {
-          setIsDropdownOpen(false);
+        setIsDropdownOpen(false);
         }, 100);
       }
       
@@ -36,7 +36,7 @@ export default function Home() {
       ) {
         // Add a small delay to allow navigation to complete first
         setTimeout(() => {
-          setIsSearchFocused(false);
+        setIsSearchFocused(false);
         }, 100);
       }
     }

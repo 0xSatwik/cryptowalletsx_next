@@ -1,4 +1,4 @@
-import { getRandomApiKey, LINEA_API_BASE, LINEA_EXPLORER_API, LXP_API } from './config';
+import { getRandomApiKey, LINEA_EXPLORER_URL, LINEA_API_BASE, LINEA_EXPLORER_API, LXP_API } from './config';
 
 interface Transaction {
   hash: string;
@@ -111,13 +111,62 @@ interface TokenHolding {
   value: string;
 }
 
-async function fetchTransactions(address: string): Promise<Transaction[]> {
-  const apiKey = getRandomApiKey();
-  const response = await fetch(
-    `${LINEA_API_BASE}?module=account&action=txlist&address=${address}&startblock=0&endblock=latest&page=1&offset=5000&sort=asc&apikey=${apiKey}`
-  );
-  const data = await response.json();
-  return data.result || [];
+const RETRY_DELAY = 1000; // 1 second
+const MAX_RETRIES = 3;
+
+// Function to fetch with automatic retries and API key rotation
+async function fetchWithRetry(
+  url: string, 
+  options: RequestInit = {}, 
+  retries = MAX_RETRIES
+): Promise<Response> {
+  try {
+    const response = await fetch(url, options);
+    
+    // If we get rate limited (429) or server error (5xx), retry with a different API key
+    if ((response.status === 429 || (response.status >= 500 && response.status < 600)) && retries > 0) {
+      console.log(`Request failed with status ${response.status}, retrying... (${retries} retries left)`);
+      await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
+      // The next attempt will automatically get a different API key through getRandomApiKey()
+      return fetchWithRetry(url, options, retries - 1);
+    }
+    
+    return response;
+  } catch (error) {
+    if (retries > 0) {
+      console.log(`Fetch error, retrying... (${retries} retries left):`, error);
+      await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
+      return fetchWithRetry(url, options, retries - 1);
+    }
+    throw error;
+  }
+}
+
+export async function fetchTransactions(address: string) {
+  try {
+    // Use getRandomApiKey from config.ts to rotate through available API keys
+    const apiKey = getRandomApiKey();
+    const url = `${LINEA_API_BASE}?module=account&action=txlist&address=${address}&startblock=0&endblock=99999999&sort=desc&apikey=${apiKey}`;
+    
+    const response = await fetchWithRetry(url);
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    if (data.status === '0' && data.message === 'No transactions found') {
+      return [];
+    }
+    
+    if (data.status !== '1') {
+      throw new Error(`API error: ${data.message}`);
+    }
+    
+    return data.result;
+  } catch (error) {
+    console.error('Error fetching Linea transactions:', error);
+    throw new Error('Failed to fetch transaction data. Please try again.');
+  }
 }
 
 async function fetchBalance(address: string): Promise<string> {

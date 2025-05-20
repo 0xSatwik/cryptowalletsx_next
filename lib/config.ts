@@ -1,10 +1,10 @@
 // Array of API keys for Lineascan
 export const LINEASCAN_API_KEYS = [
-    process.env.NEXT_PUBLIC_LINEASCAN_API_KEY_1,
-    process.env.NEXT_PUBLIC_LINEASCAN_API_KEY_2,
-    process.env.NEXT_PUBLIC_LINEASCAN_API_KEY_3,
-    process.env.NEXT_PUBLIC_LINEASCAN_API_KEY_4,
-    process.env.NEXT_PUBLIC_LINEASCAN_API_KEY_5,
+    process.env.VITE_LINEASCAN_API_KEY_1 || 'ZUXE1TFGQHSXPVKBDXCK2YFQ1CQ33XK1A3',
+    process.env.VITE_LINEASCAN_API_KEY_2 || '8GR7KCJBGDJBPP2WCGG36MI87SVFW8JCSY',
+    process.env.VITE_LINEASCAN_API_KEY_3 || 'TK37XWG5B3V21RHF7HU9Y2ZW8RYDXB3KPZ',
+    process.env.VITE_LINEASCAN_API_KEY_4,
+    process.env.VITE_LINEASCAN_API_KEY_5,
   ].filter(Boolean) as string[]; // Only keep non-empty keys and assert as string array
   
   // Get a random API key from the pool

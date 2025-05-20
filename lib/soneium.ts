@@ -2,6 +2,55 @@ import { NFTCollection } from './types';
 
 const API_BASE = 'https://soneium.blockscout.com/api/v2';
 
+// Use the Alchemy API keys from the environment for any direct RPC calls
+// This ensures we can rotate through keys to prevent rate limiting
+const ALCHEMY_API_KEYS = [
+  process.env.VITE_ALCHEMY_API_KEY_1 || 'FBKOVxVYW0yobV1ntzs7u5qM0E6_xRwO',
+  process.env.VITE_ALCHEMY_API_KEY_2 || 'FBKOVxVYW0yobV1ntzs7u5qM0E6_xRwO',
+  process.env.VITE_ALCHEMY_API_KEY_3 || 'FBKOVxVYW0yobV1ntzs7u5qM0E6_xRwO',
+  process.env.VITE_ALCHEMY_API_KEY_4 || 'FBKOVxVYW0yobV1ntzs7u5qM0E6_xRwO',
+  process.env.VITE_ALCHEMY_API_KEY_5 || 'FBKOVxVYW0yobV1ntzs7u5qM0E6_xRwO',
+  process.env.VITE_ALCHEMY_API_KEY_6 || 'FBKOVxVYW0yobV1ntzs7u5qM0E6_xRwO',
+  process.env.VITE_ALCHEMY_API_KEY_7 || 'FBKOVxVYW0yobV1ntzs7u5qM0E6_xRwO',
+  process.env.VITE_ALCHEMY_API_KEY_8 || 'FBKOVxVYW0yobV1ntzs7u5qM0E6_xRwO',
+  process.env.VITE_ALCHEMY_API_KEY_9 || 'FBKOVxVYW0yobV1ntzs7u5qM0E6_xRwO',
+  process.env.VITE_ALCHEMY_API_KEY_10 || 'FBKOVxVYW0yobV1ntzs7u5qM0E6_xRwO',
+].filter(Boolean);
+
+// Track the usage of Alchemy API keys to distribute load evenly
+const alchemyApiUsageCount: Record<string, number> = {};
+ALCHEMY_API_KEYS.forEach(key => {
+  alchemyApiUsageCount[key] = 0;
+});
+
+// Function to get the least used Alchemy API key
+function getAlchemyApiKey(): string {
+  if (ALCHEMY_API_KEYS.length === 0) {
+    throw new Error('No Alchemy API keys configured');
+  }
+  
+  // Sort keys by usage count (ascending)
+  const sortedKeys = [...ALCHEMY_API_KEYS].sort((a, b) => 
+    (alchemyApiUsageCount[a] || 0) - (alchemyApiUsageCount[b] || 0)
+  );
+  
+  // Take one of the least used keys (random selection from the 3 least used)
+  const leastUsedCount = Math.min(3, sortedKeys.length);
+  const randomIndex = Math.floor(Math.random() * leastUsedCount);
+  const selectedKey = sortedKeys[randomIndex];
+  
+  // Increment usage count
+  alchemyApiUsageCount[selectedKey] = (alchemyApiUsageCount[selectedKey] || 0) + 1;
+  
+  return selectedKey;
+}
+
+// Get RPC URL with Alchemy API key
+function getRpcUrl(): string {
+  const apiKey = getAlchemyApiKey();
+  return `https://soneium.g.alchemy.com/v2/${apiKey}`;
+}
+
 interface Transaction {
   hash: string;
   timestamp: string;

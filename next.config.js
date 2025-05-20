@@ -35,7 +35,7 @@ const nextConfig = {
     ];
   },
   env: {
-    // Make Vite environment variables available to Next.js
+    // Alchemy API keys (10 keys as mentioned by user)
     VITE_ALCHEMY_API_KEY_1: process.env.VITE_ALCHEMY_API_KEY_1 || 'FBKOVxVYW0yobV1ntzs7u5qM0E6_xRwO',
     VITE_ALCHEMY_API_KEY_2: process.env.VITE_ALCHEMY_API_KEY_2 || 'FBKOVxVYW0yobV1ntzs7u5qM0E6_xRwO',
     VITE_ALCHEMY_API_KEY_3: process.env.VITE_ALCHEMY_API_KEY_3 || 'FBKOVxVYW0yobV1ntzs7u5qM0E6_xRwO',
@@ -47,20 +47,31 @@ const nextConfig = {
     VITE_ALCHEMY_API_KEY_9: process.env.VITE_ALCHEMY_API_KEY_9 || 'FBKOVxVYW0yobV1ntzs7u5qM0E6_xRwO',
     VITE_ALCHEMY_API_KEY_10: process.env.VITE_ALCHEMY_API_KEY_10 || 'FBKOVxVYW0yobV1ntzs7u5qM0E6_xRwO',
     
+    // Lineascan API keys
+    VITE_LINEASCAN_API_KEY_1: process.env.VITE_LINEASCAN_API_KEY_1 || 'ZUXE1TFGQHSXPVKBDXCK2YFQ1CQ33XK1A3',
+    VITE_LINEASCAN_API_KEY_2: process.env.VITE_LINEASCAN_API_KEY_2 || '8GR7KCJBGDJBPP2WCGG36MI87SVFW8JCSY',
+    VITE_LINEASCAN_API_KEY_3: process.env.VITE_LINEASCAN_API_KEY_3 || 'TK37XWG5B3V21RHF7HU9Y2ZW8RYDXB3KPZ',
+    
+    // ThirdWeb Client IDs (1-17 excluding 13)
     VITE_THIRDWEB_CLIENT_ID_1: process.env.VITE_THIRDWEB_CLIENT_ID_1 || '',
     VITE_THIRDWEB_CLIENT_ID_2: process.env.VITE_THIRDWEB_CLIENT_ID_2 || '',
     VITE_THIRDWEB_CLIENT_ID_3: process.env.VITE_THIRDWEB_CLIENT_ID_3 || '',
+    VITE_THIRDWEB_CLIENT_ID_4: process.env.VITE_THIRDWEB_CLIENT_ID_4 || '',
+    VITE_THIRDWEB_CLIENT_ID_5: process.env.VITE_THIRDWEB_CLIENT_ID_5 || '',
+    VITE_THIRDWEB_CLIENT_ID_6: process.env.VITE_THIRDWEB_CLIENT_ID_6 || '',
     VITE_THIRDWEB_CLIENT_ID_7: process.env.VITE_THIRDWEB_CLIENT_ID_7 || '',
+    VITE_THIRDWEB_CLIENT_ID_8: process.env.VITE_THIRDWEB_CLIENT_ID_8 || '',
     VITE_THIRDWEB_CLIENT_ID_9: process.env.VITE_THIRDWEB_CLIENT_ID_9 || '',
     VITE_THIRDWEB_CLIENT_ID_10: process.env.VITE_THIRDWEB_CLIENT_ID_10 || '',
     VITE_THIRDWEB_CLIENT_ID_11: process.env.VITE_THIRDWEB_CLIENT_ID_11 || '',
     VITE_THIRDWEB_CLIENT_ID_12: process.env.VITE_THIRDWEB_CLIENT_ID_12 || '',
-    VITE_THIRDWEB_CLIENT_ID_13: process.env.VITE_THIRDWEB_CLIENT_ID_13 || '',
+    // Skipping 13 as per user's request
     VITE_THIRDWEB_CLIENT_ID_14: process.env.VITE_THIRDWEB_CLIENT_ID_14 || '',
     VITE_THIRDWEB_CLIENT_ID_15: process.env.VITE_THIRDWEB_CLIENT_ID_15 || '',
     VITE_THIRDWEB_CLIENT_ID_16: process.env.VITE_THIRDWEB_CLIENT_ID_16 || '',
     VITE_THIRDWEB_CLIENT_ID_17: process.env.VITE_THIRDWEB_CLIENT_ID_17 || '',
-    VITE_THIRDWEB_CLIENT_ID_18: process.env.VITE_THIRDWEB_CLIENT_ID_18 || '',
+    
+    // Legacy client ID for backward compatibility
     VITE_THIRDWEB_CLIENT_ID: process.env.VITE_THIRDWEB_CLIENT_ID || '',
   },
 };

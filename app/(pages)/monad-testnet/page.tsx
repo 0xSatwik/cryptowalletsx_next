@@ -103,6 +103,29 @@ function getActivityByDay(stats: MonadTestnetStats): number {
   return stats.activityByDay;
 }
 
+// Add a function to get the RPC URL with a random Alchemy API key
+function getMonadRpcUrl(): string {
+  // Use one of the 10 available Alchemy API keys
+  const alchemyApiKeys = [
+    process.env.VITE_ALCHEMY_API_KEY_1 || 'FBKOVxVYW0yobV1ntzs7u5qM0E6_xRwO',
+    process.env.VITE_ALCHEMY_API_KEY_2 || 'FBKOVxVYW0yobV1ntzs7u5qM0E6_xRwO',
+    process.env.VITE_ALCHEMY_API_KEY_3 || 'FBKOVxVYW0yobV1ntzs7u5qM0E6_xRwO',
+    process.env.VITE_ALCHEMY_API_KEY_4 || 'FBKOVxVYW0yobV1ntzs7u5qM0E6_xRwO',
+    process.env.VITE_ALCHEMY_API_KEY_5 || 'FBKOVxVYW0yobV1ntzs7u5qM0E6_xRwO',
+    process.env.VITE_ALCHEMY_API_KEY_6 || 'FBKOVxVYW0yobV1ntzs7u5qM0E6_xRwO',
+    process.env.VITE_ALCHEMY_API_KEY_7 || 'FBKOVxVYW0yobV1ntzs7u5qM0E6_xRwO',
+    process.env.VITE_ALCHEMY_API_KEY_8 || 'FBKOVxVYW0yobV1ntzs7u5qM0E6_xRwO',
+    process.env.VITE_ALCHEMY_API_KEY_9 || 'FBKOVxVYW0yobV1ntzs7u5qM0E6_xRwO',
+    process.env.VITE_ALCHEMY_API_KEY_10 || 'FBKOVxVYW0yobV1ntzs7u5qM0E6_xRwO'
+  ].filter(Boolean);
+  
+  // Select a random API key
+  const randomIndex = Math.floor(Math.random() * alchemyApiKeys.length);
+  const apiKey = alchemyApiKeys[randomIndex];
+  
+  return `https://monad-testnet.g.alchemy.com/v2/${apiKey}`;
+}
+
 function MonadTestnetStats() {
   const [address, setAddress] = useState('');
   const [loading, setLoading] = useState(false);
@@ -155,7 +178,9 @@ function MonadTestnetStats() {
       statusCallback('Fetching wallet balance...');
       let formattedBalance = "0";
       try {
-        const provider = new JsonRpcProvider('https://testnet-rpc.monad.xyz');
+        // Use the function to get a dynamic RPC URL with API key rotation
+        const rpcUrl = getMonadRpcUrl();
+        const provider = new JsonRpcProvider(rpcUrl);
         const balance = await provider.getBalance(address);
         formattedBalance = formatBalance(balance.toString());
         setWalletBalance(formattedBalance);
