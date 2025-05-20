@@ -1213,26 +1213,66 @@ const getTotalInteractions = () => {
                     </div>
                   </div>
                   
-                  {stats.transactions && stats.transactions.length > 0 && (
-                    <div className="flex flex-col text-sm bg-white/10 rounded-lg p-3">
-                      <span className="text-purple-100">First Activity</span>
-                      <a
-                        href={`https://testnet.monadexplorer.com/tx/${stats.transactions[0].hash}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-white hover:text-purple-200 transition-colors inline-flex items-center mt-1"
-                      >
-                        {truncateAddress(stats.transactions[0].hash)}
-                        <ExternalLink size={12} className="ml-1" />
-                      </a>
-                      <span className="text-white font-medium mt-1">
-                        {new Date(stats.transactions[0].block_timestamp * 1000).toLocaleDateString()}
-                      </span>
-                      <span className="text-purple-200 text-xs mt-1">
-                        {calculateWalletAge(stats).days} days ago
-                      </span>
-                    </div>
-                  )}
+                  {(() => {
+                    // Determine the earliest transaction, either from SocialScan API or RPC data
+                    let firstTxHash = "";
+                    let firstTxTimestamp = "";
+                    let displayDate = "";
+
+                    // Check SocialScan data first
+                    if (stats.profileData) {
+                      // Get timestamps from both first_transaction and funding_transaction
+                      const firstOutgoingTxTime = stats.profileData.first_transaction?.block_timestamp 
+                        ? new Date(stats.profileData.first_transaction.block_timestamp).getTime()
+                        : Number.MAX_SAFE_INTEGER;
+                      
+                      const firstIncomingTxTime = stats.profileData.funding_transaction?.block_timestamp
+                        ? new Date(stats.profileData.funding_transaction.block_timestamp).getTime()
+                        : Number.MAX_SAFE_INTEGER;
+                      
+                      // Determine which transaction was first
+                      if (firstOutgoingTxTime < firstIncomingTxTime && firstOutgoingTxTime !== Number.MAX_SAFE_INTEGER) {
+                        // First outgoing transaction was earlier
+                        firstTxHash = stats.profileData.first_transaction!.transaction_hash;
+                        displayDate = new Date(firstOutgoingTxTime).toLocaleDateString();
+                      } else if (firstIncomingTxTime !== Number.MAX_SAFE_INTEGER) {
+                        // First incoming transaction was earlier
+                        firstTxHash = stats.profileData.funding_transaction!.transaction_hash;
+                        displayDate = new Date(firstIncomingTxTime).toLocaleDateString();
+                      }
+                    } 
+                    // Fall back to RPC data if needed
+                    else if (stats.transactions && stats.transactions.length > 0) {
+                      // Find earliest transaction
+                      const earliestTx = stats.transactions.reduce((earliest, tx) => 
+                        tx.block_timestamp < earliest.block_timestamp ? tx : earliest, stats.transactions[0]);
+                      
+                      firstTxHash = earliestTx.hash;
+                      displayDate = new Date(earliestTx.block_timestamp * 1000).toLocaleDateString();
+                    }
+
+                    // Only render if we have a transaction hash
+                    return firstTxHash ? (
+                      <div className="flex flex-col text-sm bg-white/10 rounded-lg p-3">
+                        <span className="text-purple-100">First Activity</span>
+                        <a
+                          href={`https://testnet.monadexplorer.com/tx/${firstTxHash}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-white hover:text-purple-200 transition-colors inline-flex items-center mt-1"
+                        >
+                          {truncateAddress(firstTxHash)}
+                          <ExternalLink size={12} className="ml-1" />
+                        </a>
+                        <span className="text-white font-medium mt-1">
+                          {displayDate}
+                        </span>
+                        <span className="text-purple-200 text-xs mt-1">
+                          {calculateWalletAge(stats).days} days ago
+                        </span>
+                      </div>
+                    ) : null;
+                  })()}
                 </div>
               </div>
               
