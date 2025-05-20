@@ -70,19 +70,35 @@ interface MonadTestnetStats extends BaseMonadTestnetStats {
 // Update the wallet age calculation function to use SocialScan data if available
 function calculateWalletAge(stats: MonadTestnetStats): { days: number; creationDate: string } {
   // If we have SocialScan profile data, use the first transaction timestamp from there
-  if (stats.profileData?.first_transaction?.block_timestamp) {
-    const firstTxDate = new Date(stats.profileData.first_transaction.block_timestamp);
-    const now = new Date();
-    const days = Math.floor((now.getTime() - firstTxDate.getTime()) / (1000 * 60 * 60 * 24));
+  // The SocialScan API provides both first_transaction (first outgoing) and funding_transaction (first incoming)
+  // We should use whichever is earlier for the true wallet age
+  if (stats.profileData) {
+    // Get timestamps from both first_transaction and funding_transaction
+    const firstTxTime = stats.profileData.first_transaction?.block_timestamp 
+      ? new Date(stats.profileData.first_transaction.block_timestamp).getTime()
+      : Number.MAX_SAFE_INTEGER;
     
-    return {
-      days,
-      creationDate: firstTxDate.toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-      })
-    };
+    const fundingTxTime = stats.profileData.funding_transaction?.block_timestamp
+      ? new Date(stats.profileData.funding_transaction.block_timestamp).getTime()
+      : Number.MAX_SAFE_INTEGER;
+    
+    // Use the earlier timestamp (first activity on the wallet)
+    const earliestTimestamp = Math.min(firstTxTime, fundingTxTime);
+    
+    if (earliestTimestamp !== Number.MAX_SAFE_INTEGER) {
+      const firstTxDate = new Date(earliestTimestamp);
+      const now = new Date();
+      const days = Math.floor((now.getTime() - firstTxDate.getTime()) / (1000 * 60 * 60 * 24));
+      
+      return {
+        days,
+        creationDate: firstTxDate.toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'long', 
+          day: 'numeric'
+        })
+      };
+    }
   }
   
   // Fallback to traditional calculation
@@ -730,12 +746,26 @@ function MonadTestnetStats() {
         additionalPoints += 20;
       }
       
-      // Check if user is an early user (before May 31st, 2024)
+      // Check if user is an early user (before February 26th, 2025)
       // Use SocialScan data for more accurate first transaction check if available
       let firstTxDate: Date | null = null;
       
-      if (profileData?.first_transaction?.block_timestamp) {
-        firstTxDate = new Date(profileData.first_transaction.block_timestamp);
+      if (profileData) {
+        // Get timestamps from both first_transaction and funding_transaction
+        const firstTxTime = profileData.first_transaction?.block_timestamp 
+          ? new Date(profileData.first_transaction.block_timestamp).getTime()
+          : Number.MAX_SAFE_INTEGER;
+        
+        const fundingTxTime = profileData.funding_transaction?.block_timestamp
+          ? new Date(profileData.funding_transaction.block_timestamp).getTime()
+          : Number.MAX_SAFE_INTEGER;
+        
+        // Use the earlier timestamp (first activity on the wallet)
+        const earliestTimestamp = Math.min(firstTxTime, fundingTxTime);
+        
+        if (earliestTimestamp !== Number.MAX_SAFE_INTEGER) {
+          firstTxDate = new Date(earliestTimestamp);
+        }
       } else if (statsData.transactions && statsData.transactions.length > 0) {
         const earliestTx = statsData.transactions.reduce((earliest, tx) => 
           tx.block_timestamp < earliest.block_timestamp ? tx : earliest, statsData.transactions[0]);
@@ -778,10 +808,24 @@ function MonadTestnetStats() {
     let isEarlyUser = false;
     let earliestTxDate: Date | null = null;
     
-    if (stats.profileData?.first_transaction?.block_timestamp) {
-      earliestTxDate = new Date(stats.profileData.first_transaction.block_timestamp);
-      const cutoffDate = new Date('2025-02-26T23:59:59Z'); // February 26th, 2025 cutoff
-      isEarlyUser = earliestTxDate < cutoffDate;
+    if (stats.profileData) {
+      // Get timestamps from both first_transaction and funding_transaction
+      const firstTxTime = stats.profileData.first_transaction?.block_timestamp 
+        ? new Date(stats.profileData.first_transaction.block_timestamp).getTime()
+        : Number.MAX_SAFE_INTEGER;
+      
+      const fundingTxTime = stats.profileData.funding_transaction?.block_timestamp
+        ? new Date(stats.profileData.funding_transaction.block_timestamp).getTime()
+        : Number.MAX_SAFE_INTEGER;
+      
+      // Use the earlier timestamp (first activity on the wallet)
+      const earliestTimestamp = Math.min(firstTxTime, fundingTxTime);
+      
+      if (earliestTimestamp !== Number.MAX_SAFE_INTEGER) {
+        earliestTxDate = new Date(earliestTimestamp);
+        const cutoffDate = new Date('2025-02-26T23:59:59Z'); // February 26th, 2025 cutoff
+        isEarlyUser = earliestTxDate < cutoffDate;
+      }
     } else if (stats.transactions && stats.transactions.length > 0) {
       const earliestTx = stats.transactions.reduce((earliest, tx) => 
         tx.block_timestamp < earliest.block_timestamp ? tx : earliest, stats.transactions[0]);
@@ -834,7 +878,7 @@ const getTotalInteractions = () => {
   const getLastTransaction = () => {
     if (!stats) return { hash: null, date: 'N/A' };
     
-    // Use SocialScan data if available
+    // Use SocialScan data if available - last_transaction is actually the most recent transaction
     if (stats.profileData?.last_transaction) {
       const lastTx = stats.profileData.last_transaction;
       return {
@@ -1487,6 +1531,9 @@ const getTotalInteractions = () => {
                     <h2 className="text-2xl font-bold text-gray-900">Contracts Created</h2>
                     <p className="text-gray-600">
                       {stats.contractsCreated.total} contracts
+                      {stats && stats.totalTransactions > 9900 && (
+                        <span className="ml-1 text-xs text-gray-500">(For high-volume wallets, showing creation transactions)</span>
+                      )}
                     </p>
                   </div>
                 </div>
@@ -1512,16 +1559,33 @@ const getTotalInteractions = () => {
                         <tr key={contract} className="hover:bg-gray-50 transition-colors">
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="flex items-center">
-                              <a
-                                href={`https://testnet.monadexplorer.com/address/${contract}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="font-medium text-purple-600 hover:text-purple-800"
-                              >
-                                <span className="hidden sm:inline">{contract}</span>
-                                <span className="sm:hidden">{truncateAddress(contract)}</span>
-                                <ExternalLink size={14} className="inline-block ml-1 opacity-70" />
-                              </a>
+                              {/* Check if this is a transaction hash (for Alchemy data) or a contract address */}
+                              {contract.length === 66 && contract.startsWith('0x') ? (
+                                <>
+                                  <span className="bg-orange-100 text-orange-800 text-xs font-medium mr-2 px-2.5 py-0.5 rounded-full">Creation TX</span>
+                                  <a
+                                    href={`https://testnet.monadexplorer.com/tx/${contract}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="font-medium text-purple-600 hover:text-purple-800"
+                                  >
+                                    <span className="hidden sm:inline">{truncateAddress(contract)}</span>
+                                    <span className="sm:hidden">{truncateAddress(contract)}</span>
+                                    <ExternalLink size={14} className="inline-block ml-1 opacity-70" />
+                                  </a>
+                                </>
+                              ) : (
+                                <a
+                                  href={`https://testnet.monadexplorer.com/address/${contract}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="font-medium text-purple-600 hover:text-purple-800"
+                                >
+                                  <span className="hidden sm:inline">{contract}</span>
+                                  <span className="sm:hidden">{truncateAddress(contract)}</span>
+                                  <ExternalLink size={14} className="inline-block ml-1 opacity-70" />
+                                </a>
+                              )}
                             </div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
