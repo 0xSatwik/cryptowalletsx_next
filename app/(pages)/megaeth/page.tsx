@@ -3,10 +3,9 @@
 import { useState, useEffect } from 'react';
 import { formatDistanceToNow, format } from 'date-fns';
 import { ExternalLink, Eye, EyeOff, Info, Twitter, Share2, Award, Star, Shield, FileText, Activity, ArrowUp, Cpu, Zap, Wallet, Calendar } from 'lucide-react';
-import { JsonRpcProvider, formatEther } from 'ethers';
 
-// Constants for ThirdWeb API
-const THIRDWEB_API_BASE_URL = 'https://insight.thirdweb.com/v1/wallets';
+// Constants for Alchemy API
+const ALCHEMY_API_BASE_URL = 'https://monad-testnet.g.alchemy.com/v2/';
 
 // Component for MegaETH Stats Checker
 export default function MegaETHStatsChecker() {
@@ -21,33 +20,24 @@ export default function MegaETHStatsChecker() {
   const [showAllTransactions, setShowAllTransactions] = useState(false);
   const [walletScore, setWalletScore] = useState<WalletScore | null>(null);
   
-  // ThirdWeb Client IDs - from environment variables
-  const THIRDWEB_CLIENT_IDS = [
-    process.env.NEXT_PUBLIC_THIRDWEB_CLIENT_ID_1 || process.env.VITE_THIRDWEB_CLIENT_ID_1 || '',
-    process.env.NEXT_PUBLIC_THIRDWEB_CLIENT_ID_2 || process.env.VITE_THIRDWEB_CLIENT_ID_2 || '',
-    process.env.NEXT_PUBLIC_THIRDWEB_CLIENT_ID_3 || process.env.VITE_THIRDWEB_CLIENT_ID_3 || '',
-    process.env.NEXT_PUBLIC_THIRDWEB_CLIENT_ID_4 || process.env.VITE_THIRDWEB_CLIENT_ID_4 || '',
-    process.env.NEXT_PUBLIC_THIRDWEB_CLIENT_ID_5 || process.env.VITE_THIRDWEB_CLIENT_ID_5 || '',
-    process.env.NEXT_PUBLIC_THIRDWEB_CLIENT_ID_6 || process.env.VITE_THIRDWEB_CLIENT_ID_6 || '',
-    process.env.NEXT_PUBLIC_THIRDWEB_CLIENT_ID_7 || process.env.VITE_THIRDWEB_CLIENT_ID_7 || '',
-    process.env.NEXT_PUBLIC_THIRDWEB_CLIENT_ID_8 || process.env.VITE_THIRDWEB_CLIENT_ID_8 || '',
-    process.env.NEXT_PUBLIC_THIRDWEB_CLIENT_ID_9 || process.env.VITE_THIRDWEB_CLIENT_ID_9 || '',
-    process.env.NEXT_PUBLIC_THIRDWEB_CLIENT_ID_10 || process.env.VITE_THIRDWEB_CLIENT_ID_10 || '',
-    process.env.NEXT_PUBLIC_THIRDWEB_CLIENT_ID_11 || process.env.VITE_THIRDWEB_CLIENT_ID_11 || '',
-    process.env.NEXT_PUBLIC_THIRDWEB_CLIENT_ID_12 || process.env.VITE_THIRDWEB_CLIENT_ID_12 || '',
-    // Skip 13 as per requirement
-    process.env.NEXT_PUBLIC_THIRDWEB_CLIENT_ID_14 || process.env.VITE_THIRDWEB_CLIENT_ID_14 || '',
-    process.env.NEXT_PUBLIC_THIRDWEB_CLIENT_ID_15 || process.env.VITE_THIRDWEB_CLIENT_ID_15 || '',
-    process.env.NEXT_PUBLIC_THIRDWEB_CLIENT_ID_16 || process.env.VITE_THIRDWEB_CLIENT_ID_16 || '',
-    process.env.NEXT_PUBLIC_THIRDWEB_CLIENT_ID_17 || process.env.VITE_THIRDWEB_CLIENT_ID_17 || '',
-    // Legacy fallback
-    process.env.NEXT_PUBLIC_THIRDWEB_CLIENT_ID || process.env.VITE_THIRDWEB_CLIENT_ID || '',
+  // Alchemy API Keys - from environment variables
+  const ALCHEMY_API_KEYS = [
+    process.env.NEXT_PUBLIC_ALCHEMY_API_KEY_1 || process.env.VITE_ALCHEMY_API_KEY_1 || 'dgbnKri0Ew8I0L8bVFd8_-bRUic-g_CV',
+    process.env.NEXT_PUBLIC_ALCHEMY_API_KEY_2 || process.env.VITE_ALCHEMY_API_KEY_2 || 'FBKOVxVYW0yobV1ntzs7u5qM0E6_xRwO',
+    process.env.NEXT_PUBLIC_ALCHEMY_API_KEY_3 || process.env.VITE_ALCHEMY_API_KEY_3 || 'FBKOVxVYW0yobV1ntzs7u5qM0E6_xRwO',
+    process.env.NEXT_PUBLIC_ALCHEMY_API_KEY_4 || process.env.VITE_ALCHEMY_API_KEY_4 || 'FBKOVxVYW0yobV1ntzs7u5qM0E6_xRwO',
+    process.env.NEXT_PUBLIC_ALCHEMY_API_KEY_5 || process.env.VITE_ALCHEMY_API_KEY_5 || 'FBKOVxVYW0yobV1ntzs7u5qM0E6_xRwO',
+    process.env.NEXT_PUBLIC_ALCHEMY_API_KEY_6 || process.env.VITE_ALCHEMY_API_KEY_6 || 'FBKOVxVYW0yobV1ntzs7u5qM0E6_xRwO',
+    process.env.NEXT_PUBLIC_ALCHEMY_API_KEY_7 || process.env.VITE_ALCHEMY_API_KEY_7 || 'FBKOVxVYW0yobV1ntzs7u5qM0E6_xRwO',
+    process.env.NEXT_PUBLIC_ALCHEMY_API_KEY_8 || process.env.VITE_ALCHEMY_API_KEY_8 || 'FBKOVxVYW0yobV1ntzs7u5qM0E6_xRwO',
+    process.env.NEXT_PUBLIC_ALCHEMY_API_KEY_9 || process.env.VITE_ALCHEMY_API_KEY_9 || 'FBKOVxVYW0yobV1ntzs7u5qM0E6_xRwO',
+    process.env.NEXT_PUBLIC_ALCHEMY_API_KEY_10 || process.env.VITE_ALCHEMY_API_KEY_10 || 'FBKOVxVYW0yobV1ntzs7u5qM0E6_xRwO',
   ].filter(id => id !== '');
 
-  // Function to get a random client ID
-  const getRandomClientId = () => {
-    const randomIndex = Math.floor(Math.random() * THIRDWEB_CLIENT_IDS.length);
-    return THIRDWEB_CLIENT_IDS[randomIndex];
+  // Function to get a random Alchemy API key
+  const getRandomAlchemyApiKey = () => {
+    const randomIndex = Math.floor(Math.random() * ALCHEMY_API_KEYS.length);
+    return ALCHEMY_API_KEYS[randomIndex];
   };
 
   // New interface for wallet score
@@ -173,16 +163,48 @@ export default function MegaETHStatsChecker() {
   // Function to fetch first transaction (wallet age)
   const fetchFirstTransaction = async (address: string): Promise<Transaction | null> => {
     try {
-      const clientId = getRandomClientId();
-      const url = `${THIRDWEB_API_BASE_URL}/${address}/transactions?chain=6342&filter_block_timestamp_gte=1738308200&sort_order=asc&limit=1&page=1&clientId=${clientId}`;
+      const apiKey = getRandomAlchemyApiKey();
+      const url = `${ALCHEMY_API_BASE_URL}${apiKey}`;
       
-      const response = await fetch(url);
+      // Prepare request body for first transaction (using asc order)
+      const requestBody = {
+        id: 1,
+        jsonrpc: "2.0",
+        method: "alchemy_getAssetTransfers",
+        params: [
+          {
+            fromBlock: "0x0",
+            toBlock: "latest",
+            category: ["external"],
+            order: "asc",  // Ascending order to get oldest first
+            withMetadata: true,
+            excludeZeroValue: false,
+            maxCount: "0x1",  // Just get 1 transaction
+            fromAddress: address.toLowerCase()
+          }
+        ]
+      };
       
-      if (response.status === 404 || response.status === 503) {
-        // Try again with another client ID
-        const newClientId = getRandomClientId();
-        const retryUrl = `${THIRDWEB_API_BASE_URL}/${address}/transactions?chain=6342&filter_block_timestamp_gte=1738308200&sort_order=asc&limit=1&page=1&clientId=${newClientId}`;
-        const retryResponse = await fetch(retryUrl);
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody)
+      });
+      
+      if (!response.ok) {
+        // Try again with another API key
+        const retryApiKey = getRandomAlchemyApiKey();
+        const retryUrl = `${ALCHEMY_API_BASE_URL}${retryApiKey}`;
+        
+        const retryResponse = await fetch(retryUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(requestBody)
+        });
         
         if (!retryResponse.ok) {
           console.error(`Failed to fetch first transaction after retry: ${retryResponse.status}`);
@@ -190,35 +212,70 @@ export default function MegaETHStatsChecker() {
         }
         
         const retryData = await retryResponse.json();
-        return retryData.data && retryData.data.length > 0 ? retryData.data[0] : null;
-      }
-      
-      if (!response.ok) {
-        console.error(`Failed to fetch first transaction: ${response.status}`);
+        if (retryData.result?.transfers?.length > 0) {
+          return convertAlchemyToTransaction(retryData.result.transfers[0], address);
+        }
         return null;
       }
       
       const data = await response.json();
-      return data.data && data.data.length > 0 ? data.data[0] : null;
+      if (data.result?.transfers?.length > 0) {
+        return convertAlchemyToTransaction(data.result.transfers[0], address);
+      }
+      return null;
     } catch (error) {
       console.error('Error fetching first transaction:', error);
       return null;
     }
   };
 
-  // Function to check total transaction count - new helper function
+  // Function to check total transaction count
   const fetchTransactionCount = async (address: string): Promise<number> => {
     try {
-      const clientId = getRandomClientId();
-      const url = `${THIRDWEB_API_BASE_URL}/${address}/transactions?chain=6342&filter_block_timestamp_gte=1738308200&sort_order=desc&limit=1&page=1&clientId=${clientId}`;
+      // We'll need to use a specific API call to get the count
+      // For now, we'll approximate it by getting the first page and checking if there's a pageKey
+      const apiKey = getRandomAlchemyApiKey();
+      const url = `${ALCHEMY_API_BASE_URL}${apiKey}`;
       
-      const response = await fetch(url);
+      // Prepare request body
+      const requestBody = {
+        id: 1,
+        jsonrpc: "2.0",
+        method: "alchemy_getAssetTransfers",
+        params: [
+          {
+            fromBlock: "0x0",
+            toBlock: "latest",
+            category: ["external"],
+            order: "desc",
+            withMetadata: true,
+            excludeZeroValue: false,
+            maxCount: "0x3e8", // Get full first page (1000)
+            fromAddress: address.toLowerCase()
+          }
+        ]
+      };
       
-      if (response.status === 404 || response.status === 503) {
-        // Try again with another client ID
-        const newClientId = getRandomClientId();
-        const retryUrl = `${THIRDWEB_API_BASE_URL}/${address}/transactions?chain=6342&filter_block_timestamp_gte=1738308200&sort_order=desc&limit=1&page=1&clientId=${newClientId}`;
-        const retryResponse = await fetch(retryUrl);
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody)
+      });
+      
+      if (!response.ok) {
+        // Try again with another API key
+        const retryApiKey = getRandomAlchemyApiKey();
+        const retryUrl = `${ALCHEMY_API_BASE_URL}${retryApiKey}`;
+        
+        const retryResponse = await fetch(retryUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(requestBody)
+        });
         
         if (!retryResponse.ok) {
           console.error(`Failed to fetch transaction count after retry: ${retryResponse.status}`);
@@ -226,16 +283,17 @@ export default function MegaETHStatsChecker() {
         }
         
         const retryData = await retryResponse.json();
-        return retryData.meta?.total_items || 0;
-      }
-      
-      if (!response.ok) {
-        console.error(`Failed to fetch transaction count: ${response.status}`);
-        return 0;
+        // Return the count of transactions in this page
+        const firstPageCount = retryData.result?.transfers?.length || 0;
+        // If there's a pageKey, there are more transactions
+        return retryData.result?.pageKey ? 1000 + 100 : firstPageCount;
       }
       
       const data = await response.json();
-      return data.meta?.total_items || 0;
+      // Return the count of transactions in this page
+      const firstPageCount = data.result?.transfers?.length || 0;
+      // If there's a pageKey, there are more transactions
+      return data.result?.pageKey ? 1000 + 100 : firstPageCount;
     } catch (error) {
       console.error('Error fetching transaction count:', error);
       return 0;
@@ -245,68 +303,149 @@ export default function MegaETHStatsChecker() {
   // Function to fetch all transactions with parallel requests
   const fetchAllTransactions = async (address: string): Promise<Transaction[]> => {
     try {
-      // First, fetch the total transaction count to determine pages
-      const totalTxCount = await fetchTransactionCount(address);
-      console.log(`Total transactions: ${totalTxCount}`);
-      
-      // Determine how many pages we need to fetch (max 6 pages = 3,000 transactions)
-      const pageSize = 500;
-      const maxPages = 6;
-      const pagesToFetch = Math.min(Math.ceil(totalTxCount / pageSize), maxPages);
-      
-      // Create arrays for parallel requests
-      const pagePromises: Promise<TransactionResponse>[] = [];
-      const clientIds: string[] = [];
-      
-      // Generate promises for each page request
-      for (let page = 1; page <= pagesToFetch; page++) {
-        const clientId = getRandomClientId();
-        clientIds.push(clientId);
-        
-        const url = `${THIRDWEB_API_BASE_URL}/${address}/transactions?chain=6342&filter_block_timestamp_gte=1738308200&sort_order=desc&limit=${pageSize}&page=${page}&clientId=${clientId}`;
-        
-        const pagePromise = fetch(url)
-          .then(response => {
-            if (response.status === 404 || response.status === 503) {
-              // Try again with another client ID
-              const newClientId = getRandomClientId();
-              const retryUrl = `${THIRDWEB_API_BASE_URL}/${address}/transactions?chain=6342&filter_block_timestamp_gte=1738308200&sort_order=desc&limit=${pageSize}&page=${page}&clientId=${newClientId}`;
-              return fetch(retryUrl);
-            }
-            return response;
-          })
-          .then(response => {
-            if (!response.ok) {
-              console.error(`Failed to fetch transactions for page ${page}: ${response.status}`);
-              return { meta: { page: 0, total_items: 0, limit_per_chain: 0, chain_ids: [] }, data: [] } as TransactionResponse;
-            }
-            return response.json();
-          })
-          .catch(error => {
-            console.error(`Error fetching transactions for page ${page}:`, error);
-            return { meta: { page: 0, total_items: 0, limit_per_chain: 0, chain_ids: [] }, data: [] } as TransactionResponse;
-          });
-        
-        pagePromises.push(pagePromise);
-      }
-      
-      // Wait for all page requests to complete in parallel
-      const pageResults = await Promise.all(pagePromises);
-      
-      // Combine transaction data from all pages
+      const maxPages = 20; // Maximum pages to fetch (20k transactions max)
       const allTransactions: Transaction[] = [];
-      for (const pageResult of pageResults) {
-        if (pageResult.data && Array.isArray(pageResult.data)) {
-          allTransactions.push(...pageResult.data);
+      let pageKey: string | undefined = undefined;
+      let currentPage = 0;
+      
+      console.log(`Starting to fetch transactions for ${address}`);
+      
+      // Use pagination with pageKey to fetch all transactions
+      while (currentPage < maxPages) {
+        currentPage++;
+        
+        // Get random API key
+        const apiKey = getRandomAlchemyApiKey();
+        const url = `${ALCHEMY_API_BASE_URL}${apiKey}`;
+        
+        // Prepare request body
+        const requestBody: any = {
+          id: 1,
+          jsonrpc: "2.0",
+          method: "alchemy_getAssetTransfers",
+          params: [
+            {
+              fromBlock: "0x0",
+              toBlock: "latest",
+              category: ["external"],
+              order: "desc",
+              withMetadata: true,
+              excludeZeroValue: false,
+              maxCount: "0x3e8", // Hex for 1000
+              fromAddress: address.toLowerCase()
+            }
+          ]
+        };
+        
+        // Add pageKey if we have one from previous request
+        if (pageKey) {
+          requestBody.params[0].pageKey = pageKey;
+        }
+        
+        console.log(`Fetching page ${currentPage} with${pageKey ? '' : 'out'} pageKey`);
+        
+        try {
+          const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json',
+            },
+            body: JSON.stringify(requestBody)
+          });
+          
+          if (!response.ok) {
+            console.error(`Failed to fetch transactions for page ${currentPage}: ${response.status}`);
+            
+            // Try one more time with a different API key
+            const retryApiKey = getRandomAlchemyApiKey();
+            const retryUrl = `${ALCHEMY_API_BASE_URL}${retryApiKey}`;
+            const retryResponse = await fetch(retryUrl, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+              },
+              body: JSON.stringify(requestBody)
+            });
+            
+            if (!retryResponse.ok) {
+              console.error(`Retry failed for page ${currentPage}: ${retryResponse.status}`);
+              break;
+            }
+            
+            const retryData = await retryResponse.json();
+            
+            // Process the transactions
+            if (retryData.result && retryData.result.transfers) {
+              // Convert Alchemy format to our Transaction format
+              const pageTxs = retryData.result.transfers.map((transfer: any) => convertAlchemyToTransaction(transfer, address));
+              allTransactions.push(...pageTxs);
+            }
+            
+            // Check if there are more pages
+            pageKey = retryData.result.pageKey;
+            if (!pageKey) {
+              console.log(`No more pages after page ${currentPage}`);
+              break;
+            }
+            
+          } else {
+            const data = await response.json();
+            
+            // Process the transactions
+            if (data.result && data.result.transfers) {
+              // Convert Alchemy format to our Transaction format
+              const pageTxs = data.result.transfers.map((transfer: any) => convertAlchemyToTransaction(transfer, address));
+              allTransactions.push(...pageTxs);
+            }
+            
+            // Check if there are more pages
+            pageKey = data.result.pageKey;
+            if (!pageKey) {
+              console.log(`No more pages after page ${currentPage}`);
+              break;
+            }
+          }
+          
+        } catch (error) {
+          console.error(`Error fetching page ${currentPage}:`, error);
+          break;
         }
       }
       
-      console.log(`Fetched ${allTransactions.length} transactions from ${pagesToFetch} pages`);
+      console.log(`Fetched a total of ${allTransactions.length} transactions from ${currentPage} pages`);
       return allTransactions;
+      
     } catch (error) {
-      console.error('Error fetching all transactions:', error);
+      console.error('Error in fetchAllTransactions:', error);
       return [];
     }
+  };
+
+  // Helper function to convert Alchemy transfer format to our Transaction format
+  const convertAlchemyToTransaction = (transfer: any, walletAddress: string): Transaction => {
+    // Extract timestamp
+    const blockTimestamp = transfer.metadata?.blockTimestamp ? 
+      Math.floor(new Date(transfer.metadata.blockTimestamp).getTime() / 1000) : 
+      Math.floor(Date.now() / 1000);
+    
+    // Extract gas information
+    const gasUsed = transfer.gas ? parseInt(transfer.gas, 16) : 0;
+    const gasPrice = transfer.gasPrice ? transfer.gasPrice : '0x0';
+    
+    return {
+      chain_id: '6342', // MegaETH chain ID
+      hash: transfer.hash || '',
+      block_timestamp: blockTimestamp,
+      from_address: transfer.from || '',
+      to_address: transfer.to || '',
+      value: transfer.value ? `0x${BigInt(transfer.value).toString(16)}` : '0x0',
+      gas_used: gasUsed,
+      effective_gas_price: gasPrice,
+      status: 1, // Assume successful transaction
+      contract_address: transfer.rawContract?.address || undefined
+    };
   };
 
   // Process all transactions to extract stats
@@ -341,12 +480,23 @@ export default function MegaETHStatsChecker() {
       // Calculate volume (excluding transactions to self)
       if (tx.from_address.toLowerCase() === address.toLowerCase() && 
           tx.to_address.toLowerCase() !== address.toLowerCase()) {
-        totalVolume += Number(tx.value) / 1e18; // Convert to ETH
+        const txValue = typeof tx.value === 'string' && tx.value.startsWith('0x') 
+          ? Number(BigInt(tx.value)) / 1e18 
+          : Number(tx.value) / 1e18;
+        totalVolume += txValue;
       }
       
       // Calculate gas spent
       if (tx.from_address.toLowerCase() === address.toLowerCase()) {
-        const gasSpent = (Number(tx.gas_used) * Number(tx.effective_gas_price)) / 1e18;
+        // For Alchemy transactions, calculate gas differently
+        let gasSpent = 0;
+        if (typeof tx.gas_used === 'number' && typeof tx.effective_gas_price === 'string') {
+          if (tx.effective_gas_price.startsWith('0x')) {
+            gasSpent = (tx.gas_used * Number(BigInt(tx.effective_gas_price))) / 1e18;
+          } else {
+            gasSpent = (tx.gas_used * Number(tx.effective_gas_price)) / 1e18;
+          }
+        }
         totalGasSpent += gasSpent;
       }
       
@@ -362,7 +512,7 @@ export default function MegaETHStatsChecker() {
       
       // Identify contract creations (to_address is null or empty)
       if (tx.from_address.toLowerCase() === address.toLowerCase() && 
-          (!tx.to_address || tx.to_address === '0x')) {
+          (!tx.to_address || tx.to_address === '0x' || tx.to_address === '0x0000000000000000000000000000000000000000')) {
         contractsCreated.push(tx);
       }
     });
@@ -377,6 +527,58 @@ export default function MegaETHStatsChecker() {
       contractsInteracted,
       contractInteractionCounts,
     };
+  };
+
+  // Function to fetch wallet balance using Alchemy API
+  const fetchWalletBalance = async (address: string): Promise<string> => {
+    try {
+      const apiKey = getRandomAlchemyApiKey();
+      const url = `${ALCHEMY_API_BASE_URL}${apiKey}`;
+      
+      // Prepare request body for getting balance
+      const requestBody = {
+        id: 1,
+        jsonrpc: "2.0",
+        method: "eth_getBalance",
+        params: [address.toLowerCase(), "latest"]
+      };
+      
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody)
+      });
+      
+      if (!response.ok) {
+        // Try again with another API key
+        const retryApiKey = getRandomAlchemyApiKey();
+        const retryUrl = `${ALCHEMY_API_BASE_URL}${retryApiKey}`;
+        
+        const retryResponse = await fetch(retryUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(requestBody)
+        });
+        
+        if (!retryResponse.ok) {
+          console.error(`Failed to fetch balance after retry: ${retryResponse.status}`);
+          return "0";
+        }
+        
+        const retryData = await retryResponse.json();
+        return retryData.result || "0";
+      }
+      
+      const data = await response.json();
+      return data.result || "0";
+    } catch (error) {
+      console.error('Error fetching wallet balance:', error);
+      return "0";
+    }
   };
 
   // Main function to fetch wallet data
@@ -394,11 +596,8 @@ export default function MegaETHStatsChecker() {
     try {
       // Run these requests in parallel using Promise.all
       const [balance, firstTx, allTransactions] = await Promise.all([
-        // Get native balance from Ethereum RPC
-        (async () => {
-          const provider = new JsonRpcProvider('https://carrot.megaeth.com/rpc');
-          return provider.getBalance(walletAddress);
-        })(),
+        // Get native balance from Alchemy API
+        fetchWalletBalance(walletAddress),
         
         // Fetch first transaction for wallet age
         fetchFirstTransaction(walletAddress),
@@ -422,7 +621,7 @@ export default function MegaETHStatsChecker() {
       // Set complete wallet data
       const fullWalletData = {
         address: walletAddress,
-        balance: formatEther(balance),
+        balance,
         firstTransaction: firstTx,
         walletAge,
         firstTxDate,
@@ -463,17 +662,29 @@ export default function MegaETHStatsChecker() {
 
   // Format ETH value
   const formatEth = (value: string | number) => {
-    const num = typeof value === 'string' ? value : value.toString();
     try {
-      // For small values, use direct division instead of formatEther
-      if (num === '0' || num === '1') {
-        return (Number(num) / 1e18).toFixed(6) + ' MEGA';
+      if (!value) return '0.000000 MEGA';
+      
+      // Handle different value formats
+      let formattedValue: string;
+      
+      if (typeof value === 'string' && value.startsWith('0x')) {
+        // Handle hex string (from Alchemy)
+        const wei = BigInt(value);
+        formattedValue = (Number(wei) / 1e18).toFixed(6);
+      } else if (typeof value === 'string') {
+        // Handle decimal string
+        formattedValue = (parseFloat(value) / 1e18).toFixed(6);
+      } else {
+        // Handle number
+        formattedValue = (value as number / 1e18).toFixed(6);
       }
       
-      return parseFloat(formatEther(num)).toFixed(6) + ' MEGA';
+      return formattedValue + ' MEGA';
     } catch (e) {
       // Fallback to manual conversion if formatEther fails
-      return (Number(num) / 1e18).toFixed(6) + ' MEGA';
+      console.error('Error formatting ETH value:', e);
+      return '0.000000 MEGA';
     }
   };
 
@@ -784,7 +995,7 @@ export default function MegaETHStatsChecker() {
                           target="_blank" 
                           rel="noopener noreferrer"
                                 className="ml-2 text-white/90 hover:text-white inline-flex items-center"
-                        >
+                          >
                                 <ExternalLink size={14} />
                         </a>
                     </div>
@@ -1007,7 +1218,7 @@ export default function MegaETHStatsChecker() {
                               target="_blank"
                               rel="noopener noreferrer"
                                   className="text-blue-600 hover:text-blue-800 dark:text-blue-400 hover:underline inline-flex items-center"
-                            >
+                                >
                                   View <ExternalLink size={14} className="ml-1" />
                             </a>
                           </td>
@@ -1028,7 +1239,7 @@ export default function MegaETHStatsChecker() {
                     </p>
                 </div>
               ) : null}
-              </div>
+                </div>
             </div>
             
             {/* Contracts Interacted - Enhanced UI */}
@@ -1136,7 +1347,7 @@ export default function MegaETHStatsChecker() {
                   </div>
                 ) : null}
                 </div>
-              </div>
+            </div>
 
             {/* All Transactions - Enhanced UI */}
             <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl overflow-hidden border border-blue-100 dark:border-blue-900/20">
@@ -1244,9 +1455,9 @@ export default function MegaETHStatsChecker() {
                                   className="text-blue-600 hover:text-blue-800 dark:text-blue-400 hover:underline inline-flex items-center"
                                 >
                                   View <ExternalLink size={14} className="ml-1" />
-                                </a>
-                            </td>
-                          </tr>
+                            </a>
+                          </td>
+                        </tr>
                           ))}
                     </tbody>
                   </table>
