@@ -266,6 +266,217 @@ async function checkDirectNftOwnership(address: string): Promise<{
   }
 }
 
+// Add the Alchemy transaction interfaces after the SocialScan interfaces
+interface AlchemyTransfer {
+  blockNum: string;
+  hash: string;
+  from: string;
+  to: string;
+  value: number;
+  asset: string;
+  category: string;
+  rawContract: {
+    value: string;
+    address: string | null;
+    decimal: string;
+  };
+  metadata: {
+    blockTimestamp: string;
+  };
+}
+
+interface AlchemyTransfersResponse {
+  transfers: AlchemyTransfer[];
+  pageKey?: string;
+}
+
+// Add a function to fetch transactions using Alchemy API for users with large transaction counts
+async function fetchAlchemyTransactions(
+  address: string, 
+  statusCallback: (status: string) => void
+): Promise<{ 
+  transactions: any[]; 
+  contractsInteracted: { addresses: string[]; interactionCounts: Record<string, number>; timestamps: Record<string, number>; total: number };
+  totalVolume: string;
+  activityByDay: number;
+  activityByWeek: number;
+  activityByMonth: number;
+}> {
+  // Get a random Alchemy API key from the pool
+  const alchemyApiKeys = [
+    process.env.VITE_ALCHEMY_API_KEY_1 || 'FBKOVxVYW0yobV1ntzs7u5qM0E6_xRwO',
+    process.env.VITE_ALCHEMY_API_KEY_2 || 'FBKOVxVYW0yobV1ntzs7u5qM0E6_xRwO',
+    process.env.VITE_ALCHEMY_API_KEY_3 || 'FBKOVxVYW0yobV1ntzs7u5qM0E6_xRwO',
+    process.env.VITE_ALCHEMY_API_KEY_4 || 'FBKOVxVYW0yobV1ntzs7u5qM0E6_xRwO',
+    process.env.VITE_ALCHEMY_API_KEY_5 || 'FBKOVxVYW0yobV1ntzs7u5qM0E6_xRwO',
+    process.env.VITE_ALCHEMY_API_KEY_6 || 'FBKOVxVYW0yobV1ntzs7u5qM0E6_xRwO',
+    process.env.VITE_ALCHEMY_API_KEY_7 || 'FBKOVxVYW0yobV1ntzs7u5qM0E6_xRwO',
+    process.env.VITE_ALCHEMY_API_KEY_8 || 'FBKOVxVYW0yobV1ntzs7u5qM0E6_xRwO',
+    process.env.VITE_ALCHEMY_API_KEY_9 || 'FBKOVxVYW0yobV1ntzs7u5qM0E6_xRwO',
+    process.env.VITE_ALCHEMY_API_KEY_10 || 'FBKOVxVYW0yobV1ntzs7u5qM0E6_xRwO'
+  ].filter(Boolean);
+  
+  const randomIndex = Math.floor(Math.random() * alchemyApiKeys.length);
+  const apiKey = alchemyApiKeys[randomIndex];
+  
+  const apiUrl = `https://monad-testnet.g.alchemy.com/v2/${apiKey}`;
+  
+  try {
+    let transactions: any[] = [];
+    let pageKey: string | undefined = undefined;
+    let page = 1;
+    const pageSize = 1000; // Maximum allowed by Alchemy
+    const maxPages = 20; // Limit to 20,000 transactions (20 pages of 1000 each)
+    
+    // Track unique dates, weeks, and months
+    const uniqueDates = new Set<string>();
+    const uniqueWeeks = new Set<string>();
+    const uniqueMonths = new Set<string>();
+    
+    // Track contract interactions
+    const contractsInteracted: {
+      addresses: string[];
+      interactionCounts: Record<string, number>;
+      timestamps: Record<string, number>;
+      total: number;
+    } = {
+      addresses: [],
+      interactionCounts: {},
+      timestamps: {},
+      total: 0
+    };
+
+    let totalVolume = 0;
+    
+    while (page <= maxPages) {
+      statusCallback(`Fetching transactions page ${page} of max ${maxPages}...`);
+      
+      const requestBody = {
+        id: 1,
+        jsonrpc: "2.0",
+        method: "alchemy_getAssetTransfers",
+        params: [
+          {
+            fromBlock: "0x0",
+            toBlock: "latest",
+            category: ["external"],
+            order: "desc",
+            withMetadata: true,
+            excludeZeroValue: false,
+            maxCount: "0x3e8", // 1000 in hex
+            fromAddress: address.toLowerCase(),
+            ...(pageKey ? { pageKey } : {})
+          }
+        ]
+      };
+
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(requestBody)
+      });
+
+      if (!response.ok) {
+        throw new Error(`Alchemy API error: ${response.status}`);
+      }
+
+      const responseData = await response.json();
+      const result: AlchemyTransfersResponse = responseData.result;
+      
+      if (!result.transfers || !Array.isArray(result.transfers)) {
+        break;
+      }
+      
+      // Transform Alchemy transfers to a compatible format
+      const formattedTransfers = result.transfers.map(transfer => {
+        // Parse timestamp to unix timestamp
+        const timestamp = Math.floor(new Date(transfer.metadata.blockTimestamp).getTime() / 1000);
+        
+        // Track unique dates
+        const date = new Date(timestamp * 1000).toISOString().split('T')[0];
+        uniqueDates.add(date);
+        
+        // Track unique weeks (using year + week number)
+        const dateObj = new Date(timestamp * 1000);
+        const yearStart = new Date(dateObj.getFullYear(), 0, 1);
+        const weekNumber = Math.ceil(
+          ((dateObj.getTime() - yearStart.getTime()) / 86400000 + 1) / 7
+        );
+        uniqueWeeks.add(`${dateObj.getFullYear()}-W${weekNumber}`);
+        
+        // Track unique months
+        uniqueMonths.add(`${dateObj.getFullYear()}-${dateObj.getMonth() + 1}`);
+        
+        // Track contract interactions
+        if (transfer.to && transfer.to !== address.toLowerCase()) {
+          // Convert to lowercase for case-insensitive comparison
+          const contractAddress = transfer.to.toLowerCase();
+          
+          // Add to addresses if not exists
+          if (!contractsInteracted.addresses.includes(contractAddress)) {
+            contractsInteracted.addresses.push(contractAddress);
+            contractsInteracted.interactionCounts[contractAddress] = 1;
+            contractsInteracted.timestamps[contractAddress] = timestamp;
+          } else {
+            // Increment counter
+            contractsInteracted.interactionCounts[contractAddress] = 
+              (contractsInteracted.interactionCounts[contractAddress] || 0) + 1;
+            
+            // Update timestamp if more recent
+            if (timestamp > (contractsInteracted.timestamps[contractAddress] || 0)) {
+              contractsInteracted.timestamps[contractAddress] = timestamp;
+            }
+          }
+        }
+        
+        // Add to total volume
+        totalVolume += transfer.value || 0;
+        
+        // Return transformed transaction
+        return {
+          hash: transfer.hash,
+          block_timestamp: timestamp,
+          block_number: parseInt(transfer.blockNum, 16),
+          from: transfer.from,
+          to: transfer.to,
+          value: transfer.rawContract.value,
+          gas_used: "0", // Not available in this API
+          effective_gas_price: "0", // Not available in this API
+          function_selector: "", // Not available in this API
+        };
+      });
+      
+      transactions = [...transactions, ...formattedTransfers];
+      
+      // If no pageKey, we've reached the end
+      if (!result.pageKey) {
+        break;
+      }
+      
+      // Update pageKey for the next request
+      pageKey = result.pageKey;
+      page++;
+    }
+    
+    // Update the total count of contract interactions
+    contractsInteracted.total = contractsInteracted.addresses.length;
+    
+    return {
+      transactions,
+      contractsInteracted,
+      totalVolume: totalVolume.toString(),
+      activityByDay: uniqueDates.size,
+      activityByWeek: uniqueWeeks.size,
+      activityByMonth: uniqueMonths.size
+    };
+  } catch (error) {
+    console.error('Error fetching Alchemy transactions:', error);
+    throw error;
+  }
+}
+
 function MonadTestnetStats() {
   const [address, setAddress] = useState('');
   const [loading, setLoading] = useState(false);
@@ -310,6 +521,7 @@ function MonadTestnetStats() {
     searchSectionRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
+  // Update the handleSubmit function to use Alchemy API for large transaction counts
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!address.trim() || loading) return;
@@ -362,9 +574,80 @@ function MonadTestnetStats() {
       const nftOwnershipData = await checkDirectNftOwnership(address);
       setNftOwnership(nftOwnershipData);
       
-      // Pass the status callback to the fetch function
-      statusCallback('Fetching wallet stats...');
-      const statsData = await fetchMonadTestnetStats(address, statusCallback) as MonadTestnetStats;
+      let statsData: MonadTestnetStats;
+      
+      // Check if this is likely to be a high transaction count wallet
+      // First try to get the RPC transaction count to see if we need Alchemy API
+      try {
+        statusCallback('Checking transaction count...');
+        const rpcUrl = getMonadRpcUrl();
+        const provider = new JsonRpcProvider(rpcUrl);
+        const txCount = await provider.getTransactionCount(address);
+        
+        // Use Alchemy API if transaction count is high (above 9900)
+        if (txCount > 9900) {
+          statusCallback('High transaction count detected, using specialized API...');
+          
+          // Use Alchemy API to fetch detailed transaction data
+          const alchemyData = await fetchAlchemyTransactions(address, statusCallback);
+          
+                  // Construct the stats object with the Alchemy data
+        statsData = {
+          address: address,
+          transactions: alchemyData.transactions || [],
+          totalTransactions: alchemyData.transactions.length,
+          contractsCreated: { 
+            addresses: [], 
+            timestamps: {}, 
+            total: 0,
+            list: [] // Empty list since we don't have contract creation data from Alchemy
+          }, // Not available in this API call
+          contractsInteracted: {
+            addresses: alchemyData.contractsInteracted.addresses,
+            interactionCounts: alchemyData.contractsInteracted.interactionCounts,
+            timestamps: alchemyData.contractsInteracted.timestamps,
+            total: alchemyData.contractsInteracted.total,
+            list: alchemyData.contractsInteracted.addresses.map(addr => ({
+              address: addr,
+              timestamp: alchemyData.contractsInteracted.timestamps[addr] || 0,
+              formattedTimestamp: new Date((alchemyData.contractsInteracted.timestamps[addr] || 0) * 1000).toLocaleString()
+            }))
+          },
+          tokens: [], // Will be populated separately
+          nfts: [], // Will be populated separately
+          erc1155Tokens: [], // Will be populated separately
+          // Add missing required fields from MonadTestnetStats interface
+          activityScore: 0,
+          volumeScore: 0,
+          nftScore: 0,
+          tokenScore: 0,
+          contractScore: 0,
+          totalVolume: alchemyData.totalVolume,
+          activityByDay: alchemyData.activityByDay,
+          activityByWeek: alchemyData.activityByWeek,
+          activityByMonth: alchemyData.activityByMonth,
+          score: 0 // Score will be calculated later
+          };
+          
+          // Calculate score based on activity
+          statsData.score = 
+            statsData.activityByDay * 0.1 + 
+            statsData.activityByWeek * 0.25 + 
+            statsData.activityByMonth * 0.5 + 
+            Math.min(statsData.totalTransactions, 500) * 0.01 + 
+            Math.min(statsData.contractsInteracted.total, 100) * 0.03 +
+            Math.min(parseFloat(statsData.totalVolume) / 100, 10); // 1 point per 1000 MON up to 10 points
+        } else {
+          // Use standard API for normal transaction counts
+          statusCallback('Fetching wallet stats...');
+          statsData = await fetchMonadTestnetStats(address, statusCallback) as MonadTestnetStats;
+        }
+      } catch (error) {
+        console.error('Error checking transaction count:', error);
+        // Fallback to standard API if there's an error
+        statusCallback('Fetching wallet stats...');
+        statsData = await fetchMonadTestnetStats(address, statusCallback) as MonadTestnetStats;
+      }
       
       // Add the balance and profile data to the stats object
       statsData.nativeBalance = formattedBalance;
@@ -395,7 +678,7 @@ function MonadTestnetStats() {
         firstTxDate = new Date(earliestTx.block_timestamp * 1000);
       }
       
-      const cutoffDate = new Date('2024-05-31T23:59:59Z');
+      const cutoffDate = new Date('2025-02-26T23:59:59Z'); // February 26th, 2025 cutoff
       
       // Add 15 points for being an early user
       if (firstTxDate && firstTxDate < cutoffDate) {
@@ -433,13 +716,13 @@ function MonadTestnetStats() {
     
     if (stats.profileData?.first_transaction?.block_timestamp) {
       earliestTxDate = new Date(stats.profileData.first_transaction.block_timestamp);
-      const cutoffDate = new Date('2024-05-31T23:59:59Z');
+      const cutoffDate = new Date('2025-02-26T23:59:59Z'); // February 26th, 2025 cutoff
       isEarlyUser = earliestTxDate < cutoffDate;
     } else if (stats.transactions && stats.transactions.length > 0) {
       const earliestTx = stats.transactions.reduce((earliest, tx) => 
         tx.block_timestamp < earliest.block_timestamp ? tx : earliest, stats.transactions[0]);
       earliestTxDate = new Date(earliestTx.block_timestamp * 1000);
-      const cutoffDate = new Date('2024-05-31T23:59:59Z');
+      const cutoffDate = new Date('2025-02-26T23:59:59Z'); // February 26th, 2025 cutoff
       isEarlyUser = earliestTxDate < cutoffDate;
     }
     
@@ -956,7 +1239,7 @@ const getTotalInteractions = () => {
                     earliestTxDate = new Date(earliestTx.block_timestamp * 1000);
                   }
                   
-                  const cutoffDate = new Date('2024-05-31T23:59:59Z'); // May 31st, 2024 cutoff
+                  const cutoffDate = new Date('2025-02-26T23:59:59Z'); // February 26th, 2025 cutoff
                   const isEarlyUser = earliestTxDate && earliestTxDate < cutoffDate;
                   
                   if (!earliestTxDate) {
@@ -974,7 +1257,7 @@ const getTotalInteractions = () => {
                         <div>
                           <p className="text-white font-bold text-lg">Early Monad User</p>
                           <p className="text-white/90 text-sm">Congratulations! You've earned +15 bonus points!</p>
-                          <p className="text-white/80 text-xs mt-1">First transaction on {earliestTxDate.toLocaleDateString()} - before May 31st, 2024 cutoff</p>
+                          <p className="text-white/80 text-xs mt-1">First transaction on {earliestTxDate.toLocaleDateString()} - before February 26th, 2025 cutoff</p>
                         </div>
                       </div>
                       <div className="hidden sm:flex">
@@ -995,7 +1278,7 @@ const getTotalInteractions = () => {
                         </div>
                         <div>
                           <p className="text-white font-bold text-lg">Not an Early User</p>
-                          <p className="text-white/90 text-sm">First transaction on {earliestTxDate.toLocaleDateString()} - after May 31st, 2024 cutoff</p>
+                          <p className="text-white/90 text-sm">First transaction on {earliestTxDate.toLocaleDateString()} - after February 26th, 2025 cutoff</p>
                           <p className="text-white/80 text-xs mt-1">Early users get +15 bonus points</p>
                         </div>
                       </div>
