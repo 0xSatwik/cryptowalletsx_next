@@ -23,16 +23,25 @@ export default function MegaETHStatsChecker() {
   
   // ThirdWeb Client IDs - from environment variables
   const THIRDWEB_CLIENT_IDS = [
-    process.env.NEXT_PUBLIC_THIRDWEB_CLIENT_ID_1 || '',
-    process.env.NEXT_PUBLIC_THIRDWEB_CLIENT_ID_2 || '',
-    process.env.NEXT_PUBLIC_THIRDWEB_CLIENT_ID_3 || '',
-    process.env.NEXT_PUBLIC_THIRDWEB_CLIENT_ID_7 || '',
-    process.env.NEXT_PUBLIC_THIRDWEB_CLIENT_ID_9 || '',
-    process.env.NEXT_PUBLIC_THIRDWEB_CLIENT_ID_10 || '',
-    process.env.NEXT_PUBLIC_THIRDWEB_CLIENT_ID_11 || '',
-    process.env.NEXT_PUBLIC_THIRDWEB_CLIENT_ID_12 || '',
-    process.env.NEXT_PUBLIC_THIRDWEB_CLIENT_ID_14 || '',
-    process.env.NEXT_PUBLIC_THIRDWEB_CLIENT_ID_15 || '',
+    process.env.NEXT_PUBLIC_THIRDWEB_CLIENT_ID_1 || process.env.VITE_THIRDWEB_CLIENT_ID_1 || '',
+    process.env.NEXT_PUBLIC_THIRDWEB_CLIENT_ID_2 || process.env.VITE_THIRDWEB_CLIENT_ID_2 || '',
+    process.env.NEXT_PUBLIC_THIRDWEB_CLIENT_ID_3 || process.env.VITE_THIRDWEB_CLIENT_ID_3 || '',
+    process.env.NEXT_PUBLIC_THIRDWEB_CLIENT_ID_4 || process.env.VITE_THIRDWEB_CLIENT_ID_4 || '',
+    process.env.NEXT_PUBLIC_THIRDWEB_CLIENT_ID_5 || process.env.VITE_THIRDWEB_CLIENT_ID_5 || '',
+    process.env.NEXT_PUBLIC_THIRDWEB_CLIENT_ID_6 || process.env.VITE_THIRDWEB_CLIENT_ID_6 || '',
+    process.env.NEXT_PUBLIC_THIRDWEB_CLIENT_ID_7 || process.env.VITE_THIRDWEB_CLIENT_ID_7 || '',
+    process.env.NEXT_PUBLIC_THIRDWEB_CLIENT_ID_8 || process.env.VITE_THIRDWEB_CLIENT_ID_8 || '',
+    process.env.NEXT_PUBLIC_THIRDWEB_CLIENT_ID_9 || process.env.VITE_THIRDWEB_CLIENT_ID_9 || '',
+    process.env.NEXT_PUBLIC_THIRDWEB_CLIENT_ID_10 || process.env.VITE_THIRDWEB_CLIENT_ID_10 || '',
+    process.env.NEXT_PUBLIC_THIRDWEB_CLIENT_ID_11 || process.env.VITE_THIRDWEB_CLIENT_ID_11 || '',
+    process.env.NEXT_PUBLIC_THIRDWEB_CLIENT_ID_12 || process.env.VITE_THIRDWEB_CLIENT_ID_12 || '',
+    // Skip 13 as per requirement
+    process.env.NEXT_PUBLIC_THIRDWEB_CLIENT_ID_14 || process.env.VITE_THIRDWEB_CLIENT_ID_14 || '',
+    process.env.NEXT_PUBLIC_THIRDWEB_CLIENT_ID_15 || process.env.VITE_THIRDWEB_CLIENT_ID_15 || '',
+    process.env.NEXT_PUBLIC_THIRDWEB_CLIENT_ID_16 || process.env.VITE_THIRDWEB_CLIENT_ID_16 || '',
+    process.env.NEXT_PUBLIC_THIRDWEB_CLIENT_ID_17 || process.env.VITE_THIRDWEB_CLIENT_ID_17 || '',
+    // Legacy fallback
+    process.env.NEXT_PUBLIC_THIRDWEB_CLIENT_ID || process.env.VITE_THIRDWEB_CLIENT_ID || '',
   ].filter(id => id !== '');
 
   // Function to get a random client ID

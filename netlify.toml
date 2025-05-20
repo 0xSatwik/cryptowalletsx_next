@@ -13,6 +13,12 @@
   publish = ".next"
   command = "npm run build"
 
+# Environment variables
+[context.production.environment]
+  # Set ThirdWeb client IDs
+  NEXT_PUBLIC_THIRDWEB_CLIENT_ID_1 = "from_netlify_env"
+  VITE_THIRDWEB_CLIENT_ID_1 = "from_netlify_env"
+
 # Custom headers
 [[headers]]
   for = "/*"
