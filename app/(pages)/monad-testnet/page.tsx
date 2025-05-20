@@ -289,11 +289,36 @@ function MonadTestnetStats() {
       // Add the balance to the stats object
       statsData.nativeBalance = formattedBalance;
 
-      // Update stats with NFT ownership data from direct API check
-      if (nftOwnershipData.is1MillionNadHolder || nftOwnershipData.isSecondNftHolder) {
-        // If NFTs exist, make sure they're reflected in the score
-        statsData.nftScore = Math.max(statsData.nftScore, nftOwnershipData.is1MillionNadHolder ? 100 : 50);
+      // Calculate additional score points based on NFT holdings and early user status
+      let additionalPoints = 0;
+      
+      // Add 20 points for holding 1 Million Nad NFT (regardless of quantity)
+      if (nftOwnershipData.is1MillionNadHolder) {
+        additionalPoints += 20;
       }
+      
+      // Add 20 points for holding Monad Cipher SBT (regardless of quantity)
+      if (nftOwnershipData.isSecondNftHolder) {
+        additionalPoints += 20;
+      }
+      
+      // Check if user is an early user (before May 31st, 2024)
+      const earliestTx = statsData.transactions && statsData.transactions.length > 0 
+        ? statsData.transactions.reduce((earliest, tx) => tx.block_timestamp < earliest.block_timestamp ? tx : earliest, statsData.transactions[0])
+        : null;
+      
+      if (earliestTx) {
+        const earliestTxDate = new Date(earliestTx.block_timestamp * 1000);
+        const cutoffDate = new Date('2024-05-31T23:59:59Z');
+        
+        // Add 15 points for being an early user
+        if (earliestTxDate < cutoffDate) {
+          additionalPoints += 15;
+        }
+      }
+      
+      // Update the final score with the additional points
+      statsData.score += additionalPoints;
       
       setStats(statsData);
       setTransactionPage(1); // Reset transaction page when loading new data
@@ -337,17 +362,17 @@ function MonadTestnetStats() {
       `📊 ${stats.totalTransactions.toLocaleString()} total transactions\n` +
       `💸 ${parseFloat(stats.totalVolume).toFixed(2)} MON volume\n`;
       
-    // Add badges
+    // Add badges with the new point values
     if (is1MillionNadHolder) {
-      text += `✅ 1 Million Nad Holder (${nftOwnership.nadBalance})\n`;
+      text += `✅ 1 Million Nad Holder (+20 pts) ${parseInt(nftOwnership.nadBalance) > 1 ? `x${nftOwnership.nadBalance}` : ''}\n`;
     }
     
     if (isSecondNftHolder) {
-      text += `✅ Monad Cipher SBT Holder (${nftOwnership.cipherBalance})\n`;
+      text += `✅ Monad Cipher SBT Holder (+20 pts) ${parseInt(nftOwnership.cipherBalance) > 1 ? `x${nftOwnership.cipherBalance}` : ''}\n`;
     }
     
     if (isEarlyUser) {
-      text += `⏰ Early Monad User (since ${earliestTxDate!.toLocaleDateString()})\n`;
+      text += `⏰ Early Monad User (+15 pts) since ${earliestTxDate!.toLocaleDateString()}\n`;
     }
     
     // Add blank line and website
@@ -724,7 +749,7 @@ function MonadTestnetStats() {
                       </div>
                       <div>
                         <p className="text-white font-bold text-lg">1 Million Nad Holder</p>
-                        <p className="text-white/90 text-sm">Congratulations! You've earned +1.0 bonus points!</p>
+                        <p className="text-white/90 text-sm">Congratulations! You've earned +20 bonus points!</p>
                         <p className="text-white/80 text-xs mt-1">Holding: {nftOwnership.nadBalance} NFT{parseInt(nftOwnership.nadBalance) !== 1 ? 's' : ''}</p>
                       </div>
                     </div>
@@ -746,7 +771,7 @@ function MonadTestnetStats() {
                       </div>
                       <div>
                         <p className="text-white font-bold text-lg">Not a 1 Million Nad Holder</p>
-                        <p className="text-white/90 text-sm">Get this NFT to earn +1.0 bonus points!</p>
+                        <p className="text-white/90 text-sm">Get this NFT to earn +20 bonus points!</p>
                       </div>
                     </div>
                     <div className="hidden sm:flex">
@@ -773,7 +798,7 @@ function MonadTestnetStats() {
                       </div>
                       <div>
                         <p className="text-white font-bold text-lg">Monad Games Cipher SBT Holder</p>
-                        <p className="text-white/90 text-sm">Congratulations! You're holding the Monad Games Cipher SBT</p>
+                        <p className="text-white/90 text-sm">Congratulations! You've earned +20 bonus points!</p>
                         <p className="text-white/80 text-xs mt-1">Holding: {nftOwnership.cipherBalance} NFT{parseInt(nftOwnership.cipherBalance) !== 1 ? 's' : ''}</p>
                       </div>
                     </div>
@@ -795,7 +820,7 @@ function MonadTestnetStats() {
                       </div>
                       <div>
                         <p className="text-white font-bold text-lg">Not a Monad Games Cipher SBT Holder</p>
-                        <p className="text-white/90 text-sm">You don't own the second special NFT yet.</p>
+                        <p className="text-white/90 text-sm">Get this NFT to earn +20 bonus points!</p>
                       </div>
                     </div>
                     <div className="hidden sm:flex">
@@ -832,7 +857,8 @@ function MonadTestnetStats() {
                         </div>
                         <div>
                           <p className="text-white font-bold text-lg">Early Monad User</p>
-                          <p className="text-white/90 text-sm">Congratulations! First transaction on {earliestTxDate.toLocaleDateString()} - before May 31st, 2024 cutoff</p>
+                          <p className="text-white/90 text-sm">Congratulations! You've earned +15 bonus points!</p>
+                          <p className="text-white/80 text-xs mt-1">First transaction on {earliestTxDate.toLocaleDateString()} - before May 31st, 2024 cutoff</p>
                         </div>
                       </div>
                       <div className="hidden sm:flex">
@@ -854,6 +880,7 @@ function MonadTestnetStats() {
                         <div>
                           <p className="text-white font-bold text-lg">Not an Early User</p>
                           <p className="text-white/90 text-sm">First transaction on {earliestTxDate.toLocaleDateString()} - after May 31st, 2024 cutoff</p>
+                          <p className="text-white/80 text-xs mt-1">Early users get +15 bonus points</p>
                         </div>
                       </div>
                       <div className="hidden sm:flex">
