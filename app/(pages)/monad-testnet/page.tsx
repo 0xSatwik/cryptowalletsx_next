@@ -8,6 +8,12 @@ import { fetchMonadTestnetStats } from '../../../lib/monadTestnet';
 import type { MonadTestnetStats as BaseMonadTestnetStats, ERC1155Token, ERC20Token, ERC721NFT } from '../../../lib/monadTestnet';
 import { formatUnits, JsonRpcProvider } from 'ethers';
 
+// Cache for large transaction data (24 hours)
+const transactionCache = new Map<string, {
+  timestamp: number;
+  data: any;
+}>();
+
 // Add the SocialScan API interface
 interface SocialScanProfile {
   ens: string | null;
@@ -302,6 +308,17 @@ async function fetchAlchemyTransactions(
   activityByWeek: number;
   activityByMonth: number;
 }> {
+  // Check cache first (24 hour expiration)
+  const cacheKey = `alchemy_transactions_${address.toLowerCase()}`;
+  const cachedData = transactionCache.get(cacheKey);
+  const CACHE_EXPIRATION = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
+  
+  if (cachedData && (Date.now() - cachedData.timestamp < CACHE_EXPIRATION)) {
+    console.log(`Using cached Alchemy transaction data for ${address} (age: ${((Date.now() - cachedData.timestamp) / (60 * 60 * 1000)).toFixed(1)} hours)`);
+    statusCallback('Using cached transaction data...');
+    return cachedData.data;
+  }
+  
   // Get a random Alchemy API key from the pool
   const alchemyApiKeys = [
     process.env.VITE_ALCHEMY_API_KEY_1 || 'FBKOVxVYW0yobV1ntzs7u5qM0E6_xRwO',
@@ -463,6 +480,19 @@ async function fetchAlchemyTransactions(
     // Update the total count of contract interactions
     contractsInteracted.total = contractsInteracted.addresses.length;
     
+    // Cache the result for 24 hours
+    transactionCache.set(cacheKey, {
+      timestamp: Date.now(),
+      data: {
+        transactions,
+        contractsInteracted,
+        totalVolume: totalVolume.toString(),
+        activityByDay: uniqueDates.size,
+        activityByWeek: uniqueWeeks.size,
+        activityByMonth: uniqueMonths.size
+      }
+    });
+    
     return {
       transactions,
       contractsInteracted,
@@ -512,6 +542,11 @@ function MonadTestnetStats() {
     cipherBalance: "0",
     totalNfts: 0
   });
+  
+  // Add loading states for lazy-loaded data
+  const [tokensLoading, setTokensLoading] = useState(false);
+  const [nftsLoading, setNftsLoading] = useState(false);
+  const [erc1155Loading, setErc1155Loading] = useState(false);
   
   // Add ref for search section scrolling
   const searchSectionRef = useRef<HTMLDivElement>(null);
@@ -694,10 +729,10 @@ function MonadTestnetStats() {
       setNftPage(1); // Reset NFT page when loading new data
       setErc1155Page(1); // Reset ERC1155 page when loading new data
       
-      // Set token data directly from the stats
-      setTokens(statsData.tokens || []);
-      setNfts(statsData.nfts || []);
-      setErc1155Tokens(statsData.erc1155Tokens || []);
+      // Reset token data (will be loaded on demand)
+      setTokens([]);
+      setNfts([]);
+      setErc1155Tokens([]);
       
     } catch (error: any) {
       console.error('Error fetching stats:', error);
@@ -860,6 +895,87 @@ const getTotalInteractions = () => {
   const hasMoreERC1155 = () => {
     if (!stats) return false;
     return erc1155Page * 6 < stats.erc1155Tokens.length;
+  };
+
+  // Load tokens on demand when the user expands the tokens section
+  const handleShowTokens = async () => {
+    const newState = !showTokens;
+    setShowTokens(newState);
+    
+    // Only fetch if toggling to show and we have no tokens yet
+    if (newState && tokens.length === 0 && stats) {
+      try {
+        setTokensLoading(true);
+        setLoadingStatus('Fetching token data...');
+        
+        // Use the library function from monadTestnet.ts
+        const tokensResponse = await fetch(`/api/monad/tokens?address=${stats.address}`);
+        if (!tokensResponse.ok) throw new Error('Failed to fetch tokens');
+        
+        const tokensData = await tokensResponse.json();
+        setTokens(tokensData.tokens || []);
+      } catch (error) {
+        console.error('Error fetching tokens:', error);
+        // Don't set an error state, just show empty tokens
+      } finally {
+        setTokensLoading(false);
+        setLoadingStatus('');
+      }
+    }
+  };
+
+  // Load NFTs on demand when the user expands the NFTs section
+  const handleShowERC721 = async () => {
+    const newState = !showERC721;
+    setShowERC721(newState);
+    
+    // Only fetch if toggling to show and we have no NFTs yet
+    if (newState && nfts.length === 0 && stats) {
+      try {
+        setNftsLoading(true);
+        setLoadingStatus('Fetching NFT data...');
+        
+        // Use the library function from monadTestnet.ts
+        const nftsResponse = await fetch(`/api/monad/nfts?address=${stats.address}`);
+        if (!nftsResponse.ok) throw new Error('Failed to fetch NFTs');
+        
+        const nftsData = await nftsResponse.json();
+        setNfts(nftsData.nfts || []);
+      } catch (error) {
+        console.error('Error fetching NFTs:', error);
+        // Don't set an error state, just show empty NFTs
+      } finally {
+        setNftsLoading(false);
+        setLoadingStatus('');
+      }
+    }
+  };
+
+  // Load ERC1155 tokens on demand when the user expands the ERC1155 section
+  const handleShowERC1155 = async () => {
+    const newState = !showERC1155;
+    setShowERC1155(newState);
+    
+    // Only fetch if toggling to show and we have no ERC1155 tokens yet
+    if (newState && erc1155Tokens.length === 0 && stats) {
+      try {
+        setErc1155Loading(true);
+        setLoadingStatus('Fetching ERC1155 data...');
+        
+        // Use the library function from monadTestnet.ts
+        const erc1155Response = await fetch(`/api/monad/erc1155?address=${stats.address}`);
+        if (!erc1155Response.ok) throw new Error('Failed to fetch ERC1155 tokens');
+        
+        const erc1155Data = await erc1155Response.json();
+        setErc1155Tokens(erc1155Data.tokens || []);
+      } catch (error) {
+        console.error('Error fetching ERC1155 tokens:', error);
+        // Don't set an error state, just show empty ERC1155 tokens
+      } finally {
+        setErc1155Loading(false);
+        setLoadingStatus('');
+      }
+    }
   };
 
   return (
@@ -1663,10 +1779,11 @@ const getTotalInteractions = () => {
                   </div>
                 </div>
                 <button
-                  onClick={() => setShowTokens(!showTokens)}
+                  onClick={handleShowTokens}
                   className="p-2 bg-green-100 hover:bg-green-200 rounded-lg text-green-700 transition-colors"
+                  disabled={tokensLoading}
                 >
-                  {showTokens ? <ChevronUp size={22} /> : <ChevronDown size={22} />}
+                  {tokensLoading ? <Loader2 className="animate-spin" size={22} /> : showTokens ? <ChevronUp size={22} /> : <ChevronDown size={22} />}
                 </button>
               </div>
 
@@ -1738,10 +1855,11 @@ const getTotalInteractions = () => {
                   </div>
                 </div>
                 <button
-                  onClick={() => setShowERC721(!showERC721)}
+                  onClick={handleShowERC721}
                   className="p-2 bg-pink-100 hover:bg-pink-200 rounded-lg text-pink-700 transition-colors"
+                  disabled={nftsLoading}
                 >
-                  {showERC721 ? <ChevronUp size={22} /> : <ChevronDown size={22} />}
+                  {nftsLoading ? <Loader2 className="animate-spin" size={22} /> : showERC721 ? <ChevronUp size={22} /> : <ChevronDown size={22} />}
                 </button>
               </div>
 
@@ -1836,10 +1954,11 @@ const getTotalInteractions = () => {
                   </div>
                 </div>
                 <button
-                  onClick={() => setShowERC1155(!showERC1155)}
+                  onClick={handleShowERC1155}
                   className="p-2 bg-indigo-100 hover:bg-indigo-200 rounded-lg text-indigo-700 transition-colors"
+                  disabled={erc1155Loading}
                 >
-                  {showERC1155 ? <ChevronUp size={22} /> : <ChevronDown size={22} />}
+                  {erc1155Loading ? <Loader2 className="animate-spin" size={22} /> : showERC1155 ? <ChevronUp size={22} /> : <ChevronDown size={22} />}
                 </button>
               </div>
 
