@@ -5,7 +5,7 @@ import Head from 'next/head';
 import Link from 'next/link';
 import { Search, Loader2, ExternalLink, Wallet, Clock, ArrowRightLeft, Coins, Frame, Boxes, Twitter, Calendar, ChevronDown, ChevronUp, Building2, Users, ChevronRight, Clock3, Image, ArrowRight } from 'lucide-react';
 import { fetchMonadTestnetStats } from '../../../lib/monadTestnet';
-import type { MonadTestnetStats as BaseMonadTestnetStats, ERC1155Token, ERC20Token, ERC721NFT } from '../../../lib/monadTestnet';
+import type { MonadTestnetStats as BaseMonadTestnetStats, ERC1155Token, ERC20Token, ERC721NFT, ContractInfo } from '../../../lib/monadTestnet';
 import { formatUnits, JsonRpcProvider } from 'ethers';
 
 // Cache for large transaction data (24 hours)
@@ -49,16 +49,13 @@ interface SocialScanProfile {
   };
 }
 
-// Add a function to fetch profile data from SocialScan API through our domain
+// Add a function to fetch profile data from SocialScan API
 async function fetchWalletProfile(address: string): Promise<SocialScanProfile | null> {
   try {
-    // Use our domain API endpoint instead of directly calling SocialScan
-    const apiUrl = `/api/monad/profile?address=${address}`;
-    console.log(`Fetching wallet profile from ${apiUrl}`);
-    const response = await fetch(apiUrl);
+    const response = await fetch(`https://api.socialscan.io/rest/monad-testnet/v1/explorer/address/${address}/profile`);
     
     if (!response.ok) {
-      console.error('Error fetching wallet profile:', response.status);
+      console.error('Error fetching from SocialScan API:', response.status);
       return null;
     }
     
@@ -206,6 +203,89 @@ function getMonadRpcUrl(): string {
   return `https://monad-testnet.g.alchemy.com/v2/${apiKey}`;
 }
 
+// Function to get a ThirdWeb client ID
+function getTokenClientId(): string {
+  // Array of available client IDs (from 1 to 17, skipping 13)
+  const clientIds = [
+    process.env.NEXT_PUBLIC_THIRDWEB_CLIENT_ID_1 || "",
+    process.env.NEXT_PUBLIC_THIRDWEB_CLIENT_ID_2 || "",
+    process.env.NEXT_PUBLIC_THIRDWEB_CLIENT_ID_3 || "",
+    process.env.NEXT_PUBLIC_THIRDWEB_CLIENT_ID_4 || "",
+    process.env.NEXT_PUBLIC_THIRDWEB_CLIENT_ID_5 || "",
+    process.env.NEXT_PUBLIC_THIRDWEB_CLIENT_ID_6 || "",
+    process.env.NEXT_PUBLIC_THIRDWEB_CLIENT_ID_7 || "",
+    process.env.NEXT_PUBLIC_THIRDWEB_CLIENT_ID_8 || "",
+    process.env.NEXT_PUBLIC_THIRDWEB_CLIENT_ID_9 || "",
+    process.env.NEXT_PUBLIC_THIRDWEB_CLIENT_ID_10 || "",
+    process.env.NEXT_PUBLIC_THIRDWEB_CLIENT_ID_11 || "",
+    process.env.NEXT_PUBLIC_THIRDWEB_CLIENT_ID_12 || "",
+    // Skip 13 as it's unlucky
+    process.env.NEXT_PUBLIC_THIRDWEB_CLIENT_ID_14 || "",
+    process.env.NEXT_PUBLIC_THIRDWEB_CLIENT_ID_15 || "",
+    process.env.NEXT_PUBLIC_THIRDWEB_CLIENT_ID_16 || "",
+    process.env.NEXT_PUBLIC_THIRDWEB_CLIENT_ID_17 || ""
+  ].filter(Boolean);
+
+  // Select a random API key
+  const randomIndex = Math.floor(Math.random() * clientIds.length);
+  // Use a fallback if no client IDs are available
+  return clientIds[randomIndex] || "NYLA8d6xyFwpEzjv-j8v63RrOU-VG28F1rWEQtFtpoMQ1iQbm6zQpXn7CNwlYQHw-AEkuIuduQSU3a2makc_8A";
+}
+
+// Function to fetch contract creations data
+async function fetchContractCreations(address: string): Promise<{ addresses: string[]; timestamps: Record<string, number>; total: number; list: ContractInfo[] }> {
+  try {
+    const clientId = getTokenClientId();
+    
+    // Use ThirdWeb API to fetch transaction history and look for contract creations
+    const response = await fetch(
+      `https://api.thirdweb.com/v1/548a182d4d240fa3cc1a41bb/monad-testnet/address/${address}/transactions?page=1&limit=100`,
+      { headers: { 'x-client-id': clientId } }
+    );
+    
+    if (!response.ok) {
+      throw new Error(`Error fetching contract creations: ${response.status}`);
+    }
+    
+    const transactions = await response.json();
+    
+    // Filter for contract creation transactions
+    const contractCreations = (transactions.result || [])
+      .filter((tx: any) => tx.to === null && tx.receipt?.contract_address)
+      .map((tx: any) => {
+        // Format timestamp from timestamp string
+        const timestamp = Math.floor(new Date(tx.timestamp).getTime() / 1000);
+        return {
+          address: tx.receipt.contract_address,
+          timestamp,
+          formattedTimestamp: new Date(timestamp * 1000).toLocaleString()
+        };
+      });
+    
+    // Create the addresses array and timestamps record
+    const addresses = contractCreations.map((c: ContractInfo) => c.address);
+    const timestamps: Record<string, number> = {};
+    contractCreations.forEach((c: ContractInfo) => {
+      timestamps[c.address] = c.timestamp;
+    });
+    
+    return {
+      addresses,
+      timestamps,
+      total: addresses.length,
+      list: contractCreations
+    };
+  } catch (error) {
+    console.error("Error fetching contract creations:", error);
+    return {
+      addresses: [],
+      timestamps: {},
+      total: 0,
+      list: []
+    };
+  }
+}
+
 // Specific contract addresses for important NFTs
 const NAD_NFT_CONTRACT_ADDRESS = "0x922dA3512e2BEBBe32bccE59adf7E6759fB8CEA2".toLowerCase();
 const CIPHER_NFT_CONTRACT_ADDRESS = "0x76D37beDcf864aA2bD848b7286F1be8D42f63Cb6".toLowerCase();
@@ -219,9 +299,13 @@ async function checkDirectNftOwnership(address: string): Promise<{
   totalNfts: number;
 }> {
   try {
-    // Use our domain API endpoint for NFT ownership checking
-    const apiUrl = `/api/monad/nft-ownership?address=${address}`;
-    console.log(`Checking NFT ownership: ${apiUrl}`);
+    // Get a random Alchemy API key from the pool
+    const alchemyApiKey = getMonadRpcUrl().split('/').pop();
+
+    // Create the API URL with query parameters
+    const apiUrl = `https://monad-testnet.g.alchemy.com/nft/v3/${alchemyApiKey}/getNFTsForOwner?owner=${address}&contractAddresses%5B%5D=${NAD_NFT_CONTRACT_ADDRESS}&contractAddresses%5B%5D=${CIPHER_NFT_CONTRACT_ADDRESS}&withMetadata=false&pageSize=100`;
+
+    console.log(`Checking NFT ownership with Alchemy API: ${apiUrl.substring(0, apiUrl.indexOf('?'))}`);
     
     const response = await fetch(apiUrl);
     
@@ -506,56 +590,7 @@ async function fetchAlchemyTransactions(
   }
 }
 
-// Add this function after the fetchAlchemyTransactions function
-async function fetchContractsCreated(address: string, statusCallback: (status: string) => void): Promise<{
-  addresses: string[];
-  timestamps: Record<string, number>;
-  total: number;
-  list: { address: string; timestamp: number; formattedTimestamp: string; }[];
-}> {
-  try {
-    statusCallback('Fetching contracts created data...');
-    
-    // Use the domain's API endpoint instead of calling ThirdWeb directly
-    const response = await fetch(`/api/monad/contracts-created?address=${address}`);
-    
-    if (!response.ok) {
-      throw new Error(`Error fetching contracts created: ${response.status}`);
-    }
-    
-    const data = await response.json();
-    
-    // Format the data to match our expected structure
-    const list = (data.contracts || []).map((contract: any) => ({
-      address: contract.address,
-      timestamp: contract.timestamp,
-      formattedTimestamp: new Date(contract.timestamp * 1000).toLocaleString()
-    }));
-    
-    const addresses = list.map((item: any) => item.address);
-    const timestamps: Record<string, number> = {};
-    list.forEach((item: any) => {
-      timestamps[item.address] = item.timestamp;
-    });
-    
-    return {
-      addresses,
-      timestamps,
-      total: addresses.length,
-      list
-    };
-  } catch (error) {
-    console.error('Error fetching contracts created:', error);
-    
-    // Return empty data structure if there's an error
-    return {
-      addresses: [],
-      timestamps: {},
-      total: 0,
-      list: []
-    };
-  }
-}
+// Add functions before the MonadTestnetStats component
 
 function MonadTestnetStats() {
   const [address, setAddress] = useState('');
@@ -674,18 +709,19 @@ function MonadTestnetStats() {
         if (txCount > 9900) {
           statusCallback(`High transaction count detected (${txCount.toLocaleString()} transactions), using Alchemy API...`);
           
-          // Use Alchemy API to fetch detailed transaction data
+                    // Use Alchemy API to fetch detailed transaction data
           const alchemyData = await fetchAlchemyTransactions(address, statusCallback);
           
-          // Fetch contracts created data separately
-          const contractsCreatedData = await fetchContractsCreated(address, statusCallback);
+          // Fetch contract creation data separately
+          statusCallback('Fetching contract creations...');
+          const contractCreations = await fetchContractCreations(address);
           
           // Construct the stats object with the Alchemy data
           statsData = {
             address: address,
             transactions: alchemyData.transactions || [],
             totalTransactions: txCount, // Use the actual transaction count instead of just the fetched transactions
-            contractsCreated: contractsCreatedData, // Use the dedicated contracts created fetcher
+            contractsCreated: contractCreations, // Use properly fetched contract creation data
           contractsInteracted: {
             addresses: alchemyData.contractsInteracted.addresses,
             interactionCounts: alchemyData.contractsInteracted.interactionCounts,
@@ -956,15 +992,31 @@ const getTotalInteractions = () => {
         setTokensLoading(true);
         setLoadingStatus('Fetching token data...');
         
-        // Use our domain API endpoint for tokens
-        const apiUrl = `/api/monad/tokens?address=${stats.address}`;
-        console.log(`Fetching tokens from ${apiUrl}`);
-        const tokensResponse = await fetch(apiUrl);
+        // Use ThirdWeb API directly
+        const clientId = getTokenClientId(); // Use the function from monadTestnet.ts
+        const response = await fetch(
+          `https://api.thirdweb.com/v1/548a182d4d240fa3cc1a41bb/monad-testnet/address/${stats.address}/balances`,
+          { headers: { 'x-client-id': clientId } }
+        );
         
-        if (!tokensResponse.ok) throw new Error(`Failed to fetch tokens: ${tokensResponse.status}`);
+        if (!response.ok) throw new Error('Failed to fetch tokens');
         
-        const tokensData = await tokensResponse.json();
-        setTokens(tokensData.tokens || []);
+        const responseData = await response.json();
+        // Convert the response to our expected format
+        const tokenData = (responseData.result || [])
+          .filter((item: any) => item.type === 'ERC20')
+          .map((token: any) => ({
+            chainId: 1337,
+            chain_id: 1337,
+            tokenAddress: token.token_address,
+            token_address: token.token_address,
+            name: token.name || 'Unknown Token',
+            symbol: token.symbol || '???',
+            decimals: token.decimals || 18,
+            balance: token.balance || '0'
+          }));
+          
+        setTokens(tokenData);
       } catch (error) {
         console.error('Error fetching tokens:', error);
         // Don't set an error state, just show empty tokens
@@ -986,15 +1038,48 @@ const getTotalInteractions = () => {
         setNftsLoading(true);
         setLoadingStatus('Fetching NFT data...');
         
-        // Use our domain API endpoint for NFTs
-        const apiUrl = `/api/monad/nfts?address=${stats.address}`;
-        console.log(`Fetching NFTs from ${apiUrl}`);
-        const nftsResponse = await fetch(apiUrl);
+        // Use ThirdWeb API directly
+        const clientId = getTokenClientId(); // Use the function from monadTestnet.ts
+        const response = await fetch(
+          `https://api.thirdweb.com/v1/548a182d4d240fa3cc1a41bb/monad-testnet/address/${stats.address}/nfts`,
+          { headers: { 'x-client-id': clientId } }
+        );
         
-        if (!nftsResponse.ok) throw new Error(`Failed to fetch NFTs: ${nftsResponse.status}`);
+        if (!response.ok) throw new Error('Failed to fetch NFTs');
         
-        const nftsData = await nftsResponse.json();
-        setNfts(nftsData.nfts || []);
+        const responseData = await response.json();
+        
+        // Convert the response to our expected format
+        const nftData = (responseData.result || [])
+          .filter((item: any) => item.type === 'ERC721')
+          .map((nft: any) => ({
+            chainId: 1337,
+            chain_id: 1337,
+            tokenAddress: nft.token_address,
+            token_address: nft.token_address,
+            tokenId: nft.token_id,
+            token_id: nft.token_id,
+            balance: "1",
+            name: nft.metadata?.name || `NFT #${nft.token_id}`,
+            description: nft.metadata?.description || '',
+            image_url: nft.metadata?.image || '',
+            extra_metadata: {
+              image_url: nft.metadata?.image || '',
+              attributes: nft.metadata?.attributes || []
+            },
+            collection: {
+              name: nft.contract?.name || 'Unknown Collection'
+            },
+            contract: {
+              chain_id: 1337,
+              address: nft.token_address,
+              type: 'ERC721',
+              name: nft.contract?.name || 'Unknown',
+              symbol: nft.contract?.symbol || '???'
+            }
+          }));
+          
+        setNfts(nftData);
       } catch (error) {
         console.error('Error fetching NFTs:', error);
         // Don't set an error state, just show empty NFTs
@@ -1016,15 +1101,49 @@ const getTotalInteractions = () => {
         setErc1155Loading(true);
         setLoadingStatus('Fetching ERC1155 data...');
         
-        // Use our domain API endpoint for ERC1155 tokens
-        const apiUrl = `/api/monad/erc1155?address=${stats.address}`;
-        console.log(`Fetching ERC1155 tokens from ${apiUrl}`);
-        const erc1155Response = await fetch(apiUrl);
+        // Use ThirdWeb API directly
+        const clientId = getTokenClientId(); // Use the function from monadTestnet.ts
+        const response = await fetch(
+          `https://api.thirdweb.com/v1/548a182d4d240fa3cc1a41bb/monad-testnet/address/${stats.address}/nfts`,
+          { headers: { 'x-client-id': clientId } }
+        );
         
-        if (!erc1155Response.ok) throw new Error(`Failed to fetch ERC1155 tokens: ${erc1155Response.status}`);
+        if (!response.ok) throw new Error('Failed to fetch ERC1155 tokens');
         
-        const erc1155Data = await erc1155Response.json();
-        setErc1155Tokens(erc1155Data.tokens || []);
+        const responseData = await response.json();
+        
+        // Convert the response to our expected format - filter for ERC1155 tokens
+        const erc1155Data = (responseData.result || [])
+          .filter((item: any) => item.type === 'ERC1155')
+          .map((token: any) => ({
+            chainId: 1337,
+            chain_id: 1337,
+            tokenAddress: token.token_address,
+            token_address: token.token_address,
+            tokenId: token.token_id,
+            token_id: token.token_id,
+            balance: token.balance || '1',
+            name: token.metadata?.name || `Multi Token #${token.token_id}`,
+            description: token.metadata?.description || '',
+            image_url: token.metadata?.image || '',
+            metadata_url: token.metadata?.image || '',
+            extra_metadata: {
+              image_url: token.metadata?.image || '',
+              attributes: token.metadata?.attributes || []
+            },
+            collection: {
+              name: token.contract?.name || 'Unknown Collection'
+            },
+            contract: {
+              chain_id: 1337,
+              address: token.token_address,
+              type: 'ERC1155',
+              name: token.contract?.name || 'Unknown',
+              symbol: token.contract?.symbol || '???'
+            }
+          }));
+          
+        setErc1155Tokens(erc1155Data);
       } catch (error) {
         console.error('Error fetching ERC1155 tokens:', error);
         // Don't set an error state, just show empty ERC1155 tokens
@@ -1034,6 +1153,7 @@ const getTotalInteractions = () => {
       }
     }
   };
+
 
   return (
     <>
