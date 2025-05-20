@@ -1253,26 +1253,161 @@ const getTotalInteractions = () => {
 
                     // Only render if we have a transaction hash
                     return firstTxHash ? (
-                      <div className="flex flex-col text-sm bg-white/10 rounded-lg p-3">
-                        <span className="text-purple-100">First Activity</span>
-                        <a
+                    <div className="flex flex-col text-sm bg-white/10 rounded-lg p-3">
+                      <span className="text-purple-100">First Activity</span>
+                      <a
                           href={`https://testnet.monadexplorer.com/tx/${firstTxHash}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-white hover:text-purple-200 transition-colors inline-flex items-center mt-1"
-                        >
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-white hover:text-purple-200 transition-colors inline-flex items-center mt-1"
+                      >
                           {truncateAddress(firstTxHash)}
-                          <ExternalLink size={12} className="ml-1" />
-                        </a>
-                        <span className="text-white font-medium mt-1">
+                        <ExternalLink size={12} className="ml-1" />
+                      </a>
+                      <span className="text-white font-medium mt-1">
                           {displayDate}
-                        </span>
-                        <span className="text-purple-200 text-xs mt-1">
-                          {calculateWalletAge(stats).days} days ago
-                        </span>
-                      </div>
+                      </span>
+                      <span className="text-purple-200 text-xs mt-1">
+                        {calculateWalletAge(stats).days} days ago
+                      </span>
+                    </div>
                     ) : null;
                   })()}
+                </div>
+              </div>
+              
+              {/* Score Breakdown Section */}
+              <div className="bg-white/15 backdrop-blur-sm rounded-xl p-5 mb-6 shadow-lg border border-white/20">
+                <h4 className="text-xl text-white font-bold mb-3">Score Breakdown</h4>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-3">
+                  <div className="bg-white/10 p-3 rounded-lg">
+                    <div className="flex justify-between items-center">
+                      <span className="text-purple-100">Transaction Activity</span>
+                      <span className="font-medium">{Math.min(stats.totalTransactions, 500) * 0.01} points</span>
+                    </div>
+                    <div className="text-xs text-white/70 mt-1">
+                      {Math.min(stats.totalTransactions, 500)} / 500 transactions (0.01 points each)
+                    </div>
+                  </div>
+                  
+                  <div className="bg-white/10 p-3 rounded-lg">
+                    <div className="flex justify-between items-center">
+                      <span className="text-purple-100">Consistency Metrics</span>
+                      <span className="font-medium">{(stats.activityByDay * 0.1 + stats.activityByWeek * 0.25 + stats.activityByMonth * 0.5).toFixed(2)} points</span>
+                    </div>
+                    <div className="flex flex-wrap justify-between text-xs text-white/70 mt-1">
+                      <span>Days: {stats.activityByDay} × 0.1 = {(stats.activityByDay * 0.1).toFixed(1)}</span>
+                      <span>Weeks: {stats.activityByWeek} × 0.25 = {(stats.activityByWeek * 0.25).toFixed(2)}</span>
+                      <span>Months: {stats.activityByMonth} × 0.5 = {(stats.activityByMonth * 0.5).toFixed(1)}</span>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-3">
+                  <div className="bg-white/10 p-3 rounded-lg">
+                    <div className="flex justify-between items-center">
+                      <span className="text-purple-100">Contract Activity</span>
+                      <span className="font-medium">
+                        {(Math.min(stats.contractsCreated.addresses.length, 20) * 0.025 + 
+                         Math.min(stats.contractsInteracted.addresses.length, 30) * 0.03).toFixed(2)} points
+                      </span>
+                    </div>
+                    <div className="flex flex-wrap justify-between text-xs text-white/70 mt-1">
+                      <span>Created: {Math.min(stats.contractsCreated.addresses.length, 20)} × 0.025 = {(Math.min(stats.contractsCreated.addresses.length, 20) * 0.025).toFixed(3)}</span>
+                      <span>Interacted: {Math.min(stats.contractsInteracted.addresses.length, 30)} × 0.03 = {(Math.min(stats.contractsInteracted.addresses.length, 30) * 0.03).toFixed(2)}</span>
+                    </div>
+                  </div>
+                  
+                  <div className="bg-white/10 p-3 rounded-lg">
+                    <div className="flex justify-between items-center">
+                      <span className="text-purple-100">Volume Score</span>
+                      <span className="font-medium">
+                        {Math.min(parseFloat(stats.totalVolume) / 1000, 1).toFixed(2)} points
+                      </span>
+                    </div>
+                    <div className="text-xs text-white/70 mt-1">
+                      {parseFloat(stats.totalVolume).toFixed(2)} MON transferred
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                  <div className="bg-white/10 p-3 rounded-lg">
+                    <div className="flex justify-between items-center">
+                      <span className="text-purple-100">NFT Bonuses</span>
+                      <span className="font-medium">
+                        {(nftOwnership.is1MillionNadHolder ? 20 : 0) + (nftOwnership.isSecondNftHolder ? 20 : 0)} points
+                      </span>
+                    </div>
+                    <div className="text-xs text-white/70 mt-1">
+                      {nftOwnership.is1MillionNadHolder ? "1M Nad NFT (+20 pts)" : "No 1M Nad NFT (0 pts)"} • 
+                      {nftOwnership.isSecondNftHolder ? " Cipher SBT (+20 pts)" : " No Cipher SBT (0 pts)"}
+                    </div>
+                  </div>
+                  
+                  {(() => {
+                    // Calculate if user is an early user
+                    let isEarlyUser = false;
+                    let earliestTxDate: Date | null = null;
+                    
+                    if (stats.profileData) {
+                      const firstTxTime = stats.profileData.first_transaction?.block_timestamp 
+                        ? new Date(stats.profileData.first_transaction.block_timestamp).getTime()
+                        : Number.MAX_SAFE_INTEGER;
+                      
+                      const fundingTxTime = stats.profileData.funding_transaction?.block_timestamp
+                        ? new Date(stats.profileData.funding_transaction.block_timestamp).getTime()
+                        : Number.MAX_SAFE_INTEGER;
+                      
+                      const earliestTimestamp = Math.min(firstTxTime, fundingTxTime);
+                      
+                      if (earliestTimestamp !== Number.MAX_SAFE_INTEGER) {
+                        earliestTxDate = new Date(earliestTimestamp);
+                        const cutoffDate = new Date('2025-02-26T23:59:59Z');
+                        isEarlyUser = earliestTxDate < cutoffDate;
+                      }
+                    } else if (stats.transactions && stats.transactions.length > 0) {
+                      const earliestTx = stats.transactions.reduce((earliest, tx) => 
+                        tx.block_timestamp < earliest.block_timestamp ? tx : earliest, stats.transactions[0]);
+                      earliestTxDate = new Date(earliestTx.block_timestamp * 1000);
+                      const cutoffDate = new Date('2025-02-26T23:59:59Z');
+                      isEarlyUser = earliestTxDate < cutoffDate;
+                    }
+
+                    return (
+                      <div className="bg-white/10 p-3 rounded-lg">
+                        <div className="flex justify-between items-center">
+                          <span className="text-purple-100">Early User Bonus</span>
+                          <span className="font-medium">
+                            {isEarlyUser ? 15 : 0} points
+                          </span>
+                        </div>
+                        <div className="text-xs text-white/70 mt-1">
+                          {isEarlyUser 
+                            ? `Wallet active before Feb 26, 2025 (${earliestTxDate?.toLocaleDateString()})` 
+                            : "Wallet not active before Feb 26, 2025"}
+                        </div>
+                      </div>
+                    );
+                  })()}
+                </div>
+                
+                <div className="mt-4 border-t border-white/20 pt-4">
+                  <p className="text-white/80 text-xs">
+                    <strong>Note:</strong> For high-volume wallets (&gt;9900 transactions), we implement 24-hour caching to reduce API load while ensuring accurate scores.
+                  </p>
+                </div>
+                
+                <div className="mt-4 bg-white/10 p-4 rounded-lg">
+                  <h5 className="text-white text-sm font-bold mb-2">Technical Improvements</h5>
+                  <ul className="text-xs text-white/80 space-y-1.5">
+                    <li><strong>Enhanced Wallet Age:</strong> Using earlier timestamp between first outgoing & incoming transactions.</li>
+                    <li><strong>Contract Interaction Counter:</strong> Properly summing all interactions for accurate engagement metrics.</li>
+                    <li><strong>24-Hour Caching:</strong> For wallets with &gt;9900 transactions to reduce API load.</li>
+                    <li><strong>API Key Rotation:</strong> Distributing requests across multiple API keys for better reliability.</li>
+                    <li><strong>Transaction Linking:</strong> First transaction links point to actual earliest transaction.</li>
+                  </ul>
                 </div>
               </div>
               

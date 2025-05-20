@@ -8,8 +8,8 @@ const articleMetadata = {
   title: "How Monad Testnet Score is Calculated: Complete Guide",
   description: "Learn how the Monad Testnet wallet score is calculated, what factors contribute to your ranking, and how to optimize your on-chain activity for maximum points.",
   author: "WalletsX Team",
-  date: "2025-04-10",
-  readTime: "8 min read",
+  date: "2025-06-15",
+  readTime: "10 min read",
   tags: ["Monad", "Testnet", "Wallet Score", "Analytics", "Blockchain"],
   image: "https://images.unsplash.com/photo-1620712943543-bcc4688e7485?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80"
 };
@@ -84,17 +84,18 @@ export default function MonadScoreCalculationArticle() {
           </p>
           
           <p>
-            Our proprietary scoring algorithm analyzes multiple dimensions of on-chain activity, with each component carefully weighted to reward genuine, consistent participation rather than one-time or artificial interactions.
+            Our proprietary scoring algorithm analyzes multiple dimensions of on-chain activity, with each component carefully weighted to reward genuine, consistent participation rather than one-time or artificial interactions. We've recently updated our scoring system to better reflect valuable community contributions and long-term engagement.
           </p>
 
           <div className="bg-purple-50 border-l-4 border-purple-500 p-6 my-8 rounded-r-lg">
             <h3 className="text-xl font-bold text-purple-800 mt-0 mb-3">Score Components at a Glance</h3>
             <ul className="list-disc pl-5 space-y-2">
-              <li><strong>Transaction Activity</strong>: 0.01 points per transaction (capped)</li>
+              <li><strong>Transaction Activity</strong>: 0.01 points per transaction (capped at 500 transactions)</li>
               <li><strong>Consistency</strong>: Points for unique days, weeks, and months of activity</li>
               <li><strong>Volume</strong>: Tiered points based on MON transaction volume</li>
               <li><strong>Contract Interaction</strong>: Points for creating and interacting with contracts</li>
-              <li><strong>Special NFT Bonuses</strong>: Points for holding specific NFTs</li>
+              <li><strong>Special NFT Bonuses</strong>: Substantial points for holding specific NFTs</li>
+              <li><strong>Early User Bonus</strong>: 15 points for wallets active before February 26th, 2025</li>
               <li><strong>Inactivity Penalty</strong>: Deduction for extended periods of inactivity</li>
             </ul>
           </div>
@@ -155,7 +156,7 @@ export default function MonadScoreCalculationArticle() {
           <h3 className="text-xl font-semibold text-gray-800">3. Volume-Based Points (Up to 1 Point)</h3>
           
           <p>
-            The total volume of MON transferred in your transactions also contributes to your score, with a tiered system that rewards higher volumes:
+            The total volume of MON transferred in your transactions contributes to your score, with a tiered system that rewards higher volumes:
           </p>
           
           <div className="bg-gradient-to-r from-purple-50 to-indigo-50 p-6 rounded-lg my-6">
@@ -191,33 +192,49 @@ export default function MonadScoreCalculationArticle() {
           </ul>
           
           <p>
-            This rewards both developers who deploy contracts and users who engage with the Monad ecosystem's applications.
+            This rewards both developers who deploy contracts and users who engage with the Monad ecosystem's applications. Our updated scoring system now accurately counts total interaction counts rather than just unique contracts, providing a more comprehensive picture of your ecosystem engagement.
           </p>
 
           <h3 className="text-xl font-semibold text-gray-800">5. Special NFT Bonuses</h3>
           
           <p>
-            Holding certain special NFTs can significantly boost your score:
+            Holding certain special NFTs can significantly boost your score with our newly updated bonus point values:
           </p>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 my-8">
             <div className="bg-white border border-purple-200 rounded-xl p-6 shadow-md">
               <h4 className="text-lg font-bold text-purple-800 mb-3">1 Million Nad NFT</h4>
-              <p className="text-gray-700 mb-3">Holding this special NFT adds a substantial 1.0 point bonus to your score.</p>
+              <p className="text-gray-700 mb-3">Holding this special NFT now adds a substantial 20-point bonus to your score!</p>
               <div className="bg-purple-100 text-purple-800 text-sm font-medium px-3 py-1 rounded-full inline-flex items-center">
-                +1.0 points
+                +20 points
               </div>
             </div>
             <div className="bg-white border border-purple-200 rounded-xl p-6 shadow-md">
               <h4 className="text-lg font-bold text-purple-800 mb-3">Monad Cipher SBT</h4>
-              <p className="text-gray-700 mb-3">Holding the Monad Games Cipher SBT adds 0.5 points to your total score.</p>
+              <p className="text-gray-700 mb-3">Holding the Monad Games Cipher SBT now adds 20 points to your total score.</p>
               <div className="bg-purple-100 text-purple-800 text-sm font-medium px-3 py-1 rounded-full inline-flex items-center">
-                +0.5 points
+                +20 points
               </div>
             </div>
           </div>
 
-          <h3 className="text-xl font-semibold text-gray-800">6. Inactivity Penalty</h3>
+          <h3 className="text-xl font-semibold text-gray-800">6. Early User Bonus</h3>
+          
+          <p>
+            We've added a significant bonus for early adopters who have been supporting the Monad ecosystem from the beginning:
+          </p>
+          
+          <div className="bg-green-50 border-l-4 border-green-500 p-6 my-6 rounded-r-lg">
+            <p className="text-green-800 font-medium">
+              If your wallet had its first transaction before February 26th, 2025, you'll receive a 15-point early user bonus.
+            </p>
+          </div>
+          
+          <p>
+            Our improved wallet age calculation now uses the earlier timestamp between first outgoing transaction and first incoming transaction, ensuring accurate identification of early users using data from multiple sources.
+          </p>
+
+          <h3 className="text-xl font-semibold text-gray-800">7. Inactivity Penalty</h3>
           
           <p>
             To encourage ongoing participation, an inactivity penalty is applied if your wallet hasn't had any transactions for 5 or more days:
@@ -241,7 +258,7 @@ export default function MonadScoreCalculationArticle() {
           
           <div className="bg-gray-100 p-6 rounded-lg my-6 overflow-x-auto">
             <pre className="text-sm">
-              Score = TransactionPoints + ActivityPoints + VolumePoints + ContractPoints + NFTBonuses - InactivityPenalty
+              Score = TransactionPoints + ActivityPoints + VolumePoints + ContractPoints + NFTBonuses + EarlyUserBonus - InactivityPenalty
             </pre>
             <p className="mt-4 text-gray-700">Where:</p>
             <ul className="list-disc pl-5 space-y-1 text-gray-700">
@@ -249,8 +266,9 @@ export default function MonadScoreCalculationArticle() {
               <li>ActivityPoints = uniqueDays * 0.1 + uniqueWeeks * 0.25 + uniqueMonths * 0.5</li>
               <li>VolumePoints = calculated based on tiered volume system (max 1.0)</li>
               <li>ContractPoints = min(contractsCreated, 20) * 0.025 + min(contractsInteracted, 30) * 0.03</li>
-              <li>NFTBonuses = (is1MillionNadHolder ? 1.0 : 0) + (isSecondNftHolder ? 0.5 : 0)</li>
-              <li>InactivityPenalty = daysSinceLastTx {'>='} 5 ? 0.5 : 0</li>
+              <li>NFTBonuses = (is1MillionNadHolder ? 20.0 : 0) + (isCipherSBTHolder ? 20.0 : 0)</li>
+              <li>EarlyUserBonus = (firstTxBeforeFeb262025 ? 15.0 : 0)</li>
+              <li>InactivityPenalty = daysSinceLastTx &gt;= 5 ? 0.5 : 0</li>
             </ul>
           </div>
 
@@ -266,7 +284,7 @@ export default function MonadScoreCalculationArticle() {
             <div className="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-xl p-6">
               <h4 className="text-lg font-bold text-purple-800 mb-3">2. Interact with Contracts</h4>
               <p>
-                Engage with different dApps and smart contracts on Monad to earn contract interaction points.
+                Engage with different dApps and smart contracts on Monad to earn contract interaction points. More interactions with each contract count!
               </p>
             </div>
             <div className="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-xl p-6">
@@ -278,7 +296,7 @@ export default function MonadScoreCalculationArticle() {
             <div className="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-xl p-6">
               <h4 className="text-lg font-bold text-purple-800 mb-3">4. Acquire Special NFTs</h4>
               <p>
-                The 1 Million Nad NFT and Monad Cipher SBT provide substantial score boosts.
+                The 1 Million Nad NFT and Monad Cipher SBT now provide massive 20-point boosts each to your score.
               </p>
             </div>
           </div>
@@ -286,13 +304,13 @@ export default function MonadScoreCalculationArticle() {
           <h2 className="text-2xl font-bold text-purple-800">Monitoring Your Score</h2>
           
           <p>
-            You can track your Monad Testnet score in real-time using the <a href="/monad-testnet" className="text-purple-600 hover:text-purple-800 font-medium">WalletsX Monad Testnet Stats Checker</a>. This tool provides a comprehensive breakdown of all score components and offers personalized suggestions for improvement.
+            You can track your Monad Testnet score in real-time using the <a href="/monad-testnet" className="text-purple-600 hover:text-purple-800 font-medium">WalletsX Monad Testnet Stats Checker</a>. This tool provides a comprehensive breakdown of all score components and offers personalized suggestions for improvement. Our system now features improved caching for high-volume wallets and API key rotation to ensure reliable performance.
           </p>
           
           <div className="bg-blue-50 border-l-4 border-blue-500 p-6 my-8 rounded-r-lg">
             <h4 className="text-lg font-bold text-blue-800 mb-2">Pro Tip</h4>
             <p className="text-blue-800">
-              While high transaction counts contribute to your score, quality interactions like contract deployment and diverse contract usage often yield better results than simple transfers.
+              While high transaction counts contribute to your score, quality interactions like contract deployment and diverse contract usage often yield better results than simple transfers. Our updated calculation now properly accounts for all contract interactions.
             </p>
           </div>
 
@@ -303,12 +321,12 @@ export default function MonadScoreCalculationArticle() {
           </p>
           
           <p>
-            Keep in mind that while a high score demonstrates your active participation in the Monad ecosystem, the ultimate value comes from contributing to and being part of this innovative blockchain platform as it continues to develop.
+            With our recent scoring updates emphasizing early adoption, NFT ownership, and true engagement metrics, the WalletsX scoring system provides the most comprehensive and accurate assessment of your contribution to the Monad ecosystem.
           </p>
           
           <div className="border-t border-gray-200 mt-8 pt-8">
             <p className="text-sm text-gray-600 italic">
-              Disclaimer: This scoring system is subject to change as the Monad Testnet evolves. The WalletsX team will update this article with any significant changes to the scoring algorithm.
+              Last updated: June 15, 2025. This scoring system is subject to change as the Monad Testnet evolves. The WalletsX team will update this article with any significant changes to the scoring algorithm.
             </p>
           </div>
         </div>
