@@ -5,14 +5,8 @@ import Head from 'next/head';
 import Link from 'next/link';
 import { Search, Loader2, ExternalLink, Wallet, Clock, ArrowRightLeft, Coins, Frame, Boxes, Twitter, Calendar, ChevronDown, ChevronUp, Building2, Users, ChevronRight, Clock3, Image, ArrowRight } from 'lucide-react';
 import { fetchMonadTestnetStats } from '../../../lib/monadTestnet';
-import type { MonadTestnetStats as BaseMonadTestnetStats, ERC1155Token, ERC20Token, ERC721NFT, ContractInfo } from '../../../lib/monadTestnet';
+import type { MonadTestnetStats as BaseMonadTestnetStats, ERC1155Token, ERC20Token, ERC721NFT } from '../../../lib/monadTestnet';
 import { formatUnits, JsonRpcProvider } from 'ethers';
-
-// Cache for large transaction data (24 hours)
-const transactionCache = new Map<string, {
-  timestamp: number;
-  data: any;
-}>();
 
 // Add the SocialScan API interface
 interface SocialScanProfile {
@@ -203,89 +197,6 @@ function getMonadRpcUrl(): string {
   return `https://monad-testnet.g.alchemy.com/v2/${apiKey}`;
 }
 
-// Function to get a ThirdWeb client ID
-function getTokenClientId(): string {
-  // Array of available client IDs (from 1 to 17, skipping 13)
-  const clientIds = [
-    process.env.NEXT_PUBLIC_THIRDWEB_CLIENT_ID_1 || "",
-    process.env.NEXT_PUBLIC_THIRDWEB_CLIENT_ID_2 || "",
-    process.env.NEXT_PUBLIC_THIRDWEB_CLIENT_ID_3 || "",
-    process.env.NEXT_PUBLIC_THIRDWEB_CLIENT_ID_4 || "",
-    process.env.NEXT_PUBLIC_THIRDWEB_CLIENT_ID_5 || "",
-    process.env.NEXT_PUBLIC_THIRDWEB_CLIENT_ID_6 || "",
-    process.env.NEXT_PUBLIC_THIRDWEB_CLIENT_ID_7 || "",
-    process.env.NEXT_PUBLIC_THIRDWEB_CLIENT_ID_8 || "",
-    process.env.NEXT_PUBLIC_THIRDWEB_CLIENT_ID_9 || "",
-    process.env.NEXT_PUBLIC_THIRDWEB_CLIENT_ID_10 || "",
-    process.env.NEXT_PUBLIC_THIRDWEB_CLIENT_ID_11 || "",
-    process.env.NEXT_PUBLIC_THIRDWEB_CLIENT_ID_12 || "",
-    // Skip 13 as it's unlucky
-    process.env.NEXT_PUBLIC_THIRDWEB_CLIENT_ID_14 || "",
-    process.env.NEXT_PUBLIC_THIRDWEB_CLIENT_ID_15 || "",
-    process.env.NEXT_PUBLIC_THIRDWEB_CLIENT_ID_16 || "",
-    process.env.NEXT_PUBLIC_THIRDWEB_CLIENT_ID_17 || ""
-  ].filter(Boolean);
-
-  // Select a random API key
-  const randomIndex = Math.floor(Math.random() * clientIds.length);
-  // Use a fallback if no client IDs are available
-  return clientIds[randomIndex] || "NYLA8d6xyFwpEzjv-j8v63RrOU-VG28F1rWEQtFtpoMQ1iQbm6zQpXn7CNwlYQHw-AEkuIuduQSU3a2makc_8A";
-}
-
-// Function to fetch contract creations data
-async function fetchContractCreations(address: string): Promise<{ addresses: string[]; timestamps: Record<string, number>; total: number; list: ContractInfo[] }> {
-  try {
-    const clientId = getTokenClientId();
-    
-    // Use ThirdWeb API to fetch transaction history and look for contract creations
-    const response = await fetch(
-      `https://api.thirdweb.com/v1/548a182d4d240fa3cc1a41bb/monad-testnet/address/${address}/transactions?page=1&limit=100`,
-      { headers: { 'x-client-id': clientId } }
-    );
-    
-    if (!response.ok) {
-      throw new Error(`Error fetching contract creations: ${response.status}`);
-    }
-    
-    const transactions = await response.json();
-    
-    // Filter for contract creation transactions
-    const contractCreations = (transactions.result || [])
-      .filter((tx: any) => tx.to === null && tx.receipt?.contract_address)
-      .map((tx: any) => {
-        // Format timestamp from timestamp string
-        const timestamp = Math.floor(new Date(tx.timestamp).getTime() / 1000);
-        return {
-          address: tx.receipt.contract_address,
-          timestamp,
-          formattedTimestamp: new Date(timestamp * 1000).toLocaleString()
-        };
-      });
-    
-    // Create the addresses array and timestamps record
-    const addresses = contractCreations.map((c: ContractInfo) => c.address);
-    const timestamps: Record<string, number> = {};
-    contractCreations.forEach((c: ContractInfo) => {
-      timestamps[c.address] = c.timestamp;
-    });
-    
-    return {
-      addresses,
-      timestamps,
-      total: addresses.length,
-      list: contractCreations
-    };
-  } catch (error) {
-    console.error("Error fetching contract creations:", error);
-    return {
-      addresses: [],
-      timestamps: {},
-      total: 0,
-      list: []
-    };
-  }
-}
-
 // Specific contract addresses for important NFTs
 const NAD_NFT_CONTRACT_ADDRESS = "0x922dA3512e2BEBBe32bccE59adf7E6759fB8CEA2".toLowerCase();
 const CIPHER_NFT_CONTRACT_ADDRESS = "0x76D37beDcf864aA2bD848b7286F1be8D42f63Cb6".toLowerCase();
@@ -379,6 +290,12 @@ interface AlchemyTransfersResponse {
   pageKey?: string;
 }
 
+// Create a cache for transactions from wallets with high transaction counts
+const highVolumeWalletCache = new Map<string, {
+  timestamp: number;
+  data: any;
+}>();
+
 // Add a function to fetch transactions using Alchemy API for users with large transaction counts
 async function fetchAlchemyTransactions(
   address: string, 
@@ -386,19 +303,21 @@ async function fetchAlchemyTransactions(
 ): Promise<{ 
   transactions: any[]; 
   contractsInteracted: { addresses: string[]; interactionCounts: Record<string, number>; timestamps: Record<string, number>; total: number };
+  contractsCreated: { addresses: string[]; timestamps: Record<string, number>; total: number; list: { address: string; timestamp: number; formattedTimestamp: string }[] };
   totalVolume: string;
   activityByDay: number;
   activityByWeek: number;
   activityByMonth: number;
 }> {
-  // Check cache first (24 hour expiration)
-  const cacheKey = `alchemy_transactions_${address.toLowerCase()}`;
-  const cachedData = transactionCache.get(cacheKey);
-  const CACHE_EXPIRATION = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
+  // Check the cache first (valid for 24 hours)
+  const cacheKey = `alchemy_tx_${address.toLowerCase()}`;
+  const now = Date.now();
+  const cachedData = highVolumeWalletCache.get(cacheKey);
+  const CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
   
-  if (cachedData && (Date.now() - cachedData.timestamp < CACHE_EXPIRATION)) {
-    console.log(`Using cached Alchemy transaction data for ${address} (age: ${((Date.now() - cachedData.timestamp) / (60 * 60 * 1000)).toFixed(1)} hours)`);
-    statusCallback('Using cached transaction data...');
+  if (cachedData && (now - cachedData.timestamp) < CACHE_TTL) {
+    console.log(`Using cached transaction data for high volume wallet ${address} (cached ${Math.floor((now - cachedData.timestamp) / 60000)} minutes ago)`);
+    statusCallback(`Using cached data from ${new Date(cachedData.timestamp).toLocaleString()}...`);
     return cachedData.data;
   }
   
@@ -421,6 +340,7 @@ async function fetchAlchemyTransactions(
   
   const apiUrl = `https://monad-testnet.g.alchemy.com/v2/${apiKey}`;
   
+  statusCallback(`Fetching transaction data for high volume wallet (this may take a while)...`);
   try {
     let transactions: any[] = [];
     let pageKey: string | undefined = undefined;
@@ -444,6 +364,19 @@ async function fetchAlchemyTransactions(
       interactionCounts: {},
       timestamps: {},
       total: 0
+    };
+    
+    // Track contract creations
+    const contractsCreated: {
+      addresses: string[];
+      timestamps: Record<string, number>;
+      total: number;
+      list: { address: string; timestamp: number; formattedTimestamp: string }[];
+    } = {
+      addresses: [],
+      timestamps: {},
+      total: 0,
+      list: []
     };
 
     let totalVolume = 0;
@@ -509,8 +442,27 @@ async function fetchAlchemyTransactions(
         // Track unique months
         uniqueMonths.add(`${dateObj.getFullYear()}-${dateObj.getMonth() + 1}`);
         
+        // Check for contract creation (to field is null for contract creations)
+        if (transfer.to === null) {
+          // This is a contract creation transaction
+          // We need to extract the contract address from transaction receipt (not available in this API)
+          // Instead, we'll use the hash to identify it
+          const creationId = transfer.hash.toLowerCase();
+          
+          if (!contractsCreated.addresses.includes(creationId)) {
+            contractsCreated.addresses.push(creationId);
+            contractsCreated.timestamps[creationId] = timestamp;
+            contractsCreated.list.push({
+              address: creationId, // Using hash as a proxy for the contract address
+              timestamp: timestamp,
+              formattedTimestamp: new Date(timestamp * 1000).toLocaleString()
+            });
+            // Increment counter
+            contractsCreated.total++;
+          }
+        }
         // Track contract interactions
-        if (transfer.to && transfer.to !== address.toLowerCase()) {
+        else if (transfer.to && transfer.to !== address.toLowerCase()) {
           // Convert to lowercase for case-insensitive comparison
           const contractAddress = transfer.to.toLowerCase();
           
@@ -563,34 +515,30 @@ async function fetchAlchemyTransactions(
     // Update the total count of contract interactions
     contractsInteracted.total = contractsInteracted.addresses.length;
     
-    // Cache the result for 24 hours
-    transactionCache.set(cacheKey, {
-      timestamp: Date.now(),
-      data: {
-        transactions,
-        contractsInteracted,
-        totalVolume: totalVolume.toString(),
-        activityByDay: uniqueDates.size,
-        activityByWeek: uniqueWeeks.size,
-        activityByMonth: uniqueMonths.size
-      }
-    });
-    
-    return {
+    // Prepare the result
+    const result = {
       transactions,
       contractsInteracted,
+      contractsCreated,
       totalVolume: totalVolume.toString(),
       activityByDay: uniqueDates.size,
       activityByWeek: uniqueWeeks.size,
       activityByMonth: uniqueMonths.size
     };
+    
+    // Store in cache for future use
+    highVolumeWalletCache.set(cacheKey, {
+      timestamp: Date.now(),
+      data: result
+    });
+    console.log(`Cached transaction data for high volume wallet ${address}`);
+    
+    return result;
   } catch (error) {
     console.error('Error fetching Alchemy transactions:', error);
     throw error;
   }
 }
-
-// Add functions before the MonadTestnetStats component
 
 function MonadTestnetStats() {
   const [address, setAddress] = useState('');
@@ -627,11 +575,6 @@ function MonadTestnetStats() {
     cipherBalance: "0",
     totalNfts: 0
   });
-  
-  // Add loading states for lazy-loaded data
-  const [tokensLoading, setTokensLoading] = useState(false);
-  const [nftsLoading, setNftsLoading] = useState(false);
-  const [erc1155Loading, setErc1155Loading] = useState(false);
   
   // Add ref for search section scrolling
   const searchSectionRef = useRef<HTMLDivElement>(null);
@@ -709,19 +652,15 @@ function MonadTestnetStats() {
         if (txCount > 9900) {
           statusCallback(`High transaction count detected (${txCount.toLocaleString()} transactions), using Alchemy API...`);
           
-                    // Use Alchemy API to fetch detailed transaction data
+          // Use Alchemy API to fetch detailed transaction data
           const alchemyData = await fetchAlchemyTransactions(address, statusCallback);
           
-          // Fetch contract creation data separately
-          statusCallback('Fetching contract creations...');
-          const contractCreations = await fetchContractCreations(address);
-          
-          // Construct the stats object with the Alchemy data
+                                      // Construct the stats object with the Alchemy data
           statsData = {
             address: address,
             transactions: alchemyData.transactions || [],
             totalTransactions: txCount, // Use the actual transaction count instead of just the fetched transactions
-            contractsCreated: contractCreations, // Use properly fetched contract creation data
+            contractsCreated: alchemyData.contractsCreated,
           contractsInteracted: {
             addresses: alchemyData.contractsInteracted.addresses,
             interactionCounts: alchemyData.contractsInteracted.interactionCounts,
@@ -813,10 +752,10 @@ function MonadTestnetStats() {
       setNftPage(1); // Reset NFT page when loading new data
       setErc1155Page(1); // Reset ERC1155 page when loading new data
       
-      // Reset token data (will be loaded on demand)
-      setTokens([]);
-      setNfts([]);
-      setErc1155Tokens([]);
+      // Set token data directly from the stats
+      setTokens(statsData.tokens || []);
+      setNfts(statsData.nfts || []);
+      setErc1155Tokens(statsData.erc1155Tokens || []);
       
     } catch (error: any) {
       console.error('Error fetching stats:', error);
@@ -980,180 +919,6 @@ const getTotalInteractions = () => {
     if (!stats) return false;
     return erc1155Page * 6 < stats.erc1155Tokens.length;
   };
-
-  // Load tokens on demand when the user expands the tokens section
-  const handleShowTokens = async () => {
-    const newState = !showTokens;
-    setShowTokens(newState);
-    
-    // Only fetch if toggling to show and we have no tokens yet
-    if (newState && tokens.length === 0 && stats) {
-      try {
-        setTokensLoading(true);
-        setLoadingStatus('Fetching token data...');
-        
-        // Use ThirdWeb API directly
-        const clientId = getTokenClientId(); // Use the function from monadTestnet.ts
-        const response = await fetch(
-          `https://api.thirdweb.com/v1/548a182d4d240fa3cc1a41bb/monad-testnet/address/${stats.address}/balances`,
-          { headers: { 'x-client-id': clientId } }
-        );
-        
-        if (!response.ok) throw new Error('Failed to fetch tokens');
-        
-        const responseData = await response.json();
-        // Convert the response to our expected format
-        const tokenData = (responseData.result || [])
-          .filter((item: any) => item.type === 'ERC20')
-          .map((token: any) => ({
-            chainId: 1337,
-            chain_id: 1337,
-            tokenAddress: token.token_address,
-            token_address: token.token_address,
-            name: token.name || 'Unknown Token',
-            symbol: token.symbol || '???',
-            decimals: token.decimals || 18,
-            balance: token.balance || '0'
-          }));
-          
-        setTokens(tokenData);
-      } catch (error) {
-        console.error('Error fetching tokens:', error);
-        // Don't set an error state, just show empty tokens
-      } finally {
-        setTokensLoading(false);
-        setLoadingStatus('');
-      }
-    }
-  };
-
-  // Load NFTs on demand when the user expands the NFTs section
-  const handleShowERC721 = async () => {
-    const newState = !showERC721;
-    setShowERC721(newState);
-    
-    // Only fetch if toggling to show and we have no NFTs yet
-    if (newState && nfts.length === 0 && stats) {
-      try {
-        setNftsLoading(true);
-        setLoadingStatus('Fetching NFT data...');
-        
-        // Use ThirdWeb API directly
-        const clientId = getTokenClientId(); // Use the function from monadTestnet.ts
-        const response = await fetch(
-          `https://api.thirdweb.com/v1/548a182d4d240fa3cc1a41bb/monad-testnet/address/${stats.address}/nfts`,
-          { headers: { 'x-client-id': clientId } }
-        );
-        
-        if (!response.ok) throw new Error('Failed to fetch NFTs');
-        
-        const responseData = await response.json();
-        
-        // Convert the response to our expected format
-        const nftData = (responseData.result || [])
-          .filter((item: any) => item.type === 'ERC721')
-          .map((nft: any) => ({
-            chainId: 1337,
-            chain_id: 1337,
-            tokenAddress: nft.token_address,
-            token_address: nft.token_address,
-            tokenId: nft.token_id,
-            token_id: nft.token_id,
-            balance: "1",
-            name: nft.metadata?.name || `NFT #${nft.token_id}`,
-            description: nft.metadata?.description || '',
-            image_url: nft.metadata?.image || '',
-            extra_metadata: {
-              image_url: nft.metadata?.image || '',
-              attributes: nft.metadata?.attributes || []
-            },
-            collection: {
-              name: nft.contract?.name || 'Unknown Collection'
-            },
-            contract: {
-              chain_id: 1337,
-              address: nft.token_address,
-              type: 'ERC721',
-              name: nft.contract?.name || 'Unknown',
-              symbol: nft.contract?.symbol || '???'
-            }
-          }));
-          
-        setNfts(nftData);
-      } catch (error) {
-        console.error('Error fetching NFTs:', error);
-        // Don't set an error state, just show empty NFTs
-      } finally {
-        setNftsLoading(false);
-        setLoadingStatus('');
-      }
-    }
-  };
-
-  // Load ERC1155 tokens on demand when the user expands the ERC1155 section
-  const handleShowERC1155 = async () => {
-    const newState = !showERC1155;
-    setShowERC1155(newState);
-    
-    // Only fetch if toggling to show and we have no ERC1155 tokens yet
-    if (newState && erc1155Tokens.length === 0 && stats) {
-      try {
-        setErc1155Loading(true);
-        setLoadingStatus('Fetching ERC1155 data...');
-        
-        // Use ThirdWeb API directly
-        const clientId = getTokenClientId(); // Use the function from monadTestnet.ts
-        const response = await fetch(
-          `https://api.thirdweb.com/v1/548a182d4d240fa3cc1a41bb/monad-testnet/address/${stats.address}/nfts`,
-          { headers: { 'x-client-id': clientId } }
-        );
-        
-        if (!response.ok) throw new Error('Failed to fetch ERC1155 tokens');
-        
-        const responseData = await response.json();
-        
-        // Convert the response to our expected format - filter for ERC1155 tokens
-        const erc1155Data = (responseData.result || [])
-          .filter((item: any) => item.type === 'ERC1155')
-          .map((token: any) => ({
-            chainId: 1337,
-            chain_id: 1337,
-            tokenAddress: token.token_address,
-            token_address: token.token_address,
-            tokenId: token.token_id,
-            token_id: token.token_id,
-            balance: token.balance || '1',
-            name: token.metadata?.name || `Multi Token #${token.token_id}`,
-            description: token.metadata?.description || '',
-            image_url: token.metadata?.image || '',
-            metadata_url: token.metadata?.image || '',
-            extra_metadata: {
-              image_url: token.metadata?.image || '',
-              attributes: token.metadata?.attributes || []
-            },
-            collection: {
-              name: token.contract?.name || 'Unknown Collection'
-            },
-            contract: {
-              chain_id: 1337,
-              address: token.token_address,
-              type: 'ERC1155',
-              name: token.contract?.name || 'Unknown',
-              symbol: token.contract?.symbol || '???'
-            }
-          }));
-          
-        setErc1155Tokens(erc1155Data);
-      } catch (error) {
-        console.error('Error fetching ERC1155 tokens:', error);
-        // Don't set an error state, just show empty ERC1155 tokens
-      } finally {
-        setErc1155Loading(false);
-        setLoadingStatus('');
-      }
-    }
-  };
-
 
   return (
     <>
@@ -1956,11 +1721,10 @@ const getTotalInteractions = () => {
                   </div>
                 </div>
                 <button
-                  onClick={handleShowTokens}
+                  onClick={() => setShowTokens(!showTokens)}
                   className="p-2 bg-green-100 hover:bg-green-200 rounded-lg text-green-700 transition-colors"
-                  disabled={tokensLoading}
                 >
-                  {tokensLoading ? <Loader2 className="animate-spin" size={22} /> : showTokens ? <ChevronUp size={22} /> : <ChevronDown size={22} />}
+                  {showTokens ? <ChevronUp size={22} /> : <ChevronDown size={22} />}
                 </button>
               </div>
 
@@ -2032,11 +1796,10 @@ const getTotalInteractions = () => {
                   </div>
                 </div>
                 <button
-                  onClick={handleShowERC721}
+                  onClick={() => setShowERC721(!showERC721)}
                   className="p-2 bg-pink-100 hover:bg-pink-200 rounded-lg text-pink-700 transition-colors"
-                  disabled={nftsLoading}
                 >
-                  {nftsLoading ? <Loader2 className="animate-spin" size={22} /> : showERC721 ? <ChevronUp size={22} /> : <ChevronDown size={22} />}
+                  {showERC721 ? <ChevronUp size={22} /> : <ChevronDown size={22} />}
                 </button>
               </div>
 
@@ -2131,11 +1894,10 @@ const getTotalInteractions = () => {
                   </div>
                 </div>
                 <button
-                  onClick={handleShowERC1155}
+                  onClick={() => setShowERC1155(!showERC1155)}
                   className="p-2 bg-indigo-100 hover:bg-indigo-200 rounded-lg text-indigo-700 transition-colors"
-                  disabled={erc1155Loading}
                 >
-                  {erc1155Loading ? <Loader2 className="animate-spin" size={22} /> : showERC1155 ? <ChevronUp size={22} /> : <ChevronDown size={22} />}
+                  {showERC1155 ? <ChevronUp size={22} /> : <ChevronDown size={22} />}
                 </button>
               </div>
 
