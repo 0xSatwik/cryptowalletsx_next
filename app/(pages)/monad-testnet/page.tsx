@@ -8,13 +8,84 @@ import { fetchMonadTestnetStats } from '../../../lib/monadTestnet';
 import type { MonadTestnetStats as BaseMonadTestnetStats, ERC1155Token, ERC20Token, ERC721NFT } from '../../../lib/monadTestnet';
 import { formatUnits, JsonRpcProvider } from 'ethers';
 
-// Extend the MonadTestnetStats type to include nativeBalance
-interface MonadTestnetStats extends BaseMonadTestnetStats {
-  nativeBalance?: string;
+// Add the SocialScan API interface
+interface SocialScanProfile {
+  ens: string | null;
+  balance: string;
+  native_token_price: string;
+  balance_dollar: string;
+  is_contract: boolean;
+  is_token: boolean;
+  first_transaction: {
+    address: string;
+    block_number: number;
+    transaction_hash: string;
+    block_timestamp: string;
+    value: number;
+    receipt_status: number;
+  };
+  last_transaction: {
+    address: string;
+    block_number: number;
+    transaction_hash: string;
+    block_timestamp: string;
+    value: number;
+    receipt_status: number;
+  };
+  funding_transaction: {
+    from_address: string;
+    to_address: string;
+    value: number;
+    block_timestamp: string;
+    transaction_hash: string;
+    display_value: string;
+    display_funding_address: string;
+  };
 }
 
-// Add a helper function to calculate wallet age
+// Add a function to fetch profile data from SocialScan API
+async function fetchWalletProfile(address: string): Promise<SocialScanProfile | null> {
+  try {
+    const response = await fetch(`https://api.socialscan.io/rest/monad-testnet/v1/explorer/address/${address}/profile`);
+    
+    if (!response.ok) {
+      console.error('Error fetching from SocialScan API:', response.status);
+      return null;
+    }
+    
+    const data = await response.json();
+    return data as SocialScanProfile;
+  } catch (error) {
+    console.error('Error fetching wallet profile:', error);
+    return null;
+  }
+}
+
+// Extend the MonadTestnetStats type to include nativeBalance and profile data
+interface MonadTestnetStats extends BaseMonadTestnetStats {
+  nativeBalance?: string;
+  profileData?: SocialScanProfile | null;
+}
+
+// Update the wallet age calculation function to use SocialScan data if available
 function calculateWalletAge(stats: MonadTestnetStats): { days: number; creationDate: string } {
+  // If we have SocialScan profile data, use the first transaction timestamp from there
+  if (stats.profileData?.first_transaction?.block_timestamp) {
+    const firstTxDate = new Date(stats.profileData.first_transaction.block_timestamp);
+    const now = new Date();
+    const days = Math.floor((now.getTime() - firstTxDate.getTime()) / (1000 * 60 * 60 * 24));
+    
+    return {
+      days,
+      creationDate: firstTxDate.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      })
+    };
+  }
+  
+  // Fallback to traditional calculation
   if (!stats.transactions || stats.transactions.length === 0) {
     return { days: 0, creationDate: 'N/A' };
   }
@@ -36,7 +107,7 @@ function calculateWalletAge(stats: MonadTestnetStats): { days: number; creationD
     days,
     creationDate: earliestDate.toLocaleDateString('en-US', {
       year: 'numeric',
-      month: 'long',
+      month: 'long', 
       day: 'numeric'
     })
   };
@@ -263,15 +334,24 @@ function MonadTestnetStats() {
         setLoadingStatus(status);
       };
       
+      // Fetch the SocialScan profile data first
+      statusCallback('Fetching wallet profile...');
+      const profileData = await fetchWalletProfile(address);
+      
       // Fetch the native balance using ethers.js
       statusCallback('Fetching wallet balance...');
       let formattedBalance = "0";
       try {
-        // Use the function to get a dynamic RPC URL with API key rotation
-        const rpcUrl = getMonadRpcUrl();
-        const provider = new JsonRpcProvider(rpcUrl);
-        const balance = await provider.getBalance(address);
-        formattedBalance = formatBalance(balance.toString());
+        // Use profile data balance if available
+        if (profileData?.balance) {
+          formattedBalance = profileData.balance;
+        } else {
+          // Fallback to RPC method
+          const rpcUrl = getMonadRpcUrl();
+          const provider = new JsonRpcProvider(rpcUrl);
+          const balance = await provider.getBalance(address);
+          formattedBalance = formatBalance(balance.toString());
+        }
         setWalletBalance(formattedBalance);
       } catch (balanceError) {
         console.error('Error fetching balance:', balanceError);
@@ -286,8 +366,9 @@ function MonadTestnetStats() {
       statusCallback('Fetching wallet stats...');
       const statsData = await fetchMonadTestnetStats(address, statusCallback) as MonadTestnetStats;
       
-      // Add the balance to the stats object
+      // Add the balance and profile data to the stats object
       statsData.nativeBalance = formattedBalance;
+      statsData.profileData = profileData;
 
       // Calculate additional score points based on NFT holdings and early user status
       let additionalPoints = 0;
@@ -303,18 +384,22 @@ function MonadTestnetStats() {
       }
       
       // Check if user is an early user (before May 31st, 2024)
-      const earliestTx = statsData.transactions && statsData.transactions.length > 0 
-        ? statsData.transactions.reduce((earliest, tx) => tx.block_timestamp < earliest.block_timestamp ? tx : earliest, statsData.transactions[0])
-        : null;
+      // Use SocialScan data for more accurate first transaction check if available
+      let firstTxDate: Date | null = null;
       
-      if (earliestTx) {
-        const earliestTxDate = new Date(earliestTx.block_timestamp * 1000);
-        const cutoffDate = new Date('2024-05-31T23:59:59Z');
-        
-        // Add 15 points for being an early user
-        if (earliestTxDate < cutoffDate) {
-          additionalPoints += 15;
-        }
+      if (profileData?.first_transaction?.block_timestamp) {
+        firstTxDate = new Date(profileData.first_transaction.block_timestamp);
+      } else if (statsData.transactions && statsData.transactions.length > 0) {
+        const earliestTx = statsData.transactions.reduce((earliest, tx) => 
+          tx.block_timestamp < earliest.block_timestamp ? tx : earliest, statsData.transactions[0]);
+        firstTxDate = new Date(earliestTx.block_timestamp * 1000);
+      }
+      
+      const cutoffDate = new Date('2024-05-31T23:59:59Z');
+      
+      // Add 15 points for being an early user
+      if (firstTxDate && firstTxDate < cutoffDate) {
+        additionalPoints += 15;
       }
       
       // Update the final score with the additional points
@@ -338,17 +423,25 @@ function MonadTestnetStats() {
     }
   };
 
+  // Update getTweetUrl function to use SocialScan data for more accurate early user detection
   const getTweetUrl = () => {
     if (!stats) return '';
     
-    // Check if user is an early user
-    const earliestTx = stats.transactions && stats.transactions.length > 0 
-      ? stats.transactions.reduce((earliest, tx) => tx.block_timestamp < earliest.block_timestamp ? tx : earliest, stats.transactions[0])
-      : null;
-      
-    const earliestTxDate = earliestTx ? new Date(earliestTx.block_timestamp * 1000) : null;
-    const cutoffDate = new Date('2024-05-31T23:59:59Z'); // May 31st, 2024 cutoff
-    const isEarlyUser = earliestTxDate && earliestTxDate < cutoffDate;
+    // Check if user is an early user using profileData if available
+    let isEarlyUser = false;
+    let earliestTxDate: Date | null = null;
+    
+    if (stats.profileData?.first_transaction?.block_timestamp) {
+      earliestTxDate = new Date(stats.profileData.first_transaction.block_timestamp);
+      const cutoffDate = new Date('2024-05-31T23:59:59Z');
+      isEarlyUser = earliestTxDate < cutoffDate;
+    } else if (stats.transactions && stats.transactions.length > 0) {
+      const earliestTx = stats.transactions.reduce((earliest, tx) => 
+        tx.block_timestamp < earliest.block_timestamp ? tx : earliest, stats.transactions[0]);
+      earliestTxDate = new Date(earliestTx.block_timestamp * 1000);
+      const cutoffDate = new Date('2024-05-31T23:59:59Z');
+      isEarlyUser = earliestTxDate < cutoffDate;
+    }
     
     const score = calculateWalletScore(stats).toFixed(2);
     
@@ -371,8 +464,8 @@ function MonadTestnetStats() {
       text += `✅ Monad Cipher SBT Holder (+20 pts) ${parseInt(nftOwnership.cipherBalance) > 1 ? `x${nftOwnership.cipherBalance}` : ''}\n`;
     }
     
-    if (isEarlyUser) {
-      text += `⏰ Early Monad User (+15 pts) since ${earliestTxDate!.toLocaleDateString()}\n`;
+    if (isEarlyUser && earliestTxDate) {
+      text += `⏰ Early Monad User (+15 pts) since ${earliestTxDate.toLocaleDateString()}\n`;
     }
     
     // Add blank line and website
@@ -383,14 +476,32 @@ function MonadTestnetStats() {
   };
 
   // Get total contract interactions
-  const getTotalInteractions = () => {
-    if (!stats) return 0;
-    return stats.contractsInteracted.addresses.reduce((sum: number, contract: string) => sum + 1, 0);
-  };
+const getTotalInteractions = () => {
+  if (!stats) return 0;
+  return stats.contractsInteracted.addresses.reduce((sum: number, contract: string) => {
+    return sum + (stats.contractsInteracted.interactionCounts[contract] || 0);
+  }, 0);
+};
 
-  // Get last transaction hash and date
+  // Update the getLastTransaction function to use SocialScan data if available
   const getLastTransaction = () => {
-    if (!stats || !stats.transactions || stats.transactions.length === 0) return { hash: null, date: 'N/A' };
+    if (!stats) return { hash: null, date: 'N/A' };
+    
+    // Use SocialScan data if available
+    if (stats.profileData?.last_transaction) {
+      const lastTx = stats.profileData.last_transaction;
+      return {
+        hash: lastTx.transaction_hash,
+        date: new Date(lastTx.block_timestamp).toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric'
+        })
+      };
+    }
+    
+    // Fallback to traditional calculation
+    if (!stats.transactions || stats.transactions.length === 0) return { hash: null, date: 'N/A' };
     
     // Find the latest transaction by timestamp
     const latestTx = stats.transactions.reduce((latest: any, current: any) => {
@@ -834,12 +945,17 @@ function MonadTestnetStats() {
               {/* Early User Badge */}
               <div className="mb-4">
                 {stats && (() => {
-                  // Use the earliest transaction timestamp instead of firstSeen
-                  const earliestTx = stats.transactions && stats.transactions.length > 0 
-                    ? stats.transactions.reduce((earliest, tx) => tx.block_timestamp < earliest.block_timestamp ? tx : earliest, stats.transactions[0])
-                    : null;
-                    
-                  const earliestTxDate = earliestTx ? new Date(earliestTx.block_timestamp * 1000) : null;
+                  // Use SocialScan data for early user detection if available
+                  let earliestTxDate: Date | null = null;
+                  
+                  if (stats.profileData?.first_transaction?.block_timestamp) {
+                    earliestTxDate = new Date(stats.profileData.first_transaction.block_timestamp);
+                  } else if (stats.transactions && stats.transactions.length > 0) {
+                    const earliestTx = stats.transactions.reduce((earliest, tx) => 
+                      tx.block_timestamp < earliest.block_timestamp ? tx : earliest, stats.transactions[0]);
+                    earliestTxDate = new Date(earliestTx.block_timestamp * 1000);
+                  }
+                  
                   const cutoffDate = new Date('2024-05-31T23:59:59Z'); // May 31st, 2024 cutoff
                   const isEarlyUser = earliestTxDate && earliestTxDate < cutoffDate;
                   
