@@ -126,6 +126,75 @@ function getMonadRpcUrl(): string {
   return `https://monad-testnet.g.alchemy.com/v2/${apiKey}`;
 }
 
+// Specific contract addresses for important NFTs
+const NAD_NFT_CONTRACT_ADDRESS = "0x922dA3512e2BEBBe32bccE59adf7E6759fB8CEA2".toLowerCase();
+const CIPHER_NFT_CONTRACT_ADDRESS = "0x76D37beDcf864aA2bD848b7286F1be8D42f63Cb6".toLowerCase();
+
+// Create a function to check NFT ownership using Alchemy API directly
+async function checkDirectNftOwnership(address: string): Promise<{
+  is1MillionNadHolder: boolean;
+  isSecondNftHolder: boolean;
+  nadBalance: string;
+  cipherBalance: string;
+  totalNfts: number;
+}> {
+  try {
+    // Get a random Alchemy API key from the pool
+    const alchemyApiKey = getMonadRpcUrl().split('/').pop();
+
+    // Create the API URL with query parameters
+    const apiUrl = `https://monad-testnet.g.alchemy.com/nft/v3/${alchemyApiKey}/getNFTsForOwner?owner=${address}&contractAddresses%5B%5D=${NAD_NFT_CONTRACT_ADDRESS}&contractAddresses%5B%5D=${CIPHER_NFT_CONTRACT_ADDRESS}&withMetadata=false&pageSize=100`;
+
+    console.log(`Checking NFT ownership with Alchemy API: ${apiUrl.substring(0, apiUrl.indexOf('?'))}`);
+    
+    const response = await fetch(apiUrl);
+    
+    if (!response.ok) {
+      throw new Error(`Alchemy API error: ${response.status}`);
+    }
+    
+    const data = await response.json();
+
+    // Parse the response to check for NFT ownership
+    let is1MillionNadHolder = false;
+    let isSecondNftHolder = false;
+    let nadBalance = "0";
+    let cipherBalance = "0";
+    let totalNfts = data.totalCount || 0;
+    
+    // Check each NFT to determine which contracts we have
+    if (data.ownedNfts && Array.isArray(data.ownedNfts)) {
+      data.ownedNfts.forEach((nft: any) => {
+        const contractAddr = nft.contractAddress.toLowerCase();
+        if (contractAddr === NAD_NFT_CONTRACT_ADDRESS) {
+          is1MillionNadHolder = true;
+          nadBalance = nft.balance || "1";
+        } else if (contractAddr === CIPHER_NFT_CONTRACT_ADDRESS) {
+          isSecondNftHolder = true;
+          cipherBalance = nft.balance || "1";
+        }
+      });
+    }
+    
+    return {
+      is1MillionNadHolder,
+      isSecondNftHolder,
+      nadBalance,
+      cipherBalance,
+      totalNfts
+    };
+  } catch (error) {
+    console.error("Error checking NFT ownership:", error);
+    return {
+      is1MillionNadHolder: false,
+      isSecondNftHolder: false,
+      nadBalance: "0",
+      cipherBalance: "0",
+      totalNfts: 0
+    };
+  }
+}
+
 function MonadTestnetStats() {
   const [address, setAddress] = useState('');
   const [loading, setLoading] = useState(false);
@@ -148,6 +217,19 @@ function MonadTestnetStats() {
   const [erc1155Page, setErc1155Page] = useState(1);
   const erc1155PerPage = 10;
   const [walletBalance, setWalletBalance] = useState<string>("0");
+  const [nftOwnership, setNftOwnership] = useState<{
+    is1MillionNadHolder: boolean;
+    isSecondNftHolder: boolean;
+    nadBalance: string;
+    cipherBalance: string;
+    totalNfts: number;
+  }>({
+    is1MillionNadHolder: false,
+    isSecondNftHolder: false,
+    nadBalance: "0",
+    cipherBalance: "0",
+    totalNfts: 0
+  });
   
   // Add ref for search section scrolling
   const searchSectionRef = useRef<HTMLDivElement>(null);
@@ -166,6 +248,13 @@ function MonadTestnetStats() {
     setError(null);
     setStats(null); // Reset stats when starting a new search
     setWalletBalance("0"); // Reset balance
+    setNftOwnership({
+      is1MillionNadHolder: false,
+      isSecondNftHolder: false,
+      nadBalance: "0",
+      cipherBalance: "0", 
+      totalNfts: 0
+    });
     
     try {
       // Create a callback to update loading status
@@ -187,6 +276,11 @@ function MonadTestnetStats() {
       } catch (balanceError) {
         console.error('Error fetching balance:', balanceError);
       }
+
+      // Check NFT ownership directly using Alchemy API
+      statusCallback('Checking NFT holdings...');
+      const nftOwnershipData = await checkDirectNftOwnership(address);
+      setNftOwnership(nftOwnershipData);
       
       // Pass the status callback to the fetch function
       statusCallback('Fetching wallet stats...');
@@ -194,6 +288,12 @@ function MonadTestnetStats() {
       
       // Add the balance to the stats object
       statsData.nativeBalance = formattedBalance;
+
+      // Update stats with NFT ownership data from direct API check
+      if (nftOwnershipData.is1MillionNadHolder || nftOwnershipData.isSecondNftHolder) {
+        // If NFTs exist, make sure they're reflected in the score
+        statsData.nftScore = Math.max(statsData.nftScore, nftOwnershipData.is1MillionNadHolder ? 100 : 50);
+      }
       
       setStats(statsData);
       setTransactionPage(1); // Reset transaction page when loading new data
@@ -222,21 +322,14 @@ function MonadTestnetStats() {
       : null;
       
     const earliestTxDate = earliestTx ? new Date(earliestTx.block_timestamp * 1000) : null;
-    const cutoffDate = new Date('2025-02-26T23:59:00Z'); // February 26th, 2025, 11:59pm UTC
+    const cutoffDate = new Date('2024-05-31T23:59:59Z'); // May 31st, 2024 cutoff
     const isEarlyUser = earliestTxDate && earliestTxDate < cutoffDate;
     
     const score = calculateWalletScore(stats).toFixed(2);
     
-    // Check if the user holds 1 million NAD tokens
-    const is1MillionNadHolder = stats.tokens.some(token => 
-      token.symbol?.toLowerCase() === 'nad' && 
-      parseFloat(token.balance) >= 1000000
-    );
-    
-    // Check if the user holds the second NFT
-    const isSecondNftHolder = stats.nfts.some(nft => 
-      nft.token_address?.toLowerCase() === '0x1234567890abcdef1234567890abcdef12345678'
-    );
+    // Use the direct NFT ownership checks
+    const is1MillionNadHolder = nftOwnership.is1MillionNadHolder;
+    const isSecondNftHolder = nftOwnership.isSecondNftHolder;
     
     let text = `🚀 Just checked my wallet stats on Monad Testnet!\n\n` +
       `🏆 Wallet Score: ${score}\n` +
@@ -246,11 +339,11 @@ function MonadTestnetStats() {
       
     // Add badges
     if (is1MillionNadHolder) {
-      text += `✅ 1 Million Nad Holder\n`;
+      text += `✅ 1 Million Nad Holder (${nftOwnership.nadBalance})\n`;
     }
     
     if (isSecondNftHolder) {
-      text += `✅ Monad Cipher SBT Holder\n`;
+      text += `✅ Monad Cipher SBT Holder (${nftOwnership.cipherBalance})\n`;
     }
     
     if (isEarlyUser) {
@@ -618,11 +711,8 @@ function MonadTestnetStats() {
               {/* 1 Million Nad Holder Badge */}
               <div className="mb-4">
                 {stats && (() => {
-                  // Check if the user holds 1 million NAD tokens
-                  const is1MillionNadHolder = stats.tokens.some(token => 
-                    token.symbol?.toLowerCase() === 'nad' && 
-                    parseFloat(token.balance) >= 1000000
-                  );
+                  // Use the direct API check result rather than inferring from tokens
+                  const is1MillionNadHolder = nftOwnership.is1MillionNadHolder;
                   
                   return is1MillionNadHolder ? (
                   <div className="bg-green-600 backdrop-blur-sm rounded-xl p-4 border border-green-500 shadow-lg flex items-center justify-between">
@@ -635,6 +725,7 @@ function MonadTestnetStats() {
                       <div>
                         <p className="text-white font-bold text-lg">1 Million Nad Holder</p>
                         <p className="text-white/90 text-sm">Congratulations! You've earned +1.0 bonus points!</p>
+                        <p className="text-white/80 text-xs mt-1">Holding: {nftOwnership.nadBalance} NFT{parseInt(nftOwnership.nadBalance) !== 1 ? 's' : ''}</p>
                       </div>
                     </div>
                     <div className="hidden sm:flex">
@@ -669,10 +760,8 @@ function MonadTestnetStats() {
               {/* Second NFT Holder Badge */}
               <div className="mb-4">
                 {stats && (() => {
-                  // Check if the user holds the second NFT
-                  const isSecondNftHolder = stats.nfts.some(nft => 
-                    nft.token_address?.toLowerCase() === '0x1234567890abcdef1234567890abcdef12345678'
-                  );
+                  // Use the direct API check result for the second NFT
+                  const isSecondNftHolder = nftOwnership.isSecondNftHolder;
                   
                   return isSecondNftHolder ? (
                   <div className="bg-green-600 backdrop-blur-sm rounded-xl p-4 border border-green-500 shadow-lg flex items-center justify-between">
@@ -685,6 +774,7 @@ function MonadTestnetStats() {
                       <div>
                         <p className="text-white font-bold text-lg">Monad Games Cipher SBT Holder</p>
                         <p className="text-white/90 text-sm">Congratulations! You're holding the Monad Games Cipher SBT</p>
+                        <p className="text-white/80 text-xs mt-1">Holding: {nftOwnership.cipherBalance} NFT{parseInt(nftOwnership.cipherBalance) !== 1 ? 's' : ''}</p>
                       </div>
                     </div>
                     <div className="hidden sm:flex">
@@ -725,7 +815,7 @@ function MonadTestnetStats() {
                     : null;
                     
                   const earliestTxDate = earliestTx ? new Date(earliestTx.block_timestamp * 1000) : null;
-                  const cutoffDate = new Date('2025-02-26T23:59:00Z'); // February 26th, 2025, 11:59pm UTC
+                  const cutoffDate = new Date('2024-05-31T23:59:59Z'); // May 31st, 2024 cutoff
                   const isEarlyUser = earliestTxDate && earliestTxDate < cutoffDate;
                   
                   if (!earliestTxDate) {
@@ -742,7 +832,7 @@ function MonadTestnetStats() {
                         </div>
                         <div>
                           <p className="text-white font-bold text-lg">Early Monad User</p>
-                          <p className="text-white/90 text-sm">Congratulations! First transaction on {earliestTxDate.toLocaleDateString()} - before Feb 26th, 2025 cutoff</p>
+                          <p className="text-white/90 text-sm">Congratulations! First transaction on {earliestTxDate.toLocaleDateString()} - before May 31st, 2024 cutoff</p>
                         </div>
                       </div>
                       <div className="hidden sm:flex">
@@ -763,7 +853,7 @@ function MonadTestnetStats() {
                         </div>
                         <div>
                           <p className="text-white font-bold text-lg">Not an Early User</p>
-                          <p className="text-white/90 text-sm">First transaction on {earliestTxDate.toLocaleDateString()} - after Feb 26th, 2025 cutoff</p>
+                          <p className="text-white/90 text-sm">First transaction on {earliestTxDate.toLocaleDateString()} - after May 31st, 2024 cutoff</p>
                         </div>
                       </div>
                       <div className="hidden sm:flex">
