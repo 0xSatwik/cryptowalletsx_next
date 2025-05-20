@@ -736,14 +736,14 @@ function MonadTestnetStats() {
       // Calculate additional score points based on NFT holdings and early user status
       let additionalPoints = 0;
       
-      // Add 20 points for holding 1 Million Nad NFT (regardless of quantity)
+      // Add 5 points for holding 1 Million Nad NFT (regardless of quantity)
       if (nftOwnershipData.is1MillionNadHolder) {
-        additionalPoints += 20;
+        additionalPoints += 5;
       }
       
-      // Add 20 points for holding Monad Cipher SBT (regardless of quantity)
+      // Add 5 points for holding Monad Cipher SBT (regardless of quantity)
       if (nftOwnershipData.isSecondNftHolder) {
-        additionalPoints += 20;
+        additionalPoints += 5;
       }
       
       // Check if user is an early user (before February 26th, 2025)
@@ -774,9 +774,9 @@ function MonadTestnetStats() {
       
       const cutoffDate = new Date('2025-02-26T23:59:59Z'); // February 26th, 2025 cutoff
       
-      // Add 15 points for being an early user
+      // Add 5 points for being an early user
       if (firstTxDate && firstTxDate < cutoffDate) {
-        additionalPoints += 15;
+        additionalPoints += 5;
       }
       
       // Update the final score with the additional points
@@ -848,15 +848,15 @@ function MonadTestnetStats() {
       
     // Add badges with the new point values
     if (is1MillionNadHolder) {
-      text += `✅ 1 Million Nad Holder (+20 pts) ${parseInt(nftOwnership.nadBalance) > 1 ? `x${nftOwnership.nadBalance}` : ''}\n`;
+      text += `✅ 1 Million Nad Holder (+5 pts) ${parseInt(nftOwnership.nadBalance) > 1 ? `x${nftOwnership.nadBalance}` : ''}\n`;
     }
     
     if (isSecondNftHolder) {
-      text += `✅ Monad Cipher SBT Holder (+20 pts) ${parseInt(nftOwnership.cipherBalance) > 1 ? `x${nftOwnership.cipherBalance}` : ''}\n`;
+      text += `✅ Monad Cipher SBT Holder (+5 pts) ${parseInt(nftOwnership.cipherBalance) > 1 ? `x${nftOwnership.cipherBalance}` : ''}\n`;
     }
     
     if (isEarlyUser && earliestTxDate) {
-      text += `⏰ Early Monad User (+15 pts) since ${earliestTxDate.toLocaleDateString()}\n`;
+      text += `⏰ Early Monad User (+5 pts) since ${earliestTxDate.toLocaleDateString()}\n`;
     }
     
     // Add blank line and website
@@ -1337,12 +1337,12 @@ const getTotalInteractions = () => {
                     <div className="flex justify-between items-center">
                       <span className="text-purple-100">NFT Bonuses</span>
                       <span className="font-medium">
-                        {(nftOwnership.is1MillionNadHolder ? 20 : 0) + (nftOwnership.isSecondNftHolder ? 20 : 0)} points
+                        {(nftOwnership.is1MillionNadHolder ? 5 : 0) + (nftOwnership.isSecondNftHolder ? 5 : 0)} points
                       </span>
                     </div>
                     <div className="text-xs text-white/70 mt-1">
-                      {nftOwnership.is1MillionNadHolder ? "1M Nad NFT (+20 pts)" : "No 1M Nad NFT (0 pts)"} • 
-                      {nftOwnership.isSecondNftHolder ? " Cipher SBT (+20 pts)" : " No Cipher SBT (0 pts)"}
+                      {nftOwnership.is1MillionNadHolder ? "1M Nad NFT (+5 pts)" : "No 1M Nad NFT (0 pts)"} • 
+                      {nftOwnership.isSecondNftHolder ? " Cipher SBT (+5 pts)" : " No Cipher SBT (0 pts)"}
                     </div>
                   </div>
                   
@@ -1380,7 +1380,7 @@ const getTotalInteractions = () => {
                         <div className="flex justify-between items-center">
                           <span className="text-purple-100">Early User Bonus</span>
                           <span className="font-medium">
-                            {isEarlyUser ? 15 : 0} points
+                            {isEarlyUser ? 5 : 0} points
                           </span>
                         </div>
                         <div className="text-xs text-white/70 mt-1">
@@ -1427,7 +1427,7 @@ const getTotalInteractions = () => {
                       </div>
                       <div>
                         <p className="text-white font-bold text-lg">1 Million Nad Holder</p>
-                        <p className="text-white/90 text-sm">Congratulations! You've earned +20 bonus points!</p>
+                        <p className="text-white/90 text-sm">Congratulations! You've earned +5 bonus points!</p>
                         <p className="text-white/80 text-xs mt-1">Holding: {nftOwnership.nadBalance} NFT{parseInt(nftOwnership.nadBalance) !== 1 ? 's' : ''}</p>
                       </div>
                     </div>
@@ -1449,7 +1449,7 @@ const getTotalInteractions = () => {
                       </div>
                       <div>
                         <p className="text-white font-bold text-lg">Not a 1 Million Nad Holder</p>
-                        <p className="text-white/90 text-sm">Get this NFT to earn +20 bonus points!</p>
+                        <p className="text-white/90 text-sm">Get this NFT to earn +5 bonus points!</p>
                       </div>
                     </div>
                     <div className="hidden sm:flex">
@@ -1476,7 +1476,7 @@ const getTotalInteractions = () => {
                       </div>
                       <div>
                         <p className="text-white font-bold text-lg">Monad Games Cipher SBT Holder</p>
-                        <p className="text-white/90 text-sm">Congratulations! You've earned +20 bonus points!</p>
+                        <p className="text-white/90 text-sm">Congratulations! You've earned +5 bonus points!</p>
                         <p className="text-white/80 text-xs mt-1">Holding: {nftOwnership.cipherBalance} NFT{parseInt(nftOwnership.cipherBalance) !== 1 ? 's' : ''}</p>
                       </div>
                     </div>
@@ -1498,7 +1498,7 @@ const getTotalInteractions = () => {
                       </div>
                       <div>
                         <p className="text-white font-bold text-lg">Not a Monad Games Cipher SBT Holder</p>
-                        <p className="text-white/90 text-sm">Get this NFT to earn +20 bonus points!</p>
+                        <p className="text-white/90 text-sm">Get this NFT to earn +5 bonus points!</p>
                       </div>
                     </div>
                     <div className="hidden sm:flex">
@@ -1540,7 +1540,7 @@ const getTotalInteractions = () => {
                         </div>
                         <div>
                           <p className="text-white font-bold text-lg">Early Monad User</p>
-                          <p className="text-white/90 text-sm">Congratulations! You've earned +15 bonus points!</p>
+                          <p className="text-white/90 text-sm">Congratulations! You've earned +5 bonus points!</p>
                           <p className="text-white/80 text-xs mt-1">First transaction on {earliestTxDate.toLocaleDateString()} - before February 26th, 2025 cutoff</p>
                         </div>
                       </div>
@@ -1563,7 +1563,7 @@ const getTotalInteractions = () => {
                         <div>
                           <p className="text-white font-bold text-lg">Not an Early User</p>
                           <p className="text-white/90 text-sm">First transaction on {earliestTxDate.toLocaleDateString()} - after February 26th, 2025 cutoff</p>
-                          <p className="text-white/80 text-xs mt-1">Early users get +15 bonus points</p>
+                          <p className="text-white/80 text-xs mt-1">Early users get +5 bonus points</p>
                         </div>
                       </div>
                       <div className="hidden sm:flex">

@@ -204,16 +204,16 @@ export default function MonadScoreCalculationArticle() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 my-8">
             <div className="bg-white border border-purple-200 rounded-xl p-6 shadow-md">
               <h4 className="text-lg font-bold text-purple-800 mb-3">1 Million Nad NFT</h4>
-              <p className="text-gray-700 mb-3">Holding this special NFT now adds a substantial 20-point bonus to your score!</p>
+              <p className="text-gray-700 mb-3">Holding this special NFT adds a 5-point bonus to your score!</p>
               <div className="bg-purple-100 text-purple-800 text-sm font-medium px-3 py-1 rounded-full inline-flex items-center">
-                +20 points
+                +5 points
               </div>
             </div>
             <div className="bg-white border border-purple-200 rounded-xl p-6 shadow-md">
               <h4 className="text-lg font-bold text-purple-800 mb-3">Monad Cipher SBT</h4>
-              <p className="text-gray-700 mb-3">Holding the Monad Games Cipher SBT now adds 20 points to your total score.</p>
+              <p className="text-gray-700 mb-3">Holding the Monad Games Cipher SBT adds 5 points to your total score.</p>
               <div className="bg-purple-100 text-purple-800 text-sm font-medium px-3 py-1 rounded-full inline-flex items-center">
-                +20 points
+                +5 points
               </div>
             </div>
           </div>
@@ -226,7 +226,7 @@ export default function MonadScoreCalculationArticle() {
           
           <div className="bg-green-50 border-l-4 border-green-500 p-6 my-6 rounded-r-lg">
             <p className="text-green-800 font-medium">
-              If your wallet had its first transaction before February 26th, 2025, you'll receive a 15-point early user bonus.
+              If your wallet had its first transaction before February 26th, 2025, you'll receive a 5-point early user bonus.
             </p>
           </div>
           
@@ -266,8 +266,8 @@ export default function MonadScoreCalculationArticle() {
               <li>ActivityPoints = uniqueDays * 0.1 + uniqueWeeks * 0.25 + uniqueMonths * 0.5</li>
               <li>VolumePoints = calculated based on tiered volume system (max 1.0)</li>
               <li>ContractPoints = min(contractsCreated, 20) * 0.025 + min(contractsInteracted, 30) * 0.03</li>
-              <li>NFTBonuses = (is1MillionNadHolder ? 20.0 : 0) + (isCipherSBTHolder ? 20.0 : 0)</li>
-              <li>EarlyUserBonus = (firstTxBeforeFeb262025 ? 15.0 : 0)</li>
+              <li>NFTBonuses = (is1MillionNadHolder ? 5.0 : 0) + (isCipherSBTHolder ? 5.0 : 0)</li>
+              <li>EarlyUserBonus = (firstTxBeforeFeb262025 ? 5.0 : 0)</li>
               <li>InactivityPenalty = daysSinceLastTx &gt;= 5 ? 0.5 : 0</li>
             </ul>
           </div>
@@ -296,7 +296,7 @@ export default function MonadScoreCalculationArticle() {
             <div className="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-xl p-6">
               <h4 className="text-lg font-bold text-purple-800 mb-3">4. Acquire Special NFTs</h4>
               <p>
-                The 1 Million Nad NFT and Monad Cipher SBT now provide massive 20-point boosts each to your score.
+                The 1 Million Nad NFT and Monad Cipher SBT provide valuable 5-point boosts each to your score.
               </p>
             </div>
           </div>
