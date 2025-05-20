@@ -321,7 +321,7 @@ async function fetchAlchemyTransactions(
     return cachedData.data;
   }
   
-  // Get a random Alchemy API key from the pool
+  // Get the Alchemy API keys
   const alchemyApiKeys = [
     process.env.VITE_ALCHEMY_API_KEY_1 || 'FBKOVxVYW0yobV1ntzs7u5qM0E6_xRwO',
     process.env.VITE_ALCHEMY_API_KEY_2 || 'FBKOVxVYW0yobV1ntzs7u5qM0E6_xRwO',
@@ -335,10 +335,11 @@ async function fetchAlchemyTransactions(
     process.env.VITE_ALCHEMY_API_KEY_10 || 'FBKOVxVYW0yobV1ntzs7u5qM0E6_xRwO'
   ].filter(Boolean);
   
-  const randomIndex = Math.floor(Math.random() * alchemyApiKeys.length);
-  const apiKey = alchemyApiKeys[randomIndex];
-  
-  const apiUrl = `https://monad-testnet.g.alchemy.com/v2/${apiKey}`;
+  // Function to get a different API key for each request using round-robin
+  const getApiKey = (pageNumber: number) => {
+    const keyIndex = (pageNumber - 1) % alchemyApiKeys.length;
+    return alchemyApiKeys[keyIndex];
+  };
   
   statusCallback(`Fetching transaction data for high volume wallet (this may take a while)...`);
   try {
@@ -382,7 +383,11 @@ async function fetchAlchemyTransactions(
     let totalVolume = 0;
     
     while (page <= maxPages) {
-      statusCallback(`Fetching transactions page ${page} of max ${maxPages} (${page * 1000} of max ${maxPages * 1000} transactions)...`);
+      // Get a different API key for each page request
+      const apiKey = getApiKey(page);
+      const apiUrl = `https://monad-testnet.g.alchemy.com/v2/${apiKey}`;
+      
+      statusCallback(`Fetching transactions page ${page} of max ${maxPages} (${page * 1000} of max ${maxPages * 1000} transactions) with API key #${page % alchemyApiKeys.length || alchemyApiKeys.length}...`);
       
       const requestBody = {
         id: 1,
