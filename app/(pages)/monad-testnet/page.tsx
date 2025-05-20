@@ -170,6 +170,7 @@ function formatBalance(balance: string, decimals: number = 18): string {
       const fullNumber = integerPart + paddedDecimal;
       const value = BigInt(fullNumber);
       const divisor = BigInt(10 ** decimals);
+      // Always format to exactly 4 decimal places
       return (Number(value) / Number(divisor)).toFixed(4);
     }
 
@@ -178,9 +179,12 @@ function formatBalance(balance: string, decimals: number = 18): string {
     const divisor = BigInt(10 ** decimals);
     const quotient = value / divisor;
     const remainder = value % divisor;
-    const paddedRemainder = remainder.toString().padStart(decimals, '0');
-    const fullNumber = `${quotient}.${paddedRemainder}`;
-    return Number(fullNumber).toFixed(4);
+    
+    // Format to exactly 4 decimal places
+    let decimalStr = remainder.toString().padStart(decimals, '0');
+    decimalStr = decimalStr.substring(0, 4).padEnd(4, '0');
+    
+    return `${quotient}.${decimalStr}`;
   } catch (error) {
     console.error('Error formatting balance:', error);
     return '0.0000';
@@ -321,11 +325,45 @@ interface AlchemyTransfersResponse {
   pageKey?: string;
 }
 
-// Create a cache for transactions from wallets with high transaction counts
-const highVolumeWalletCache = new Map<string, {
-  timestamp: number;
-  data: any;
-}>();
+// Helper functions for browser localStorage caching
+function getFromCache(key: string) {
+  if (typeof window === 'undefined') return null;
+  
+  try {
+    const cachedItem = localStorage.getItem(`monad_cache_${key}`);
+    if (!cachedItem) return null;
+    
+    const parsedItem = JSON.parse(cachedItem);
+    const now = Date.now();
+    const CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
+    
+    // Check if cache is still valid
+    if (now - parsedItem.timestamp < CACHE_TTL) {
+      return parsedItem.data;
+    } else {
+      // Clear expired cache
+      localStorage.removeItem(`monad_cache_${key}`);
+      return null;
+    }
+  } catch (error) {
+    console.error('Error retrieving from cache:', error);
+    return null;
+  }
+}
+
+function saveToCache(key: string, data: any) {
+  if (typeof window === 'undefined') return;
+  
+  try {
+    const cacheItem = {
+      timestamp: Date.now(),
+      data
+    };
+    localStorage.setItem(`monad_cache_${key}`, JSON.stringify(cacheItem));
+  } catch (error) {
+    console.error('Error saving to cache:', error);
+  }
+}
 
 // Add a function to fetch transactions using Alchemy API for users with large transaction counts
 async function fetchAlchemyTransactions(
@@ -340,16 +378,14 @@ async function fetchAlchemyTransactions(
   activityByWeek: number;
   activityByMonth: number;
 }> {
-  // Check the cache first (valid for 24 hours)
+  // Check the browser localStorage cache first (valid for 24 hours)
   const cacheKey = `alchemy_tx_${address.toLowerCase()}`;
-  const now = Date.now();
-  const cachedData = highVolumeWalletCache.get(cacheKey);
-  const CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
+  const cachedData = getFromCache(cacheKey);
   
-  if (cachedData && (now - cachedData.timestamp) < CACHE_TTL) {
-    console.log(`Using cached transaction data for high volume wallet ${address} (cached ${Math.floor((now - cachedData.timestamp) / 60000)} minutes ago)`);
-    statusCallback(`Using cached data from ${new Date(cachedData.timestamp).toLocaleString()}...`);
-    return cachedData.data;
+  if (cachedData) {
+    console.log(`Using cached transaction data for high volume wallet ${address}`);
+    statusCallback(`Using cached data...`);
+    return cachedData;
   }
   
   // Get the Alchemy API keys
@@ -372,7 +408,7 @@ async function fetchAlchemyTransactions(
     return alchemyApiKeys[keyIndex];
   };
   
-  statusCallback(`Fetching transaction data for high volume wallet (this may take a while)...`);
+  statusCallback(`Processing wallet data... 0% complete`);
   try {
     let transactions: any[] = [];
     let pageKey: string | undefined = undefined;
@@ -418,7 +454,7 @@ async function fetchAlchemyTransactions(
       const apiKey = getApiKey(page);
       const apiUrl = `https://monad-testnet.g.alchemy.com/v2/${apiKey}`;
       
-      statusCallback(`Fetching transactions page ${page} of max ${maxPages} (${page * 1000} of max ${maxPages * 1000} transactions) with API key #${page % alchemyApiKeys.length || alchemyApiKeys.length}...`);
+      statusCallback(`Processing wallet data... ${Math.floor((page / maxPages) * 100)}% complete`);
       
       const requestBody = {
         id: 1,
@@ -562,11 +598,8 @@ async function fetchAlchemyTransactions(
       activityByMonth: uniqueMonths.size
     };
     
-    // Store in cache for future use
-    highVolumeWalletCache.set(cacheKey, {
-      timestamp: Date.now(),
-      data: result
-    });
+    // Store in browser localStorage cache for future use
+    saveToCache(cacheKey, result);
     console.log(`Cached transaction data for high volume wallet ${address}`);
     
     return result;
@@ -686,7 +719,7 @@ function MonadTestnetStats() {
         
         // Use Alchemy API if transaction count is high (above 9900)
         if (txCount > 9900) {
-          statusCallback(`High transaction count detected (${txCount.toLocaleString()} transactions), using Alchemy API...`);
+          statusCallback(`Processing high transaction volume wallet...`);
           
           // Use Alchemy API to fetch detailed transaction data
           const alchemyData = await fetchAlchemyTransactions(address, statusCallback);
@@ -802,7 +835,22 @@ function MonadTestnetStats() {
       setNftPage(1); // Reset NFT page when loading new data
       setErc1155Page(1); // Reset ERC1155 page when loading new data
       
-      // Set token data directly from the stats
+      // Fetch tokens, NFTs, and ERC1155 tokens separately even when using Alchemy API
+      if (statsData.tokens?.length === 0 || !statsData.tokens) {
+        // For high volume wallets, we still need token data - fetch it separately
+        statusCallback('Fetching token data...');
+        try {
+          // Use the regular stats function but only extract the token data
+          const tokenData = await fetchMonadTestnetStats(address, msg => console.log(msg));
+          statsData.tokens = tokenData.tokens;
+          statsData.nfts = tokenData.nfts;
+          statsData.erc1155Tokens = tokenData.erc1155Tokens;
+        } catch (err) {
+          console.error('Error fetching token data:', err);
+        }
+      }
+      
+      // Set token data from the stats
       setTokens(statsData.tokens || []);
       setNfts(statsData.nfts || []);
       setErc1155Tokens(statsData.erc1155Tokens || []);
@@ -1115,11 +1163,11 @@ const getTotalInteractions = () => {
                   <div 
                     className="h-full bg-gradient-to-r from-purple-500 to-indigo-600 rounded-full transition-all duration-300"
                     style={{ 
-                      width: `${loadingStatus.includes('Fetching transactions page') ? 
-                        parseInt(loadingStatus.split('page')[1].split('of')[0].trim()) / 
-                        parseInt(loadingStatus.split('of max')[1].split('(')[0].trim()) * 100 : 
-                        loadingStatus.includes('Found') || loadingStatus.includes('Checking NFT') ? '100' : 
-                        loadingStatus.includes('High transaction count') ? '50' : '30'}%` 
+                      width: `${loadingStatus.includes('Processing wallet data') ? 
+                        parseInt(loadingStatus.split('%')[0].split('...')[1].trim()) : 
+                        loadingStatus.includes('Found') || loadingStatus.includes('Checking NFT') ? 100 : 
+                        loadingStatus.includes('Analysis complete') ? 100 :
+                        loadingStatus.includes('High transaction count') ? 50 : 30}%` 
                     }}
                   ></div>
                 </div>
@@ -1497,22 +1545,7 @@ const getTotalInteractions = () => {
                   </div>
                 </div>
                 
-                <div className="mt-4 border-t border-white/20 pt-4">
-                  <p className="text-white/80 text-xs">
-                    <strong>Note:</strong> For high-volume wallets (&gt;9900 transactions), we implement 24-hour caching to reduce API load while ensuring accurate scores.
-                  </p>
-                </div>
-                
-                <div className="mt-4 bg-white/10 p-4 rounded-lg">
-                  <h5 className="text-white text-sm font-bold mb-2">Technical Improvements</h5>
-                  <ul className="text-xs text-white/80 space-y-1.5">
-                    <li><strong>Enhanced Wallet Age:</strong> Using earlier timestamp between first outgoing & incoming transactions.</li>
-                    <li><strong>Contract Interaction Counter:</strong> Properly summing all interactions for accurate engagement metrics.</li>
-                    <li><strong>24-Hour Caching:</strong> For wallets with &gt;9900 transactions to reduce API load.</li>
-                    <li><strong>API Key Rotation:</strong> Distributing requests across multiple API keys for better reliability.</li>
-                    <li><strong>Transaction Linking:</strong> First transaction links point to actual earliest transaction.</li>
-                  </ul>
-                </div>
+
               </div>
               
               {/* 1 Million Nad Holder Badge */}
