@@ -65,6 +65,7 @@ export default function MegaETHStatsChecker() {
     effective_gas_price: string;
     status: number;
     contract_address?: string;
+    asset?: string; // Add asset field to store the token type (ETH, etc.)
   }
 
   interface TransactionResponse {
@@ -430,9 +431,29 @@ export default function MegaETHStatsChecker() {
       Math.floor(new Date(transfer.metadata.blockTimestamp).getTime() / 1000) : 
       Math.floor(Date.now() / 1000);
     
+    // Extract value - handle both numeric and hex representations
+    let value = '0x0';
+    if (transfer.rawContract?.value) {
+      // Use the raw hex value from rawContract if available
+      value = transfer.rawContract.value;
+    } else if (typeof transfer.value === 'number') {
+      // If value is a number (like 0.4), convert to wei (assuming it's in ETH)
+      try {
+        // Convert ETH to wei (multiply by 10^18)
+        const valueInWei = BigInt(Math.floor(transfer.value * 1e18));
+        value = `0x${valueInWei.toString(16)}`;
+      } catch (e) {
+        console.error('Error converting value to wei:', e);
+        value = '0x0';
+      }
+    }
+    
     // Extract gas information
     const gasUsed = transfer.gas ? parseInt(transfer.gas, 16) : 0;
     const gasPrice = transfer.gasPrice ? transfer.gasPrice : '0x0';
+    
+    // Get contract address - could be in rawContract.address or separately in contract_address
+    const contractAddress = transfer.rawContract?.address || transfer.contract_address || undefined;
     
     return {
       chain_id: '6342', // MegaETH chain ID
@@ -440,11 +461,12 @@ export default function MegaETHStatsChecker() {
       block_timestamp: blockTimestamp,
       from_address: transfer.from || '',
       to_address: transfer.to || '',
-      value: transfer.value ? `0x${BigInt(transfer.value).toString(16)}` : '0x0',
+      value: value,
       gas_used: gasUsed,
       effective_gas_price: gasPrice,
       status: 1, // Assume successful transaction
-      contract_address: transfer.rawContract?.address || undefined
+      contract_address: contractAddress,
+      asset: transfer.asset || 'ETH' // Store the asset type
     };
   };
 
@@ -661,7 +683,7 @@ export default function MegaETHStatsChecker() {
   };
 
   // Format ETH value
-  const formatEth = (value: string | number) => {
+  const formatEth = (value: string | number, asset?: string) => {
     try {
       if (!value) return '0.000000 MEGA';
       
@@ -680,7 +702,9 @@ export default function MegaETHStatsChecker() {
         formattedValue = (value as number / 1e18).toFixed(6);
       }
       
-      return formattedValue + ' MEGA';
+      // Use asset field if available, otherwise default to MEGA
+      const assetName = asset || 'MEGA';
+      return formattedValue + ' ' + assetName;
     } catch (e) {
       // Fallback to manual conversion if formatEther fails
       console.error('Error formatting ETH value:', e);
@@ -1365,11 +1389,11 @@ export default function MegaETHStatsChecker() {
                         <span className="text-gray-500 dark:text-gray-400">{walletData.allTransactions?.length || 0} transactions</span>
                         <div className="ml-3 bg-green-100 dark:bg-green-800/30 text-green-700 dark:text-green-300 text-xs font-bold px-2 py-1 rounded-md">
                           {walletScore.transactionsScore} pts
-                            </div>
-                            </div>
-                          </div>
+                        </div>
                       </div>
-                          <button
+                    </div>
+                  </div>
+                  <button
                     onClick={() => setShowAllTransactions(!showAllTransactions)}
                     className="bg-green-50 dark:bg-green-900/20 hover:bg-green-100 dark:hover:bg-green-800/30 text-green-700 dark:text-green-300 px-4 py-2 rounded-lg flex items-center font-medium transition-colors"
                   >
@@ -1380,10 +1404,10 @@ export default function MegaETHStatsChecker() {
                     ) : (
                       <>
                         Show <Eye size={16} className="ml-2" />
-                </>
-              )}
-                </button>
-              </div>
+                      </>
+                    )}
+                  </button>
+                </div>
 
                 {showAllTransactions && walletData.allTransactions && walletData.allTransactions.length > 0 ? (
                   <div className="border border-green-100 dark:border-green-800/20 rounded-xl overflow-hidden">
@@ -1404,19 +1428,22 @@ export default function MegaETHStatsChecker() {
                               Value
                             </th>
                             <th className="px-6 py-4 text-left text-xs font-medium text-green-700 dark:text-green-300 uppercase tracking-wider">
+                              Asset
+                            </th>
+                            <th className="px-6 py-4 text-left text-xs font-medium text-green-700 dark:text-green-300 uppercase tracking-wider">
                               Date
                             </th>
                             <th className="px-6 py-4 text-right text-xs font-medium text-green-700 dark:text-green-300 uppercase tracking-wider">
                               Action
                             </th>
-                      </tr>
-                    </thead>
+                          </tr>
+                        </thead>
                         <tbody className="bg-white dark:bg-gray-800 divide-y divide-green-100 dark:divide-green-800/20">
                           {walletData.allTransactions.slice(0, 100).map((tx, index) => (
                             <tr key={index} className="hover:bg-green-50 dark:hover:bg-green-900/10 transition-colors">
                               <td className="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-700 dark:text-gray-300">
                                 {formatAddress(tx.hash)}
-                            </td>
+                              </td>
                               <td className="px-6 py-4 whitespace-nowrap text-sm font-mono">
                                 <span className={`${
                                   tx.from_address.toLowerCase() === walletData.address.toLowerCase()
@@ -1442,11 +1469,14 @@ export default function MegaETHStatsChecker() {
                               )}
                             </td>
                               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">
-                                {formatEth(tx.value)}
+                                {formatEth(tx.value, tx.asset)}
                             </td>
                               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">
+                                {tx.asset || "ETH"}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">
                                 {formatDate(tx.block_timestamp)}
-                            </td>
+                              </td>
                               <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
                                 <a
                                   href={`https://www.megaexplorer.xyz/tx/${tx.hash}`}
@@ -1459,17 +1489,17 @@ export default function MegaETHStatsChecker() {
                           </td>
                         </tr>
                           ))}
-                    </tbody>
-                  </table>
-                </div>
+                        </tbody>
+                      </table>
+                    </div>
                     {walletData.allTransactions.length > 100 && (
                       <div className="bg-green-50 dark:bg-green-900/10 text-green-700 dark:text-green-300 text-center py-3 border-t border-green-100 dark:border-green-800/20">
                         <p className="text-sm">
                           Showing 100 of {walletData.allTransactions.length.toLocaleString()} transactions
                         </p>
-                </div>
-              )}
-            </div>
+                      </div>
+                    )}
+                  </div>
                 ) : showAllTransactions && (!walletData.allTransactions || walletData.allTransactions.length === 0) ? (
                   <div className="bg-green-50 dark:bg-green-900/10 rounded-xl p-8 text-center border border-green-100 dark:border-green-800/20">
                     <div className="inline-block p-4 bg-white dark:bg-gray-700 rounded-full mb-4 shadow-sm">
@@ -1481,7 +1511,7 @@ export default function MegaETHStatsChecker() {
                     </p>
                   </div>
                 ) : null}
-                </div>
+              </div>
             </div>
           </div>
         )}
