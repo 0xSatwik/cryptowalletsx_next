@@ -709,14 +709,14 @@ function MonadTestnetStats() {
           score: 0 // Score will be calculated later
           };
           
-          // Calculate score based on activity
-          statsData.score = 
-            statsData.activityByDay * 0.1 + 
-            statsData.activityByWeek * 0.25 + 
-            statsData.activityByMonth * 0.5 + 
-            Math.min(statsData.totalTransactions, 500) * 0.01 + 
-            Math.min(statsData.contractsInteracted.total, 100) * 0.03 +
-            Math.min(parseFloat(statsData.totalVolume) / 100, 10); // 1 point per 1000 MON up to 10 points
+          // Calculate base score components
+          const transactionPoints = Math.min(statsData.totalTransactions, 500) * 0.01;
+          const consistencyPoints = statsData.activityByDay * 0.1 + statsData.activityByWeek * 0.25 + statsData.activityByMonth * 0.5;
+          const contractPoints = Math.min(statsData.contractsInteracted.total, 30) * 0.03 + Math.min(statsData.contractsCreated.addresses.length, 20) * 0.025;
+          const volumePoints = Math.min(parseFloat(statsData.totalVolume) / 1000, 1);
+          
+          // Calculate score based on activity - sum of all components
+          statsData.score = transactionPoints + consistencyPoints + contractPoints + volumePoints;
         } else {
           // Use standard API for normal transaction counts
           statusCallback('Fetching wallet stats...');
@@ -1310,12 +1310,12 @@ const getTotalInteractions = () => {
                       <span className="text-purple-100">Contract Activity</span>
                       <span className="font-medium">
                         {(Math.min(stats.contractsCreated.addresses.length, 20) * 0.025 + 
-                         Math.min(stats.contractsInteracted.addresses.length, 30) * 0.03).toFixed(2)} points
+                         Math.min(stats.contractsInteracted.total, 30) * 0.03).toFixed(2)} points
                       </span>
                     </div>
                     <div className="flex flex-wrap justify-between text-xs text-white/70 mt-1">
                       <span>Created: {Math.min(stats.contractsCreated.addresses.length, 20)} × 0.025 = {(Math.min(stats.contractsCreated.addresses.length, 20) * 0.025).toFixed(3)}</span>
-                      <span>Interacted: {Math.min(stats.contractsInteracted.addresses.length, 30)} × 0.03 = {(Math.min(stats.contractsInteracted.addresses.length, 30) * 0.03).toFixed(2)}</span>
+                      <span>Interacted: {Math.min(stats.contractsInteracted.total, 30)} × 0.03 = {(Math.min(stats.contractsInteracted.total, 30) * 0.03).toFixed(2)}</span>
                     </div>
                   </div>
                   
@@ -1391,6 +1391,13 @@ const getTotalInteractions = () => {
                       </div>
                     );
                   })()}
+                </div>
+
+                <div className="mt-4 bg-white/10 p-3 rounded-lg">
+                  <div className="flex justify-between items-center">
+                    <span className="text-purple-100 font-semibold">Total Score</span>
+                    <span className="font-medium text-lg">{calculateWalletScore(stats).toFixed(2)} points</span>
+                  </div>
                 </div>
                 
                 <div className="mt-4 border-t border-white/20 pt-4">
