@@ -40,6 +40,24 @@ interface BlockscoutNftCollectionsResponse {
   next_page_params: any | null;
 }
 
+// Alchemy getNFTsForOwner response type
+interface AlchemyNft {
+  contract: {
+    address: string;
+  };
+  tokenId: string;
+  tokenType: string;
+  image: {
+    cachedUrl?: string;
+    originalUrl?: string;
+  };
+}
+
+interface AlchemyNftsResponse {
+  ownedNfts: AlchemyNft[];
+  totalCount: number;
+}
+
 // Special OG Badges
 const ogBadges: Badge[] = [
   { 
@@ -182,6 +200,30 @@ const ecosystemBadges: Badge[] = [
   }
 ];
 
+// Function to get Alchemy API keys in a sequential manner
+const getNextAlchemyKey = (() => {
+  let currentKeyIndex = 0;
+  const keys = [
+    process.env.VITE_ALCHEMY_API_KEY_1,
+    process.env.VITE_ALCHEMY_API_KEY_2,
+    process.env.VITE_ALCHEMY_API_KEY_3,
+    process.env.VITE_ALCHEMY_API_KEY_4,
+    process.env.VITE_ALCHEMY_API_KEY_5,
+    process.env.VITE_ALCHEMY_API_KEY_6,
+    process.env.VITE_ALCHEMY_API_KEY_7,
+    process.env.VITE_ALCHEMY_API_KEY_8,
+    process.env.VITE_ALCHEMY_API_KEY_9,
+    process.env.VITE_ALCHEMY_API_KEY_10
+  ].filter(key => !!key); // Filter out any undefined keys
+  
+  return () => {
+    if (keys.length === 0) return null;
+    const key = keys[currentKeyIndex];
+    currentKeyIndex = (currentKeyIndex + 1) % keys.length; // Move to next key and wrap around
+    return key;
+  };
+})();
+
 // Helper function to highlight search term in badge names
 function highlightText(text: string, searchTerm: string) {
   if (!searchTerm) return text;
@@ -213,98 +255,74 @@ export default function SoneiumBadgeChecker() {
   const [showShareModal, setShowShareModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
 
-  // Randomize Alchemy API keys to avoid rate limiting
-  const getRandomAlchemyKey = () => {
-    const keys = [
-      process.env.NEXT_PUBLIC_ALCHEMY_API_KEY_1,
-      process.env.NEXT_PUBLIC_ALCHEMY_API_KEY_2,
-      process.env.NEXT_PUBLIC_ALCHEMY_API_KEY_3,
-      process.env.NEXT_PUBLIC_ALCHEMY_API_KEY_4,
-      process.env.NEXT_PUBLIC_ALCHEMY_API_KEY_5,
-      process.env.NEXT_PUBLIC_ALCHEMY_API_KEY_6,
-      process.env.NEXT_PUBLIC_ALCHEMY_API_KEY_7,
-      process.env.NEXT_PUBLIC_ALCHEMY_API_KEY_8,
-      process.env.NEXT_PUBLIC_ALCHEMY_API_KEY_9,
-      process.env.NEXT_PUBLIC_ALCHEMY_API_KEY_10
+  // Check all badges in a single API call
+  const checkAllBadges = async (walletAddress: string) => {
+    // Select one API key for this user's request
+    const apiKey = getNextAlchemyKey();
+    if (!apiKey) {
+      console.error('No Alchemy API keys available');
+      throw new Error('API key configuration error');
+    }
+    
+    // Prepare contract addresses for query
+    const contractAddresses = [
+      ...ogBadges.map(badge => badge.contractAddress),
+      ...ecosystemBadges.map(badge => badge.contractAddress)
     ];
-    return keys[Math.floor(Math.random() * keys.length)];
-  };
-
-  // Check if wallet owns a specific badge
-  const checkBadgeOwnership = async (walletAddress: string, contractAddress: string) => {
-    const apiKey = getRandomAlchemyKey();
-    const options = { method: 'GET', headers: { accept: 'application/json' } };
-    const url = `https://soneium-mainnet.g.alchemy.com/nft/v3/${apiKey}/isHolderOfContract?wallet=${walletAddress}&contractAddress=${contractAddress}`;
+    
+    // Build the URL with all contract addresses
+    let url = `https://soneium-mainnet.g.alchemy.com/nft/v3/${apiKey}/getNFTsForOwner?owner=${walletAddress}&withMetadata=true`;
+    contractAddresses.forEach(address => {
+      url += `&contractAddresses%5B%5D=${address}`;
+    });
     
     try {
+      const options = { method: 'GET', headers: { accept: 'application/json' } };
       const response = await fetch(url, options);
-      const result = await response.json();
-      return result.isHolderOfContract || false;
-    } catch (err) {
-      console.error(`Error checking badge ${contractAddress}:`, err);
-      return false;
-    }
-  };
-
-  // Check if wallet owns OG badges using Blockscout API
-  const checkOGBadgesOwnership = async (walletAddress: string): Promise<Map<string, Badge>> => {
-    const ownedBadges = new Map<string, Badge>();
-    let nextPageParams: any = null;
-    let page = 1;
-    
-    do {
-      try {
-        // Construct URL with pagination if necessary
-        let url = `https://soneium.blockscout.com/api/v2/addresses/${walletAddress}/nft/collections?type=ERC-1155`;
-        if (nextPageParams) {
-          url += `&${new URLSearchParams(nextPageParams).toString()}`;
-        }
-        
-        const response = await fetch(url);
-        if (!response.ok) {
-          throw new Error(`API responded with status ${response.status}`);
-        }
-        
-        const data: BlockscoutNftCollectionsResponse = await response.json();
-        
-        // Look for OG badges in the response
-        for (const item of data.items) {
-          // Check if this is the OG Badge contract
-          if (item.token.address.toLowerCase() === ogBadges[0].contractAddress.toLowerCase()) {
-            // Go through token instances to find badge IDs 0 and 1
-            for (const instance of item.token_instances) {
-              const tokenId = instance.id;
-              
-              // Match with our predefined OG badges
-              const badgeTemplate = ogBadges.find(b => b.tokenId === tokenId);
-              if (badgeTemplate) {
-                const ownedBadge: Badge = {
-                  ...badgeTemplate,
-                  owned: true,
-                  imageUrl: instance.image_url || undefined
-                };
-                ownedBadges.set(tokenId, ownedBadge);
-              }
-            }
-          }
-        }
-        
-        // Check if there are more pages
-        nextPageParams = data.next_page_params;
-        page++;
-        
-        // Safety limit to prevent infinite loops
-        if (page > 10) {
-          console.warn('Reached maximum page limit for NFT collections');
-          break;
-        }
-      } catch (err) {
-        console.error('Error checking OG badges:', err);
-        break;
+      
+      if (!response.ok) {
+        throw new Error(`API responded with status ${response.status}`);
       }
-    } while (nextPageParams);
-    
-    return ownedBadges;
+      
+      const data: AlchemyNftsResponse = await response.json();
+      
+      // Process the response to determine which badges are owned
+      const ownedNfts = new Map<string, AlchemyNft>();
+      
+      // Group NFTs by contract address
+      data.ownedNfts.forEach(nft => {
+        const key = nft.tokenType === 'ERC1155' 
+          ? `${nft.contract.address.toLowerCase()}-${nft.tokenId}`  // For ERC1155, include token ID
+          : nft.contract.address.toLowerCase();                    // For ERC721, just use the contract address
+        ownedNfts.set(key, nft);
+      });
+      
+      // Update OG badges
+      const updatedOgBadges = ogBadges.map(badge => {
+        const key = `${badge.contractAddress.toLowerCase()}-${badge.tokenId}`;
+        const ownedNft = ownedNfts.get(key);
+        return {
+          ...badge,
+          owned: !!ownedNft,
+          imageUrl: ownedNft?.image?.cachedUrl || ownedNft?.image?.originalUrl
+        };
+      });
+      
+      // Update ecosystem badges
+      const updatedEcosystemBadges = ecosystemBadges.map(badge => {
+        const ownedNft = ownedNfts.get(badge.contractAddress.toLowerCase());
+        return {
+          ...badge,
+          owned: !!ownedNft,
+          imageUrl: ownedNft?.image?.cachedUrl || ownedNft?.image?.originalUrl
+        };
+      });
+      
+      return { updatedOgBadges, updatedEcosystemBadges };
+    } catch (err) {
+      console.error('Error checking badges:', err);
+      throw err;
+    }
   };
 
   // Check all badges when address is submitted
@@ -316,40 +334,10 @@ export default function SoneiumBadgeChecker() {
     setError(null);
     
     try {
-      // Check OG badges using Blockscout API
-      const ownedOGBadges = await checkOGBadgesOwnership(address);
-      
-      // Update OG badges list
-      const updatedOgBadges = ogBadges.map(badge => {
-        const ownedBadge = ownedOGBadges.get(badge.tokenId || '');
-        return {
-          ...badge,
-          owned: !!ownedBadge,
-          imageUrl: ownedBadge?.imageUrl
-        };
-      });
+      // Use the new optimized method to check all badges at once
+      const { updatedOgBadges, updatedEcosystemBadges } = await checkAllBadges(address);
       
       setOgBadgesList(updatedOgBadges);
-      
-      // Check ecosystem badges
-      const updatedEcosystemBadges = [...ecosystemBadges];
-      
-      // Process badges in batches of 5 to avoid rate limiting
-      const batchSize = 5;
-      for (let i = 0; i < updatedEcosystemBadges.length; i += batchSize) {
-        const batch = updatedEcosystemBadges.slice(i, i + batchSize);
-        await Promise.all(
-          batch.map(async (badge, batchIndex) => {
-            const isOwned = await checkBadgeOwnership(address, badge.contractAddress);
-            updatedEcosystemBadges[i + batchIndex] = { ...badge, owned: isOwned };
-          })
-        );
-        // Small delay between batches
-        if (i + batchSize < updatedEcosystemBadges.length) {
-          await new Promise(resolve => setTimeout(resolve, 500));
-        }
-      }
-      
       setEcosystemBadgesList(updatedEcosystemBadges);
     } catch (error) {
       console.error('Error checking badges:', error);
@@ -420,6 +408,22 @@ export default function SoneiumBadgeChecker() {
         {badge.owned ? 'Holding' : 'You missed it'}
       </span>
     );
+  };
+
+  // Render badge image if available
+  const renderBadgeImage = (badge: Badge) => {
+    if (badge.imageUrl) {
+      return (
+        <div className="mb-3 mt-2">
+          <img 
+            src={badge.imageUrl} 
+            alt={badge.name} 
+            className="max-h-40 rounded-md object-contain mx-auto shadow-md" 
+          />
+        </div>
+      );
+    }
+    return null;
   };
 
   // Reset search when changing tabs
@@ -615,45 +619,49 @@ export default function SoneiumBadgeChecker() {
                           : 'bg-gradient-to-br from-red-50 to-white border-red-100 hover:border-red-200'
                     }`}
                   >
-                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-                      <div className="flex items-center gap-3 flex-shrink-0">
-                        <div className={`p-3 rounded-full shadow-md ${
-                          badge.owned === undefined
-                            ? 'bg-gray-100'
-                            : badge.owned
-                              ? 'bg-gradient-to-br from-amber-400 to-yellow-500 text-white'
-                              : 'bg-gradient-to-br from-red-400 to-rose-500 text-white'
-                        }`}>
-                          {badge.owned === undefined ? (
-                            <HelpCircle size={22} className="text-gray-500" />
-                          ) : badge.owned ? (
-                            <CheckCircle2 size={22} className="text-white" />
-                          ) : (
-                            <XCircle size={22} className="text-white" />
-                          )}
-                        </div>
-                      </div>
+                    <div className="flex flex-col items-center gap-4">
+                      {renderBadgeImage(badge)}
                       
-                      <div className="flex-1">
-                        <h3 className={`font-bold text-lg ${badge.owned ? 'text-amber-800' : 'text-gray-700'}`}>
-                          {badge.name}
-                          {badge.tokenId && <span className="ml-1 text-xs font-normal text-gray-500">(ID: {badge.tokenId})</span>}
-                        </h3>
-                        <div className="flex flex-wrap gap-2 mt-1">
-                          <span className="text-sm text-gray-500">{truncateAddress(badge.contractAddress)}</span>
-                          {renderBadgeStatus(badge)}
+                      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 w-full">
+                        <div className="flex items-center gap-3 flex-shrink-0">
+                          <div className={`p-3 rounded-full shadow-md ${
+                            badge.owned === undefined
+                              ? 'bg-gray-100'
+                              : badge.owned
+                                ? 'bg-gradient-to-br from-amber-400 to-yellow-500 text-white'
+                                : 'bg-gradient-to-br from-red-400 to-rose-500 text-white'
+                          }`}>
+                            {badge.owned === undefined ? (
+                              <HelpCircle size={22} className="text-gray-500" />
+                            ) : badge.owned ? (
+                              <CheckCircle2 size={22} className="text-white" />
+                            ) : (
+                              <XCircle size={22} className="text-white" />
+                            )}
+                          </div>
                         </div>
+                        
+                        <div className="flex-1">
+                          <h3 className={`font-bold text-lg ${badge.owned ? 'text-amber-800' : 'text-gray-700'}`}>
+                            {badge.name}
+                            {badge.tokenId && <span className="ml-1 text-xs font-normal text-gray-500">(ID: {badge.tokenId})</span>}
+                          </h3>
+                          <div className="flex flex-wrap gap-2 mt-1">
+                            <span className="text-sm text-gray-500">{truncateAddress(badge.contractAddress)}</span>
+                            {renderBadgeStatus(badge)}
+                          </div>
+                        </div>
+                        
+                        <a
+                          href={`https://soneium.blockscout.com/token/${badge.contractAddress}${badge.tokenId ? '/instance/' + badge.tokenId : ''}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex-shrink-0 text-amber-600 hover:text-amber-700 flex items-center gap-1 group bg-amber-50 hover:bg-amber-100 px-3 py-2 rounded-lg transition-all duration-200 border border-amber-100 mt-2 sm:mt-0"
+                        >
+                          <span className="text-sm font-medium">View on Explorer</span>
+                          <ExternalLink size={16} className="group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+                        </a>
                       </div>
-                      
-                      <a
-                        href={`https://soneium.blockscout.com/token/${badge.contractAddress}${badge.tokenId ? '/instance/' + badge.tokenId : ''}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex-shrink-0 text-amber-600 hover:text-amber-700 flex items-center gap-1 group bg-amber-50 hover:bg-amber-100 px-3 py-2 rounded-lg transition-all duration-200 border border-amber-100 mt-2 sm:mt-0"
-                      >
-                        <span className="text-sm font-medium">View on Explorer</span>
-                        <ExternalLink size={16} className="group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
-                      </a>
                     </div>
                   </div>
                 ))}
@@ -696,54 +704,58 @@ export default function SoneiumBadgeChecker() {
                   </div>
                 ) : (
                   filteredEcosystemBadges.map((badge) => (
-            <div 
-              key={badge.contractAddress}
+                    <div 
+                      key={badge.contractAddress}
                       className={`p-5 rounded-xl shadow-md hover:shadow-lg transition-all duration-300 border ${
-                badge.owned === undefined
+                        badge.owned === undefined
                           ? 'bg-white/90 border-gray-100 hover:border-gray-200'
-                  : badge.owned
+                          : badge.owned
                             ? 'bg-gradient-to-br from-green-50 to-white border-green-100 hover:border-green-200'
                             : 'bg-gradient-to-br from-red-50 to-white border-red-100 hover:border-red-200'
                       }`}
                     >
-                      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-                        <div className="flex items-center gap-3 flex-shrink-0">
-                          <div className={`p-3 rounded-full shadow-md ${
-                    badge.owned === undefined
-                      ? 'bg-gray-100'
-                      : badge.owned
-                        ? 'bg-gradient-to-br from-green-400 to-emerald-500 text-white'
-                        : 'bg-gradient-to-br from-red-400 to-rose-500 text-white'
-                  }`}>
-                    {badge.owned === undefined ? (
-                              <HelpCircle size={22} className="text-gray-500" />
-                    ) : badge.owned ? (
-                      <CheckCircle2 size={22} className="text-white" />
-                    ) : (
-                      <XCircle size={22} className="text-white" />
-                    )}
-                  </div>
+                      <div className="flex flex-col items-center gap-4">
+                        {renderBadgeImage(badge)}
+                        
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 w-full">
+                          <div className="flex items-center gap-3 flex-shrink-0">
+                            <div className={`p-3 rounded-full shadow-md ${
+                              badge.owned === undefined
+                                ? 'bg-gray-100'
+                                : badge.owned
+                                  ? 'bg-gradient-to-br from-green-400 to-emerald-500 text-white'
+                                  : 'bg-gradient-to-br from-red-400 to-rose-500 text-white'
+                            }`}>
+                              {badge.owned === undefined ? (
+                                <HelpCircle size={22} className="text-gray-500" />
+                              ) : badge.owned ? (
+                                <CheckCircle2 size={22} className="text-white" />
+                              ) : (
+                                <XCircle size={22} className="text-white" />
+                              )}
+                            </div>
+                          </div>
+                          
+                          <div className="flex-1">
+                            <h3 className={`font-semibold text-lg ${badge.owned ? 'text-emerald-800' : 'text-gray-800'}`}>
+                              {searchTerm ? highlightText(badge.name, searchTerm) : badge.name}
+                            </h3>
+                            <div className="flex flex-wrap gap-2 mt-1">
+                              <span className="text-sm text-gray-500">{truncateAddress(badge.contractAddress)}</span>
+                              {renderBadgeStatus(badge)}
+                            </div>
+                          </div>
+                          
+                          <a
+                            href={`https://soneium.blockscout.com/token/${badge.contractAddress}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex-shrink-0 text-emerald-600 hover:text-emerald-700 flex items-center gap-1 group bg-emerald-50 hover:bg-emerald-100 px-3 py-2 rounded-lg transition-all duration-200 border border-emerald-100 mt-2 sm:mt-0"
+                          >
+                            <span className="text-sm font-medium">View on Explorer</span>
+                            <ExternalLink size={16} className="group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+                          </a>
                         </div>
-                        
-                        <div className="flex-1">
-                          <h3 className={`font-semibold text-lg ${badge.owned ? 'text-emerald-800' : 'text-gray-800'}`}>
-                            {searchTerm ? highlightText(badge.name, searchTerm) : badge.name}
-                          </h3>
-                          <div className="flex flex-wrap gap-2 mt-1">
-                            <span className="text-sm text-gray-500">{truncateAddress(badge.contractAddress)}</span>
-                            {renderBadgeStatus(badge)}
-                  </div>
-                </div>
-                        
-                <a
-                  href={`https://soneium.blockscout.com/token/${badge.contractAddress}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                          className="flex-shrink-0 text-emerald-600 hover:text-emerald-700 flex items-center gap-1 group bg-emerald-50 hover:bg-emerald-100 px-3 py-2 rounded-lg transition-all duration-200 border border-emerald-100 mt-2 sm:mt-0"
-                >
-                          <span className="text-sm font-medium">View on Explorer</span>
-                  <ExternalLink size={16} className="group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
-                </a>
                       </div>
                     </div>
                   ))
