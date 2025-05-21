@@ -13,9 +13,14 @@ export default function sitemap(): MetadataRoute.Sitemap {
     '',
     '/about',
     '/contact',
+    '/post',
     '/privacy',
     '/web3-tools',
     
+// posts
+'/post/monad-testnet-score-calculation',
+'/post/mitosis-defi-revolution',
+
     // Tool pages
     '/balance-checker',
     '/megaeth',
