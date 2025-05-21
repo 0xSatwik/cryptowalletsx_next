@@ -4,7 +4,6 @@ import { Metadata } from 'next';
 import Header from './components/layout/Header';
 import Footer from './components/layout/Footer';
 import HomePageWrapper from './components/layout/HomePageWrapper';
-import Script from 'next/script';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -23,33 +22,6 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <head>
-        {/* Google Analytics (gtag.js) */}
-        <Script 
-          strategy="afterInteractive" 
-          src="https://www.googletagmanager.com/gtag/js?id=G-V9NDVEH82Z" 
-        />
-        <Script
-          id="gtag-init"
-          strategy="afterInteractive"
-          dangerouslySetInnerHTML={{
-            __html: `
-              window.dataLayer = window.dataLayer || [];
-              function gtag(){dataLayer.push(arguments);}
-              gtag('js', new Date());
-              gtag('config', 'G-V9NDVEH82Z');
-            `,
-          }}
-        />
-
-        {/* Google AdSense */}
-        <Script 
-          async
-          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8421191784631095"
-          crossOrigin="anonymous"
-          strategy="afterInteractive"
-        />
-      </head>
       <body className={inter.className}>
         <div className="flex flex-col min-h-screen">
           <Header />
