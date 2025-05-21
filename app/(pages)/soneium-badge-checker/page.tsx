@@ -12,6 +12,14 @@ interface Badge {
   isSpecial?: boolean;
   tokenId?: string;
   imageUrl?: string;
+  animationUrl?: string;
+  description?: string;
+  additionalNfts?: {
+    tokenId: string;
+    name?: string;
+    imageUrl?: string;
+    animationUrl?: string;
+  }[];
 }
 
 // Define Blockscout API response types
@@ -48,6 +56,13 @@ interface AlchemyNft {
   tokenId: string;
   tokenType: string;
   image: {
+    cachedUrl?: string;
+    thumbnailUrl?: string;
+    originalUrl?: string;
+  };
+  name?: string;
+  description?: string;
+  animation?: {
     cachedUrl?: string;
     originalUrl?: string;
   };
@@ -285,36 +300,71 @@ export default function SoneiumBadgeChecker() {
       }
       
       const data: AlchemyNftsResponse = await response.json();
+      console.log("NFT response data:", data);
       
-      // Process the response to determine which badges are owned
-      const ownedNfts = new Map<string, AlchemyNft>();
+      // Create maps to track owned NFTs by both contract-specific and contract-tokenId keys
+      const ownedNftsByContract = new Map<string, AlchemyNft[]>();
+      const ownedNftsByTokenId = new Map<string, AlchemyNft>();
       
-      // Group NFTs by contract address
+      // Group NFTs by contract address and by specific tokenId
       data.ownedNfts.forEach(nft => {
-        const key = nft.tokenType === 'ERC1155' 
-          ? `${nft.contract.address.toLowerCase()}-${nft.tokenId}`  // For ERC1155, include token ID
-          : nft.contract.address.toLowerCase();                    // For ERC721, just use the contract address
-        ownedNfts.set(key, nft);
+        // Group by contract address (for ERC721 and general ownership checks)
+        const contractKey = nft.contract.address.toLowerCase();
+        if (!ownedNftsByContract.has(contractKey)) {
+          ownedNftsByContract.set(contractKey, []);
+        }
+        ownedNftsByContract.get(contractKey)?.push(nft);
+        
+        // For ERC1155, also index by contract+tokenId for specific token checks
+        if (nft.tokenType === 'ERC1155') {
+          const tokenKey = `${contractKey}-${nft.tokenId}`;
+          ownedNftsByTokenId.set(tokenKey, nft);
+        }
       });
       
       // Update OG badges
       const updatedOgBadges = ogBadges.map(badge => {
         const key = `${badge.contractAddress.toLowerCase()}-${badge.tokenId}`;
-        const ownedNft = ownedNfts.get(key);
+        const ownedNft = ownedNftsByTokenId.get(key);
         return {
           ...badge,
           owned: !!ownedNft,
-          imageUrl: ownedNft?.image?.cachedUrl || ownedNft?.image?.originalUrl
+          imageUrl: ownedNft?.image?.cachedUrl || ownedNft?.image?.thumbnailUrl || ownedNft?.image?.originalUrl,
+          animationUrl: ownedNft?.animation?.cachedUrl || ownedNft?.animation?.originalUrl,
+          description: ownedNft?.description
         };
       });
       
       // Update ecosystem badges
       const updatedEcosystemBadges = ecosystemBadges.map(badge => {
-        const ownedNft = ownedNfts.get(badge.contractAddress.toLowerCase());
+        const contractAddress = badge.contractAddress.toLowerCase();
+        const ownedNfts = ownedNftsByContract.get(contractAddress) || [];
+        
+        // Check if any NFT from this contract is owned
+        const isOwned = ownedNfts.length > 0;
+        
+        // Get the first owned NFT from this contract for metadata
+        const ownedNft = ownedNfts[0];
+        
+        // Collect additional NFTs from the same contract if there are multiple
+        const additionalNfts = ownedNfts.length > 1 
+          ? ownedNfts.slice(1).map(nft => ({
+              tokenId: nft.tokenId,
+              name: nft.name,
+              imageUrl: nft.image?.cachedUrl || nft.image?.thumbnailUrl || nft.image?.originalUrl,
+              animationUrl: nft.animation?.cachedUrl || nft.animation?.originalUrl
+            })) 
+          : undefined;
+        
         return {
           ...badge,
-          owned: !!ownedNft,
-          imageUrl: ownedNft?.image?.cachedUrl || ownedNft?.image?.originalUrl
+          owned: isOwned,
+          imageUrl: ownedNft?.image?.cachedUrl || ownedNft?.image?.thumbnailUrl || ownedNft?.image?.originalUrl || (isOwned ? `https://assets.untitledbank.co/badge/ub-soneium-og-badge.gif` : undefined),
+          tokenId: ownedNft?.tokenId,
+          animationUrl: ownedNft?.animation?.cachedUrl || ownedNft?.animation?.originalUrl,
+          description: ownedNft?.description,
+          name: ownedNft?.name || badge.name,
+          additionalNfts
         };
       });
       
@@ -412,18 +462,111 @@ export default function SoneiumBadgeChecker() {
 
   // Render badge image if available
   const renderBadgeImage = (badge: Badge) => {
-    if (badge.imageUrl) {
+    // Check if badge has multiple NFTs to display
+    if (badge.additionalNfts && badge.additionalNfts.length > 0) {
       return (
-        <div className="mb-3 mt-2">
-          <img 
-            src={badge.imageUrl} 
-            alt={badge.name} 
-            className="max-h-40 rounded-md object-contain mx-auto shadow-md" 
-          />
+        <div className="mb-4 mt-3">
+          <div className="text-sm text-gray-600 mb-2 text-center font-medium">
+            {badge.additionalNfts.length + 1} variants of this badge collected
+          </div>
+          
+          {/* Main badge */}
+          <div className="mb-3">
+            {renderSingleBadgeImage(badge)}
+          </div>
+          
+          {/* Additional badges in a gallery */}
+          <div className="flex flex-wrap justify-center gap-2">
+            {badge.additionalNfts.map((nft, index) => (
+              <div key={`${badge.contractAddress}-${nft.tokenId || index}`} className="w-20 h-20 overflow-hidden rounded-md shadow-md">
+                {nft.animationUrl ? (
+                  <video
+                    src={nft.animationUrl}
+                    autoPlay
+                    loop
+                    muted
+                    playsInline
+                    className="w-full h-full object-cover"
+                  />
+                ) : nft.imageUrl ? (
+                  <img
+                    src={nft.imageUrl}
+                    alt={nft.name || `Additional badge ${index + 1}`}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full bg-gray-100 flex items-center justify-center">
+                    <Shield size={16} className="text-gray-400" />
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
         </div>
       );
     }
-    return null;
+    
+    // For badges with a single NFT, render normally
+    return renderSingleBadgeImage(badge);
+  };
+
+  // Helper function to render a single badge image
+  const renderSingleBadgeImage = (badge: Badge) => {
+    // For animated badges (like the OG badge)
+    if (badge.animationUrl) {
+      return (
+        <div className="relative group mb-3 mt-2 max-w-xs mx-auto w-full">
+          <video 
+            src={badge.animationUrl} 
+            autoPlay 
+            loop 
+            muted 
+            playsInline
+            className="w-full h-auto rounded-md shadow-lg hover:shadow-xl transition-all duration-300 object-cover max-h-60" 
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end justify-center p-3">
+            <span className="text-white text-sm font-medium truncate">{badge.name}</span>
+          </div>
+        </div>
+      );
+    }
+    
+    // For static images
+    if (badge.imageUrl) {
+      if (badge.imageUrl.endsWith('.gif')) {
+        return (
+          <div className="relative group mb-3 mt-2 max-w-xs mx-auto w-full">
+            <img 
+              src={badge.imageUrl} 
+              alt={badge.name} 
+              className="w-full h-auto rounded-md shadow-lg hover:shadow-xl transition-all duration-300 object-cover max-h-60" 
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end justify-center p-3">
+              <span className="text-white text-sm font-medium truncate">{badge.name}</span>
+            </div>
+          </div>
+        );
+      }
+      return (
+        <div className="relative group mb-3 mt-2 max-w-xs mx-auto w-full overflow-hidden rounded-md shadow-lg hover:shadow-xl transition-all duration-300">
+          <img 
+            src={badge.imageUrl} 
+            alt={badge.name} 
+            className="w-full h-auto object-cover max-h-60 transform group-hover:scale-105 transition-transform duration-300" 
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end justify-center p-3">
+            <span className="text-white text-sm font-medium truncate">{badge.name}</span>
+          </div>
+        </div>
+      );
+    }
+    
+    // Fallback if no image is available
+    return (
+      <div className="flex items-center justify-center h-40 w-full max-w-xs mx-auto mb-3 mt-2 bg-gradient-to-br from-gray-100 to-gray-200 rounded-md">
+        <Shield size={50} className="text-gray-400" />
+      </div>
+    );
   };
 
   // Reset search when changing tabs
