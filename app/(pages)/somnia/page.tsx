@@ -6,10 +6,12 @@ import { ExternalLink, Eye, EyeOff, Info, Twitter, Share2, Award, Star, Shield, 
 import { JsonRpcProvider } from 'ethers';
 
 // Constants for API
-const SOMNIA_API_BASE_URL = 'https://api.socialscan.io/dream-somnia/v1/explorer';
 const SOMNIA_RPC_URL = 'https://dream-rpc.somnia.network/';
 const SOMNIA_NFT_API_URL = 'https://somnia-poc.w3us.site/api/v2/addresses';
 const SOMNIA_TOKEN_API_URL = 'https://somnia-poc.w3us.site/api/v2/addresses';
+// New RPC-based API endpoints for account stats and transaction history
+const SOMNIA_ACCOUNT_STATS_URL = 'https://somnia-explorer-api.vercel.app/api/account/counters/';
+const SOMNIA_TRANSACTION_HISTORY_URL = 'https://somnia-explorer-api.vercel.app/api/account/transactions/';
 
 // Component for Somnia Stats Checker
 export default function SomniaStatsChecker() {
@@ -59,11 +61,49 @@ export default function SomniaStatsChecker() {
     receipt_contract_address?: string;
   }
 
+  // Updated interface for new API transaction response
+  interface RPCTransaction {
+    hash: string;
+    from: string;
+    to: string;
+    value: string;
+    timestamp: string;
+    gasUsed: number;
+    gasPrice: string;
+    fee: string;
+    methodName: string;
+    isContract: boolean;
+    createdContract?: string;
+  }
+
   interface TransactionResponse {
     data: Transaction[];
     total: number;
     page: number;
     size: number;
+  }
+
+  // New interface for RPC-based transaction response
+  interface RPCTransactionResponse {
+    transactions: RPCTransaction[];
+    count: number;
+    page: number;
+    limit: number;
+  }
+
+  // Updated interface for new API account stats response
+  interface AccountStatsResponse {
+    address: string;
+    balance: string;
+    transactionCount: number;
+    firstTxTimestamp: string;
+    uniqueDaysActive: number;
+    uniqueWeeksActive: number;
+    uniqueMonthsActive: number;
+    totalVolume: string;
+    totalGasSpent: string;
+    contractsCreated: number;
+    contractsInteracted: number;
   }
 
   interface ProfileResponse {
@@ -159,27 +199,36 @@ export default function SomniaStatsChecker() {
   };
 
   // Function to calculate wallet score
-  const calculateWalletScore = (walletData: WalletData): WalletScore => {
+  const calculateWalletScore = (walletData: WalletData, accountStats?: AccountStatsResponse): WalletScore => {
+    // Use accountStats data if available, otherwise fallback to calculated values
+    const txCount = accountStats?.transactionCount || walletData.allTransactions.length;
+    const contractsCreated = accountStats?.contractsCreated || walletData.contractsCreated.length;
+    const contractsInteracted = accountStats?.contractsInteracted || walletData.contractsInteracted.size;
+    const uniqueDays = accountStats?.uniqueDaysActive || walletData.uniqueDays.size;
+    const uniqueWeeks = accountStats?.uniqueWeeksActive || walletData.uniqueWeeks.size;
+    const uniqueMonths = accountStats?.uniqueMonthsActive || walletData.uniqueMonths.size;
+    const totalVolume = accountStats ? parseFloat(accountStats.totalVolume) : walletData.totalVolume;
+    
     // Transactions score: 1 point per tx, max 10000
-    const transactionsScore = Math.min(walletData.allTransactions.length, 10000);
+    const transactionsScore = Math.min(txCount, 10000);
     
     // Contract creation score: 5 points per contract, max 100
-    const contractCreationScore = Math.min(walletData.contractsCreated.length * 5, 100);
+    const contractCreationScore = Math.min(contractsCreated * 5, 100);
     
     // Contract interaction score: 5 points per unique contract, max 5000
-    const contractInteractionScore = Math.min(walletData.contractsInteracted.size * 5, 5000);
+    const contractInteractionScore = Math.min(contractsInteracted * 5, 5000);
     
     // Volume score: 5 points per 100 native coin volume, max 5000
-    const volumeScore = Math.min(Math.floor(walletData.totalVolume / 100) * 5, 5000);
+    const volumeScore = Math.min(Math.floor(totalVolume / 100) * 5, 5000);
     
     // Unique days score: 5 points per unique day, no limit
-    const uniqueDaysScore = walletData.uniqueDays.size * 5;
+    const uniqueDaysScore = uniqueDays * 5;
     
     // Unique weeks score: 5 points per unique week, no limit
-    const uniqueWeeksScore = walletData.uniqueWeeks.size * 5;
+    const uniqueWeeksScore = uniqueWeeks * 5;
     
     // Unique months score: 5 points per unique month, no limit
-    const uniqueMonthsScore = walletData.uniqueMonths.size * 5;
+    const uniqueMonthsScore = uniqueMonths * 5;
     
     // Total score
     const totalScore = transactionsScore + contractCreationScore + contractInteractionScore + 
@@ -213,60 +262,79 @@ export default function SomniaStatsChecker() {
     setIsValidAddress(address === '' || isValidEthAddress(address));
   };
 
-  // Function to fetch profile (balance) information
+  // Function to fetch profile (balance) information using new RPC API
   const fetchProfile = async (address: string): Promise<ProfileResponse | null> => {
     try {
-      const url = `${SOMNIA_API_BASE_URL}/address/${address}/profile`;
+      const url = `${SOMNIA_ACCOUNT_STATS_URL}${address}`;
       const response = await fetch(url);
-      
-      if (response.status === 429) {
-        const errorData = await response.json();
-        if (errorData.message && errorData.message.includes("180 per 1 minute")) {
-          throw new Error("Rate limit exceeded: 180 requests per minute. Please wait a few minutes and try again.");
-        }
-        throw new Error(`Rate limit exceeded. Please wait a few minutes and try again.`);
-      }
       
       if (!response.ok) {
         console.error(`Failed to fetch profile: ${response.status}`);
         return null;
       }
       
-      return await response.json();
+      const accountStats: AccountStatsResponse = await response.json();
+      
+      // Convert to format compatible with existing code
+      return {
+        balance: accountStats.balance,
+        native_token_price: '0', // Not provided by new API
+        balance_dollar: '0', // Not provided by new API
+        is_contract: false, // Not provided by new API
+        is_token: false // Not provided by new API
+      };
     } catch (error) {
       console.error('Error fetching profile:', error);
       throw error; // Re-throw to be handled by the fetchWalletData function
     }
   };
 
-  // Function to get transaction count using RPC
+  // Function to get transaction count using the account stats API
   const getTransactionCount = async (address: string): Promise<number> => {
     try {
-      const provider = new JsonRpcProvider(SOMNIA_RPC_URL);
-      const txCount = await provider.getTransactionCount(address);
-      console.log(`Total transaction count from RPC: ${txCount}`);
+      const url = `${SOMNIA_ACCOUNT_STATS_URL}${address}`;
+      const response = await fetch(url);
+      
+      if (!response.ok) {
+        console.error(`Failed to fetch transaction count: ${response.status}`);
+        return 0;
+      }
+      
+      const accountStats: AccountStatsResponse = await response.json();
+      const txCount = accountStats.transactionCount;
+      console.log(`Total transaction count from API: ${txCount}`);
       
       // Save the RPC transaction count to state
       setTotalTxCountFromRPC(txCount);
       
       return txCount;
     } catch (error) {
-      console.error('Error fetching transaction count from RPC:', error);
-      // Return a high number to fallback to the regular batching approach
-      return 10000;
+      console.error('Error fetching transaction count from API:', error);
+      // Fallback to RPC method if the API fails
+      try {
+        const provider = new JsonRpcProvider(SOMNIA_RPC_URL);
+        const txCount = await provider.getTransactionCount(address);
+        console.log(`Total transaction count from RPC: ${txCount}`);
+        setTotalTxCountFromRPC(txCount);
+        return txCount;
+      } catch (rpcError) {
+        console.error('Error fetching transaction count from RPC:', rpcError);
+        // Return a high number to fallback to the regular batching approach
+        return 10000;
+      }
     }
   };
 
-  // Function to fetch all transactions with optimized parallel requests
+  // Function to fetch all transactions with optimized parallel requests using new API
   const fetchAllTransactions = async (address: string): Promise<Transaction[]> => {
     try {
-      // First get transaction count using RPC to determine how many requests we need
+      // First get transaction count to determine how many requests we need
       const txCount = await getTransactionCount(address);
       
       // Define constants for paging
-      const pageSize = 500; // API's max page size
+      const pageSize = 100; // Adjust based on new API's recommended page size
       const maxParallelRequests = 5; // Maximum parallel requests per batch
-      const maxPages = 20; // Maximum total pages to fetch (10,000 transactions)
+      const maxPages = 20; // Maximum total pages to fetch (2,000 transactions)
       
       // Calculate how many pages we actually need
       const requiredPages = Math.min(Math.ceil(txCount / pageSize), maxPages);
@@ -287,25 +355,17 @@ export default function SomniaStatsChecker() {
         console.log(`Fetching batch from page ${batchStart + 1} to ${batchEnd}`);
         
         // Create array of promises for this batch
-        const batchPromises: Promise<TransactionResponse>[] = [];
+        const batchPromises: Promise<RPCTransactionResponse>[] = [];
         
         // Add promises for each page in this batch
         for (let page = batchStart + 1; page <= batchEnd; page++) {
-          const url = `${SOMNIA_API_BASE_URL}/transactions?size=${pageSize}&page=${page}&address=${address}`;
+          const url = `${SOMNIA_TRANSACTION_HISTORY_URL}${address}?page=${page}&limit=${pageSize}`;
           
           const pagePromise = fetch(url)
             .then(async response => {
-              if (response.status === 429) {
-                const errorData = await response.json();
-                if (errorData.message && errorData.message.includes("180 per 1 minute")) {
-                  throw new Error("Rate limit exceeded: 180 requests per minute. Please wait a few minutes and try again.");
-                }
-                throw new Error(`Rate limit exceeded. Please wait a few minutes and try again.`);
-              }
-              
               if (!response.ok) {
                 console.error(`Failed to fetch transactions for page ${page}: ${response.status}`);
-                return { data: [], total: 0, page: 0, size: 0 } as TransactionResponse;
+                return { transactions: [], count: 0, page: 0, limit: 0 } as RPCTransactionResponse;
               }
               return response.json();
             })
@@ -322,11 +382,26 @@ export default function SomniaStatsChecker() {
         
         // Process results from this batch
         for (const pageResult of batchResults) {
-          if (pageResult.data && Array.isArray(pageResult.data)) {
-            allTransactions.push(...pageResult.data);
+          if (pageResult.transactions && Array.isArray(pageResult.transactions)) {
+            // Convert RPCTransaction to Transaction format
+            const formattedTransactions = pageResult.transactions.map((tx: RPCTransaction): Transaction => ({
+              hash: tx.hash,
+              from_address: tx.from,
+              to_address: tx.to,
+              value: tx.value,
+              block_timestamp: tx.timestamp,
+              receipt_gas_used: tx.gasUsed,
+              gas_price: tx.gasPrice,
+              transaction_fee: tx.fee,
+              method: tx.methodName,
+              is_contract: tx.isContract,
+              receipt_contract_address: tx.createdContract
+            }));
+            
+            allTransactions.push(...formattedTransactions);
             
             // Check if we've reached the actual end of data (fewer results than page size)
-            if (pageResult.data.length < pageSize) {
+            if (pageResult.transactions.length < pageSize) {
               console.log(`End of data reached at page ${pageResult.page}`);
               // No need to fetch further pages
               batchStart = requiredPages; // This will end the outer loop
@@ -428,14 +503,6 @@ export default function SomniaStatsChecker() {
     try {
       const response = await fetch(`${SOMNIA_NFT_API_URL}/${address}/nft/collections?type=ERC-721%2CERC-404%2CERC-1155`);
       
-      if (response.status === 429) {
-        const errorData = await response.json();
-        if (errorData.message && errorData.message.includes("180 per 1 minute")) {
-          throw new Error("Rate limit exceeded: 180 requests per minute. Please wait a few minutes and try again.");
-        }
-        throw new Error(`Rate limit exceeded. Please wait a few minutes and try again.`);
-      }
-      
       if (!response.ok) {
         console.error(`Failed to fetch NFTs: ${response.status}`);
         return;
@@ -484,21 +551,34 @@ export default function SomniaStatsChecker() {
     try {
       const response = await fetch(`${SOMNIA_TOKEN_API_URL}/${address}/tokens?type=ERC-20`);
       
-      if (response.status === 429) {
-        const errorData = await response.json();
-        if (errorData.message && errorData.message.includes("180 per 1 minute")) {
-          throw new Error("Rate limit exceeded: 180 requests per minute. Please wait a few minutes and try again.");
-        }
-        throw new Error(`Rate limit exceeded. Please wait a few minutes and try again.`);
-      }
-      
       if (!response.ok) {
         console.error(`Failed to fetch token holdings: ${response.status}`);
         return;
       }
       
       const data = await response.json();
-      setTokenHoldings(data.items || []);
+      
+      // Filter out tokens with zero balance and normalize the data
+      const normalizedTokens = (data.items || []).filter((holding: TokenHolding) => {
+        const value = holding.value || '0';
+        return BigInt(value) > BigInt(0);
+      }).map((holding: TokenHolding) => {
+        // Ensure token data is complete
+        if (!holding.token) {
+          holding.token = {
+            name: 'Unknown Token',
+            symbol: 'UNKNOWN',
+            decimals: '18',
+            address: '',
+            total_supply: '0',
+            holders: '0',
+            type: 'ERC-20'
+          };
+        }
+        return holding;
+      });
+      
+      setTokenHoldings(normalizedTokens);
     } catch (error) {
       console.error('Error fetching token holdings:', error);
       // We don't need to show rate limit error for tokens since the main data is already displayed
@@ -554,6 +634,16 @@ export default function SomniaStatsChecker() {
     setTokenHoldings([]);
     
     try {
+      // Fetch account stats first to get basic info
+      const url = `${SOMNIA_ACCOUNT_STATS_URL}${walletAddress}`;
+      const accountStatsResponse = await fetch(url);
+      
+      if (!accountStatsResponse.ok) {
+        throw new Error('Failed to fetch account stats data');
+      }
+      
+      const accountStats: AccountStatsResponse = await accountStatsResponse.json();
+      
       // Run these requests in parallel using Promise.all
       const [profileData, allTransactions] = await Promise.all([
         // Get profile data from API
@@ -574,7 +664,12 @@ export default function SomniaStatsChecker() {
       let walletAge = 'Unknown';
       let firstTxDate = '';
       
-      if (processedData.firstTransaction) {
+      // Use first transaction from account stats if available, otherwise use processed data
+      if (accountStats.firstTxTimestamp) {
+        const firstTxTimestamp = parseISO(accountStats.firstTxTimestamp);
+        walletAge = formatDistanceToNow(firstTxTimestamp, { addSuffix: true });
+        firstTxDate = format(firstTxTimestamp, 'PPpp'); // Format: 'Apr 29, 2023, 2:15:30 PM'
+      } else if (processedData.firstTransaction) {
         const firstTxTimestamp = parseISO(processedData.firstTransaction.block_timestamp);
         walletAge = formatDistanceToNow(firstTxTimestamp, { addSuffix: true });
         firstTxDate = format(firstTxTimestamp, 'PPpp'); // Format: 'Apr 29, 2023, 2:15:30 PM'
@@ -583,18 +678,25 @@ export default function SomniaStatsChecker() {
       // Set complete wallet data
       const fullWalletData = {
         address: walletAddress,
-        balance: profileData.balance,
+        balance: accountStats.balance || profileData.balance,
         firstTransaction: processedData.firstTransaction,
         walletAge,
         firstTxDate,
+        uniqueDays: new Set(Array.from({ length: accountStats.uniqueDaysActive || 0 }).map((_, i) => `day-${i}`)),
+        uniqueWeeks: new Set(Array.from({ length: accountStats.uniqueWeeksActive || 0 }).map((_, i) => `week-${i}`)),
+        uniqueMonths: new Set(Array.from({ length: accountStats.uniqueMonthsActive || 0 }).map((_, i) => `month-${i}`)),
+        totalVolume: parseFloat(accountStats.totalVolume || '0'),
+        totalGasSpent: parseFloat(accountStats.totalGasSpent || '0'),
+        contractsCreated: processedData.contractsCreated || [],
+        contractsInteracted: processedData.contractsInteracted || new Set(),
         allTransactions,
-        ...processedData,
+        contractInteractionCounts: processedData.contractInteractionCounts || new Map(),
       } as WalletData;
       
       setWalletData(fullWalletData);
       
       // Calculate and set wallet score
-      const score = calculateWalletScore(fullWalletData);
+      const score = calculateWalletScore(fullWalletData, accountStats);
       setWalletScore(score);
       
       // Fetch NFTs and token holdings for the wallet
@@ -640,6 +742,7 @@ export default function SomniaStatsChecker() {
   const generateTwitterShareText = () => {
     if (!walletData || !walletScore) return '';
     
+    // For tx count, prefer the value from API, fallback to local calculation
     const txCount = totalTxCountFromRPC > 0 ? totalTxCountFromRPC : walletData.allTransactions.length;
     
     const lines = [
