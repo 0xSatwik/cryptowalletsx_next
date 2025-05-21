@@ -178,11 +178,11 @@ const ecosystemBadges: Badge[] = [
     contractAddress: "0xAa6c38A85e5781bCc410693B52F64EfF1aFcd3c6"
   },
   { 
-    name: "Owlto Soneium Badge", 
+    name: "Owlto X Soneium Ecosystem Badge", 
     contractAddress: "0x1eC6AACC79f3c4817d7fea2268e1c54C6b2662Fb"
   },
   { 
-    name: "Orbiter Soneium Badge", 
+    name: "Orbiter x Soneium Quest", 
     contractAddress: "0xc59f0D1B1b614d8446dDe1760fc3e6ae57bF9501"
   },
   { 
@@ -302,6 +302,10 @@ export default function SoneiumBadgeChecker() {
       const data: AlchemyNftsResponse = await response.json();
       console.log("NFT response data:", data);
       
+      // Debug: Show all contract addresses from API response
+      const receivedContracts = data.ownedNfts.map(nft => nft.contract.address.toLowerCase());
+      console.log("Received contract addresses:", receivedContracts);
+      
       // Create maps to track owned NFTs by both contract-specific and contract-tokenId keys
       const ownedNftsByContract = new Map<string, AlchemyNft[]>();
       const ownedNftsByTokenId = new Map<string, AlchemyNft>();
@@ -322,6 +326,9 @@ export default function SoneiumBadgeChecker() {
         }
       });
       
+      // Debug: Log the found contracts
+      console.log("Found contracts in map:", Array.from(ownedNftsByContract.keys()));
+      
       // Update OG badges
       const updatedOgBadges = ogBadges.map(badge => {
         const key = `${badge.contractAddress.toLowerCase()}-${badge.tokenId}`;
@@ -338,6 +345,11 @@ export default function SoneiumBadgeChecker() {
       // Update ecosystem badges
       const updatedEcosystemBadges = ecosystemBadges.map(badge => {
         const contractAddress = badge.contractAddress.toLowerCase();
+        
+        // Debug this specific badge check
+        console.log(`Checking badge: ${badge.name}, Address: ${contractAddress}`);
+        console.log(`Has NFTs for this contract: ${ownedNftsByContract.has(contractAddress)}`);
+        
         const ownedNfts = ownedNftsByContract.get(contractAddress) || [];
         
         // Check if any NFT from this contract is owned
@@ -464,6 +476,10 @@ export default function SoneiumBadgeChecker() {
   const renderBadgeImage = (badge: Badge) => {
     // Check if badge has multiple NFTs to display
     if (badge.additionalNfts && badge.additionalNfts.length > 0) {
+      console.log(`Rendering multiple variants for badge: ${badge.name}`);
+      console.log(`Main badge image URL: ${badge.imageUrl}`);
+      console.log(`Additional images:`, badge.additionalNfts.map(nft => nft.imageUrl));
+      
       return (
         <div className="mb-4 mt-3">
           <div className="text-sm text-gray-600 mb-2 text-center font-medium">
@@ -984,8 +1000,8 @@ export default function SoneiumBadgeChecker() {
                 <div className="bg-indigo-50 rounded-lg p-3 text-indigo-700">Moon Medal Badge</div>
                 <div className="bg-indigo-50 rounded-lg p-3 text-indigo-700">KYO FINANCE Soneium Badge</div>
                 <div className="bg-indigo-50 rounded-lg p-3 text-indigo-700">SONEX GOAT BADGE</div>
-                <div className="bg-indigo-50 rounded-lg p-3 text-indigo-700">Owlto Soneium Badge</div>
-                <div className="bg-indigo-50 rounded-lg p-3 text-indigo-700">Orbiter Soneium Badge</div>
+                <div className="bg-indigo-50 rounded-lg p-3 text-indigo-700">Owlto X Soneium Ecosystem Badge</div>
+                <div className="bg-indigo-50 rounded-lg p-3 text-indigo-700">Orbiter x Soneium Quest</div>
                 <div className="bg-indigo-50 rounded-lg p-3 text-indigo-700">Fractal Visions Ecosystem Badge</div>
                 <div className="bg-indigo-50 rounded-lg p-3 text-indigo-700">Mithraeum Badge</div>
                 <div className="bg-indigo-50 rounded-lg p-3 text-indigo-700">Omnihub Ecosystem Badge</div>
