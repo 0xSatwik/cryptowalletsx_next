@@ -5,13 +5,13 @@ import { formatDistanceToNow, format, parseISO } from 'date-fns';
 import { ExternalLink, Eye, EyeOff, Info, Twitter, Share2, Award, Star, Shield, FileText, Activity, ArrowUp, Cpu, Zap, Wallet, Calendar, Image, Package, Coins } from 'lucide-react';
 import { JsonRpcProvider } from 'ethers';
 
-// Constants for API
-const SOMNIA_RPC_URL = 'https://dream-rpc.somnia.network/';
-const SOMNIA_NFT_API_URL = 'https://somnia-poc.w3us.site/api/v2/addresses';
-const SOMNIA_TOKEN_API_URL = 'https://somnia-poc.w3us.site/api/v2/addresses';
-// New RPC-based API endpoints for account stats and transaction history
-const SOMNIA_ACCOUNT_STATS_URL = 'https://somnia-explorer-api.vercel.app/api/account/counters/';
-const SOMNIA_TRANSACTION_HISTORY_URL = 'https://somnia-explorer-api.vercel.app/api/account/transactions/';
+// Constants for API and Explorer
+const SOMNIA_COUNTERS_API_URL = '/api/somnia/addresses';
+const SOMNIA_TRANSACTIONS_API_URL = '/api/shannon';
+const SOMNIA_RPC_URL = 'https://dream-rpc.somnia.network/'; // Keep RPC URL direct as it's used with ethers library
+const SOMNIA_NFT_API_URL = '/api/somnia/addresses';
+const SOMNIA_TOKEN_API_URL = '/api/somnia/addresses';
+const SOMNIA_EXPLORER_URL = 'https://shannon-explorer.somnia.network';
 
 // Component for Somnia Stats Checker
 export default function SomniaStatsChecker() {
@@ -21,6 +21,8 @@ export default function SomniaStatsChecker() {
   const [isLoading, setIsLoading] = useState(false);
   const [walletData, setWalletData] = useState<WalletData | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [apiDebugInfo, setApiDebugInfo] = useState<string | null>(null);
+  const [showDebugInfo, setShowDebugInfo] = useState<boolean>(false); // Add this to control debug visibility
   const [showCreatedContracts, setShowCreatedContracts] = useState(false);
   const [showInteractedContracts, setShowInteractedContracts] = useState(false);
   const [showAllTransactions, setShowAllTransactions] = useState(false);
@@ -31,7 +33,7 @@ export default function SomniaStatsChecker() {
   const [isLoadingNfts, setIsLoadingNfts] = useState(false);
   const [tokenHoldings, setTokenHoldings] = useState<TokenHolding[]>([]);
   const [isLoadingTokens, setIsLoadingTokens] = useState(false);
-  const [totalTxCountFromRPC, setTotalTxCountFromRPC] = useState<number>(0);
+  const [totalTxCount, setTotalTxCount] = useState<number>(0);
   
   // Interface for wallet score
   interface WalletScore {
@@ -49,61 +51,33 @@ export default function SomniaStatsChecker() {
   // Interfaces
   interface Transaction {
     hash: string;
-    from_address: string;
-    to_address: string;
-    value: string;
-    block_timestamp: string;
-    receipt_gas_used: number;
-    gas_price: string;
-    transaction_fee: string;
-    method: string;
-    is_contract: boolean;
-    receipt_contract_address?: string;
-  }
-
-  // Updated interface for new API transaction response
-  interface RPCTransaction {
-    hash: string;
     from: string;
     to: string;
     value: string;
-    timestamp: string;
-    gasUsed: number;
+    timeStamp: string;
+    gas: string;
     gasPrice: string;
-    fee: string;
-    methodName: string;
-    isContract: boolean;
-    createdContract?: string;
+    gasUsed: string;
+    blockNumber: string;
+    isError: string;
+    input: string;
+    contractAddress?: string;
+    txreceipt_status: string;
+    nonce: string;
+    confirmations: string;
   }
 
-  interface TransactionResponse {
-    data: Transaction[];
-    total: number;
-    page: number;
-    size: number;
+  interface TransactionListResponse {
+    status: string;
+    message: string;
+    result: Transaction[];
   }
 
-  // New interface for RPC-based transaction response
-  interface RPCTransactionResponse {
-    transactions: RPCTransaction[];
-    count: number;
-    page: number;
-    limit: number;
-  }
-
-  // Updated interface for new API account stats response
-  interface AccountStatsResponse {
-    address: string;
-    balance: string;
-    transactionCount: number;
-    firstTxTimestamp: string;
-    uniqueDaysActive: number;
-    uniqueWeeksActive: number;
-    uniqueMonthsActive: number;
-    totalVolume: string;
-    totalGasSpent: string;
-    contractsCreated: number;
-    contractsInteracted: number;
+  interface CountersResponse {
+    transactions_count: string;
+    token_transfers_count: string;
+    gas_usage_count: string;
+    validations_count: string;
   }
 
   interface ProfileResponse {
@@ -157,6 +131,9 @@ export default function SomniaStatsChecker() {
   interface WalletData {
     address: string;
     balance: string;
+    transactionsCount: number;
+    tokenTransfersCount: number;
+    gasUsageCount: string;
     firstTransaction: Transaction | null;
     walletAge: string;
     firstTxDate: string;
@@ -199,36 +176,27 @@ export default function SomniaStatsChecker() {
   };
 
   // Function to calculate wallet score
-  const calculateWalletScore = (walletData: WalletData, accountStats?: AccountStatsResponse): WalletScore => {
-    // Use accountStats data if available, otherwise fallback to calculated values
-    const txCount = accountStats?.transactionCount || walletData.allTransactions.length;
-    const contractsCreated = accountStats?.contractsCreated || walletData.contractsCreated.length;
-    const contractsInteracted = accountStats?.contractsInteracted || walletData.contractsInteracted.size;
-    const uniqueDays = accountStats?.uniqueDaysActive || walletData.uniqueDays.size;
-    const uniqueWeeks = accountStats?.uniqueWeeksActive || walletData.uniqueWeeks.size;
-    const uniqueMonths = accountStats?.uniqueMonthsActive || walletData.uniqueMonths.size;
-    const totalVolume = accountStats ? parseFloat(accountStats.totalVolume) : walletData.totalVolume;
-    
+  const calculateWalletScore = (walletData: WalletData): WalletScore => {
     // Transactions score: 1 point per tx, max 10000
-    const transactionsScore = Math.min(txCount, 10000);
+    const transactionsScore = Math.min(walletData.allTransactions.length, 10000);
     
     // Contract creation score: 5 points per contract, max 100
-    const contractCreationScore = Math.min(contractsCreated * 5, 100);
+    const contractCreationScore = Math.min(walletData.contractsCreated.length * 5, 100);
     
     // Contract interaction score: 5 points per unique contract, max 5000
-    const contractInteractionScore = Math.min(contractsInteracted * 5, 5000);
+    const contractInteractionScore = Math.min(walletData.contractsInteracted.size * 5, 5000);
     
     // Volume score: 5 points per 100 native coin volume, max 5000
-    const volumeScore = Math.min(Math.floor(totalVolume / 100) * 5, 5000);
+    const volumeScore = Math.min(Math.floor(walletData.totalVolume / 100) * 5, 5000);
     
     // Unique days score: 5 points per unique day, no limit
-    const uniqueDaysScore = uniqueDays * 5;
+    const uniqueDaysScore = walletData.uniqueDays.size * 5;
     
     // Unique weeks score: 5 points per unique week, no limit
-    const uniqueWeeksScore = uniqueWeeks * 5;
+    const uniqueWeeksScore = walletData.uniqueWeeks.size * 5;
     
     // Unique months score: 5 points per unique month, no limit
-    const uniqueMonthsScore = uniqueMonths * 5;
+    const uniqueMonthsScore = walletData.uniqueMonths.size * 5;
     
     // Total score
     const totalScore = transactionsScore + contractCreationScore + contractInteractionScore + 
@@ -262,82 +230,102 @@ export default function SomniaStatsChecker() {
     setIsValidAddress(address === '' || isValidEthAddress(address));
   };
 
-  // Function to fetch profile (balance) information using new RPC API
-  const fetchProfile = async (address: string): Promise<ProfileResponse | null> => {
+  // Function to fetch profile (balance) information - now using RPC
+  const fetchProfile = async (address: string): Promise<{ balance: string }> => {
     try {
-      const url = `${SOMNIA_ACCOUNT_STATS_URL}${address}`;
-      const response = await fetch(url);
-      
-      if (!response.ok) {
-        console.error(`Failed to fetch profile: ${response.status}`);
-        return null;
-      }
-      
-      const accountStats: AccountStatsResponse = await response.json();
-      
-      // Convert to format compatible with existing code
-      return {
-        balance: accountStats.balance,
-        native_token_price: '0', // Not provided by new API
-        balance_dollar: '0', // Not provided by new API
-        is_contract: false, // Not provided by new API
-        is_token: false // Not provided by new API
-      };
+      const balance = await fetchBalance(address);
+      return { balance };
     } catch (error) {
       console.error('Error fetching profile:', error);
-      throw error; // Re-throw to be handled by the fetchWalletData function
+      throw error;
     }
   };
 
-  // Function to get transaction count using the account stats API
-  const getTransactionCount = async (address: string): Promise<number> => {
+  // Function to get transaction count using RPC - no longer needed, we get it from counters API
+
+  // Function to fetch account counters
+  const fetchAccountCounters = async (address: string): Promise<CountersResponse> => {
     try {
-      const url = `${SOMNIA_ACCOUNT_STATS_URL}${address}`;
-      const response = await fetch(url);
+      // Use the direct API URL - explicitly avoiding any potential redirects
+      const url = `${SOMNIA_COUNTERS_API_URL}/${address}/counters`;
+      console.log('Fetching account counters from:', url);
+      
+      // Add headers to potentially avoid CORS issues
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        },
+      });
+      
+      // Store API debug info
+      setApiDebugInfo(`Attempted to fetch from: ${url}\nStatus: ${response.status}\nRedirected: ${response.redirected ? 'Yes' : 'No'}`);
       
       if (!response.ok) {
-        console.error(`Failed to fetch transaction count: ${response.status}`);
-        return 0;
+        console.error(`Failed to fetch account counters: ${response.status}`);
+        throw new Error(`Failed to fetch account data: ${response.status} ${response.statusText}`);
       }
       
-      const accountStats: AccountStatsResponse = await response.json();
-      const txCount = accountStats.transactionCount;
-      console.log(`Total transaction count from API: ${txCount}`);
-      
-      // Save the RPC transaction count to state
-      setTotalTxCountFromRPC(txCount);
-      
-      return txCount;
+      return await response.json();
     } catch (error) {
-      console.error('Error fetching transaction count from API:', error);
-      // Fallback to RPC method if the API fails
-      try {
-        const provider = new JsonRpcProvider(SOMNIA_RPC_URL);
-        const txCount = await provider.getTransactionCount(address);
-        console.log(`Total transaction count from RPC: ${txCount}`);
-        setTotalTxCountFromRPC(txCount);
-        return txCount;
-      } catch (rpcError) {
-        console.error('Error fetching transaction count from RPC:', rpcError);
-        // Return a high number to fallback to the regular batching approach
-        return 10000;
-      }
+      console.error('Error fetching account counters:', error);
+      throw error;
     }
   };
 
-  // Function to fetch all transactions with optimized parallel requests using new API
+  // Function to fetch transactions with pagination
+  const fetchTransactions = async (address: string, page: number, pageSize: number = 1000): Promise<Transaction[]> => {
+    try {
+      const url = `${SOMNIA_TRANSACTIONS_API_URL}?module=account&action=txlist&address=${address}&page=${page}&offset=${pageSize}&sort=dsc`;
+      console.log('Fetching transactions from:', url);
+      
+      // Add debug information to existing state
+      setApiDebugInfo(prevInfo => `${prevInfo || ''}\n\nFetching transactions page ${page} from: ${url}`);
+      
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        },
+      });
+      
+      // Update debug info
+      setApiDebugInfo(prevInfo => `${prevInfo || ''}\nTransaction API Status: ${response.status}\nRedirected: ${response.redirected ? 'Yes' : 'No'}`);
+      
+      if (!response.ok) {
+        console.error(`Failed to fetch transactions: ${response.status}`);
+        throw new Error(`Failed to fetch transaction data: ${response.status} ${response.statusText}`);
+      }
+      
+      const data: TransactionListResponse = await response.json();
+      
+      if (data.status !== "1" || !Array.isArray(data.result)) {
+        console.error('Invalid transaction data format:', data);
+        throw new Error('Invalid transaction data format');
+      }
+      
+      return data.result;
+    } catch (error) {
+      console.error(`Error fetching transactions for page ${page}:`, error);
+      throw error;
+    }
+  };
+
+  // Function to fetch all transactions with optimized parallel requests
   const fetchAllTransactions = async (address: string): Promise<Transaction[]> => {
     try {
-      // First get transaction count to determine how many requests we need
-      const txCount = await getTransactionCount(address);
+      // First get transaction count from counters API
+      const counters = await fetchAccountCounters(address);
+      const txCount = parseInt(counters.transactions_count);
       
       // Define constants for paging
-      const pageSize = 100; // Adjust based on new API's recommended page size
+      const pageSize = 1000; // API's max page size
       const maxParallelRequests = 5; // Maximum parallel requests per batch
-      const maxPages = 20; // Maximum total pages to fetch (2,000 transactions)
       
       // Calculate how many pages we actually need
-      const requiredPages = Math.min(Math.ceil(txCount / pageSize), maxPages);
+      const requiredPages = Math.ceil(txCount / pageSize);
       console.log(`Required pages for ${txCount} transactions: ${requiredPages}`);
       
       // If no transactions, return empty array
@@ -355,25 +343,11 @@ export default function SomniaStatsChecker() {
         console.log(`Fetching batch from page ${batchStart + 1} to ${batchEnd}`);
         
         // Create array of promises for this batch
-        const batchPromises: Promise<RPCTransactionResponse>[] = [];
+        const batchPromises: Promise<Transaction[]>[] = [];
         
         // Add promises for each page in this batch
         for (let page = batchStart + 1; page <= batchEnd; page++) {
-          const url = `${SOMNIA_TRANSACTION_HISTORY_URL}${address}?page=${page}&limit=${pageSize}`;
-          
-          const pagePromise = fetch(url)
-            .then(async response => {
-              if (!response.ok) {
-                console.error(`Failed to fetch transactions for page ${page}: ${response.status}`);
-                return { transactions: [], count: 0, page: 0, limit: 0 } as RPCTransactionResponse;
-              }
-              return response.json();
-            })
-            .catch(error => {
-              console.error(`Error fetching transactions for page ${page}:`, error);
-              throw error; // Re-throw to be handled by the fetchWalletData function
-            });
-          
+          const pagePromise = fetchTransactions(address, page, pageSize);
           batchPromises.push(pagePromise);
         }
         
@@ -382,27 +356,12 @@ export default function SomniaStatsChecker() {
         
         // Process results from this batch
         for (const pageResult of batchResults) {
-          if (pageResult.transactions && Array.isArray(pageResult.transactions)) {
-            // Convert RPCTransaction to Transaction format
-            const formattedTransactions = pageResult.transactions.map((tx: RPCTransaction): Transaction => ({
-              hash: tx.hash,
-              from_address: tx.from,
-              to_address: tx.to,
-              value: tx.value,
-              block_timestamp: tx.timestamp,
-              receipt_gas_used: tx.gasUsed,
-              gas_price: tx.gasPrice,
-              transaction_fee: tx.fee,
-              method: tx.methodName,
-              is_contract: tx.isContract,
-              receipt_contract_address: tx.createdContract
-            }));
-            
-            allTransactions.push(...formattedTransactions);
+          if (pageResult && Array.isArray(pageResult)) {
+            allTransactions.push(...pageResult);
             
             // Check if we've reached the actual end of data (fewer results than page size)
-            if (pageResult.transactions.length < pageSize) {
-              console.log(`End of data reached at page ${pageResult.page}`);
+            if (pageResult.length < pageSize) {
+              console.log(`End of data reached at page ${batchStart + 1 + batchResults.indexOf(pageResult)}`);
               // No need to fetch further pages
               batchStart = requiredPages; // This will end the outer loop
               break;
@@ -415,7 +374,19 @@ export default function SomniaStatsChecker() {
       return allTransactions;
     } catch (error) {
       console.error('Error fetching all transactions:', error);
-      throw error; // Re-throw to be handled by the fetchWalletData function
+      throw error;
+    }
+  };
+
+  // Function to fetch balance using RPC
+  const fetchBalance = async (address: string): Promise<string> => {
+    try {
+      const provider = new JsonRpcProvider(SOMNIA_RPC_URL);
+      const balanceWei = await provider.getBalance(address);
+      return balanceWei.toString();
+    } catch (error) {
+      console.error('Error fetching balance:', error);
+      throw error;
     }
   };
 
@@ -438,14 +409,15 @@ export default function SomniaStatsChecker() {
     
     transactions.forEach(tx => {
       // Check if this is the earliest transaction by comparing timestamps
-      if (!firstTransaction || new Date(tx.block_timestamp) < new Date(firstTransaction.block_timestamp)) {
+      if (!firstTransaction || new Date(parseTimestamp(tx.timeStamp)) < new Date(parseTimestamp(firstTransaction.timeStamp))) {
         firstTransaction = tx;
       }
       
-      const date = parseISO(tx.block_timestamp);
+      // Parse timestamp for date operations
+      const date = new Date(parseTimestamp(tx.timeStamp));
       
-      // Unique days
-      uniqueDays.add(tx.block_timestamp.split('T')[0]);
+      // Unique days - using ISO date string YYYY-MM-DD
+      uniqueDays.add(date.toISOString().split('T')[0]);
       
       // Unique weeks (using ISO week)
       const year = date.getFullYear();
@@ -457,32 +429,42 @@ export default function SomniaStatsChecker() {
       uniqueMonths.add(`${year}-${month}`);
       
       // Calculate volume (excluding transactions to self)
-      if (tx.from_address.toLowerCase() === address.toLowerCase() && 
-          tx.to_address.toLowerCase() !== address.toLowerCase()) {
-        totalVolume += Number(tx.value);
+      if (tx.from.toLowerCase() === address.toLowerCase() && 
+          tx.to && tx.to.toLowerCase() !== address.toLowerCase()) {
+        totalVolume += Number(tx.value) / 1e18; // Convert to ETH
       }
       
-      // Calculate gas spent
-      if (tx.from_address.toLowerCase() === address.toLowerCase()) {
-        totalGasSpent += Number(tx.transaction_fee);
+      // Calculate gas spent in ETH
+      if (tx.from.toLowerCase() === address.toLowerCase()) {
+        // gasPrice * gasUsed = gas cost in wei
+        const gasSpentWei = BigInt(tx.gasUsed || 0) * BigInt(tx.gasPrice || 0);
+        totalGasSpent += Number(gasSpentWei) / 1e18; // Convert to ETH
       }
       
-      // Track contract interactions with counts
-      if (tx.to_address && tx.is_contract) {
-        const contractAddress = tx.to_address.toLowerCase();
-        contractsInteracted.add(contractAddress);
-        
-        // Increment interaction count
-        const currentCount = contractInteractionCounts.get(contractAddress) || 0;
-        contractInteractionCounts.set(contractAddress, currentCount + 1);
+      // Track contract interactions
+      if (tx.from.toLowerCase() === address.toLowerCase() &&
+          tx.to && tx.to.toLowerCase() !== address.toLowerCase()) {
+        // If input data is not just "0x" and not a blank string, it's a contract interaction
+        if (tx.input && tx.input.length > 2 && tx.input !== '0x') {
+          // This is likely a contract interaction
+          const contractAddress = tx.to.toLowerCase();
+          contractsInteracted.add(contractAddress);
+          
+          // Increment interaction count
+          const currentCount = contractInteractionCounts.get(contractAddress) || 0;
+          contractInteractionCounts.set(contractAddress, currentCount + 1);
+        }
       }
       
-      // Identify contract creations (to_address is null or empty)
-      if (tx.from_address.toLowerCase() === address.toLowerCase() && 
-          tx.receipt_contract_address) {
+      // Identify contract creations - contractAddress field should be populated
+      if (tx.from.toLowerCase() === address.toLowerCase() && 
+          tx.contractAddress && tx.contractAddress !== '') {
         contractsCreated.push(tx);
       }
     });
+    
+    // Debug output for contract detection
+    console.log(`Found ${contractsCreated.length} contracts created and ${contractsInteracted.size} contracts interacted with`);
     
     return {
       firstTransaction,
@@ -497,11 +479,56 @@ export default function SomniaStatsChecker() {
     };
   };
 
+  // Helper function to parse different timestamp formats
+  const parseTimestamp = (timestamp: string): Date | number => {
+    // Check if timestamp is already an ISO string with 'T' and 'Z'
+    if (typeof timestamp === 'string' && timestamp.includes('T')) {
+      return new Date(timestamp);
+    }
+    
+    // Check if it's a Unix timestamp (seconds or milliseconds)
+    const num = Number(timestamp);
+    if (!isNaN(num)) {
+      // If it's in seconds (Unix timestamp), convert to milliseconds
+      if (num < 20000000000) { // Smaller than year ~2603 in milliseconds
+        return new Date(num * 1000);
+      }
+      // Already in milliseconds
+      return new Date(num);
+    }
+    
+    // Fallback - try parsing as is
+    return new Date(timestamp);
+  };
+
   // Function to fetch NFTs for the wallet
   const fetchNFTs = async (address: string) => {
     setIsLoadingNfts(true);
     try {
-      const response = await fetch(`${SOMNIA_NFT_API_URL}/${address}/nft/collections?type=ERC-721%2CERC-404%2CERC-1155`);
+      const url = `${SOMNIA_NFT_API_URL}/${address}/nft/collections?type=ERC-721%2CERC-404%2CERC-1155`;
+      console.log('Fetching NFTs from:', url);
+      
+      // Add debug information
+      setApiDebugInfo(prevInfo => `${prevInfo || ''}\n\nFetching NFTs from: ${url}`);
+      
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        },
+      });
+      
+      // Update debug info
+      setApiDebugInfo(prevInfo => `${prevInfo || ''}\nNFT API Status: ${response.status}\nRedirected: ${response.redirected ? 'Yes' : 'No'}`);
+      
+      if (response.status === 429) {
+        const errorData = await response.json();
+        if (errorData.message && errorData.message.includes("180 per 1 minute")) {
+          throw new Error("Rate limit exceeded: 180 requests per minute. Please wait a few minutes and try again.");
+        }
+        throw new Error(`Rate limit exceeded. Please wait a few minutes and try again.`);
+      }
       
       if (!response.ok) {
         console.error(`Failed to fetch NFTs: ${response.status}`);
@@ -549,7 +576,30 @@ export default function SomniaStatsChecker() {
   const fetchTokenHoldings = async (address: string) => {
     setIsLoadingTokens(true);
     try {
-      const response = await fetch(`${SOMNIA_TOKEN_API_URL}/${address}/tokens?type=ERC-20`);
+      const url = `${SOMNIA_TOKEN_API_URL}/${address}/tokens?type=ERC-20`;
+      console.log('Fetching token holdings from:', url);
+      
+      // Add debug information
+      setApiDebugInfo(prevInfo => `${prevInfo || ''}\n\nFetching tokens from: ${url}`);
+      
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        },
+      });
+      
+      // Update debug info
+      setApiDebugInfo(prevInfo => `${prevInfo || ''}\nToken API Status: ${response.status}\nRedirected: ${response.redirected ? 'Yes' : 'No'}`);
+      
+      if (response.status === 429) {
+        const errorData = await response.json();
+        if (errorData.message && errorData.message.includes("180 per 1 minute")) {
+          throw new Error("Rate limit exceeded: 180 requests per minute. Please wait a few minutes and try again.");
+        }
+        throw new Error(`Rate limit exceeded. Please wait a few minutes and try again.`);
+      }
       
       if (!response.ok) {
         console.error(`Failed to fetch token holdings: ${response.status}`);
@@ -557,28 +607,7 @@ export default function SomniaStatsChecker() {
       }
       
       const data = await response.json();
-      
-      // Filter out tokens with zero balance and normalize the data
-      const normalizedTokens = (data.items || []).filter((holding: TokenHolding) => {
-        const value = holding.value || '0';
-        return BigInt(value) > BigInt(0);
-      }).map((holding: TokenHolding) => {
-        // Ensure token data is complete
-        if (!holding.token) {
-          holding.token = {
-            name: 'Unknown Token',
-            symbol: 'UNKNOWN',
-            decimals: '18',
-            address: '',
-            total_supply: '0',
-            holders: '0',
-            type: 'ERC-20'
-          };
-        }
-        return holding;
-      });
-      
-      setTokenHoldings(normalizedTokens);
+      setTokenHoldings(data.items || []);
     } catch (error) {
       console.error('Error fetching token holdings:', error);
       // We don't need to show rate limit error for tokens since the main data is already displayed
@@ -619,6 +648,12 @@ export default function SomniaStatsChecker() {
     return `${integerPart}.${trimmedFractionalPart}`;
   };
 
+  // Format for displaying wallet balance in ETH, not wei
+  const formatEthBalance = (wei: string): string => {
+    const etherValue = Number(wei) / 1e18;
+    return etherValue.toFixed(6);
+  };
+
   // Main function to fetch wallet data
   const fetchWalletData = async () => {
     if (!isValidAddress || !walletAddress) {
@@ -628,26 +663,20 @@ export default function SomniaStatsChecker() {
     
     setIsLoading(true);
     setError(null);
+    setApiDebugInfo(null);
     setWalletData(null);
     setWalletScore(null);
     setNftCollections([]);
     setTokenHoldings([]);
     
     try {
-      // Fetch account stats first to get basic info
-      const url = `${SOMNIA_ACCOUNT_STATS_URL}${walletAddress}`;
-      const accountStatsResponse = await fetch(url);
-      
-      if (!accountStatsResponse.ok) {
-        throw new Error('Failed to fetch account stats data');
-      }
-      
-      const accountStats: AccountStatsResponse = await accountStatsResponse.json();
-      
       // Run these requests in parallel using Promise.all
-      const [profileData, allTransactions] = await Promise.all([
-        // Get profile data from API
+      const [profileData, countersData, allTransactions] = await Promise.all([
+        // Get profile data (balance) using RPC
         fetchProfile(walletAddress),
+        
+        // Get counters data (transactions count, token transfers, gas usage)
+        fetchAccountCounters(walletAddress),
         
         // Fetch all transactions
         fetchAllTransactions(walletAddress)
@@ -664,39 +693,48 @@ export default function SomniaStatsChecker() {
       let walletAge = 'Unknown';
       let firstTxDate = '';
       
-      // Use first transaction from account stats if available, otherwise use processed data
-      if (accountStats.firstTxTimestamp) {
-        const firstTxTimestamp = parseISO(accountStats.firstTxTimestamp);
-        walletAge = formatDistanceToNow(firstTxTimestamp, { addSuffix: true });
-        firstTxDate = format(firstTxTimestamp, 'PPpp'); // Format: 'Apr 29, 2023, 2:15:30 PM'
-      } else if (processedData.firstTransaction) {
-        const firstTxTimestamp = parseISO(processedData.firstTransaction.block_timestamp);
-        walletAge = formatDistanceToNow(firstTxTimestamp, { addSuffix: true });
-        firstTxDate = format(firstTxTimestamp, 'PPpp'); // Format: 'Apr 29, 2023, 2:15:30 PM'
+      if (processedData.firstTransaction) {
+        try {
+          // Use our custom timestamp parser
+          const parsedDate = new Date(parseTimestamp(processedData.firstTransaction?.timeStamp || '0'));
+          
+          // Add debug info about timestamp
+          setApiDebugInfo(prevInfo => {
+            const txTime = processedData.firstTransaction?.timeStamp || 'undefined';
+            return `${prevInfo || ''}\n\nFirst Transaction Timestamp: ${txTime}\nParsed as: ${parsedDate.toISOString()}`;
+          });
+          
+          walletAge = formatDistanceToNow(parsedDate, { addSuffix: true });
+          firstTxDate = format(parsedDate, 'PPpp'); // Format: 'Apr 29, 2023, 2:15:30 PM'
+        } catch (dateError) {
+          console.error('Error parsing transaction date:', dateError);
+          setApiDebugInfo(prevInfo => {
+            const txTime = processedData.firstTransaction?.timeStamp || 'undefined';
+            return `${prevInfo || ''}\n\nError parsing date: ${String(dateError)}\nTimestamp value: ${txTime}`;
+          });
+          walletAge = 'Unknown (date error)';
+          firstTxDate = 'Unknown format';
+        }
       }
       
       // Set complete wallet data
       const fullWalletData = {
         address: walletAddress,
-        balance: accountStats.balance || profileData.balance,
+        balance: profileData.balance,
+        transactionsCount: parseInt(countersData.transactions_count),
+        tokenTransfersCount: parseInt(countersData.token_transfers_count),
+        gasUsageCount: countersData.gas_usage_count,
         firstTransaction: processedData.firstTransaction,
         walletAge,
         firstTxDate,
-        uniqueDays: new Set(Array.from({ length: accountStats.uniqueDaysActive || 0 }).map((_, i) => `day-${i}`)),
-        uniqueWeeks: new Set(Array.from({ length: accountStats.uniqueWeeksActive || 0 }).map((_, i) => `week-${i}`)),
-        uniqueMonths: new Set(Array.from({ length: accountStats.uniqueMonthsActive || 0 }).map((_, i) => `month-${i}`)),
-        totalVolume: parseFloat(accountStats.totalVolume || '0'),
-        totalGasSpent: parseFloat(accountStats.totalGasSpent || '0'),
-        contractsCreated: processedData.contractsCreated || [],
-        contractsInteracted: processedData.contractsInteracted || new Set(),
         allTransactions,
-        contractInteractionCounts: processedData.contractInteractionCounts || new Map(),
+        ...processedData,
       } as WalletData;
       
       setWalletData(fullWalletData);
       
       // Calculate and set wallet score
-      const score = calculateWalletScore(fullWalletData, accountStats);
+      const score = calculateWalletScore(fullWalletData);
       setWalletScore(score);
       
       // Fetch NFTs and token holdings for the wallet
@@ -714,7 +752,7 @@ export default function SomniaStatsChecker() {
       if (errorMessage.includes('Rate limit exceeded')) {
         setError(errorMessage);
       } else {
-        setError('Failed to fetch wallet data. Please try again.');
+        setError(`Failed to fetch wallet data: ${errorMessage}. Please try again.`);
       }
     } finally {
       setIsLoading(false);
@@ -742,8 +780,7 @@ export default function SomniaStatsChecker() {
   const generateTwitterShareText = () => {
     if (!walletData || !walletScore) return '';
     
-    // For tx count, prefer the value from API, fallback to local calculation
-    const txCount = totalTxCountFromRPC > 0 ? totalTxCountFromRPC : walletData.allTransactions.length;
+    const txCount = walletData.transactionsCount;
     
     const lines = [
       `🔍 My #Somnia Wallet Stats:`,
@@ -876,6 +913,22 @@ export default function SomniaStatsChecker() {
             </div>
           </div>
         )}
+        
+        {/* API Debug Info - Hidden by default, only shown when showDebugInfo is true */}
+        {apiDebugInfo && showDebugInfo && (
+          <div className="bg-gray-100 dark:bg-gray-700 rounded-xl p-4 mt-4 text-sm font-mono overflow-x-auto">
+            <div className="flex justify-between items-center mb-2">
+              <p className="font-bold">API Debug Info:</p>
+              <button 
+                onClick={() => setShowDebugInfo(false)}
+                className="text-xs bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 px-2 py-1 rounded"
+              >
+                Hide
+              </button>
+            </div>
+            <pre>{apiDebugInfo}</pre>
+          </div>
+        )}
 
         {/* Enhanced Loading State */}
         {isLoading && (
@@ -980,7 +1033,7 @@ export default function SomniaStatsChecker() {
                           <h2 className="text-2xl font-bold text-gray-800 dark:text-white flex items-center">
                             Wallet Overview
                             <a
-                              href={`https://socialscan.io/address/${walletData.address}?network=somnia`}
+                              href={`${SOMNIA_EXPLORER_URL}/address/${walletData.address}`}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="ml-2 text-purple-500 hover:text-purple-600 dark:text-purple-400"
@@ -1024,7 +1077,7 @@ export default function SomniaStatsChecker() {
                         </div>
                         <h3 className="text-lg font-bold text-white mb-1">Balance</h3>
                         <p className="text-3xl font-extrabold text-white drop-shadow-md">
-                          {parseFloat(walletData.balance).toFixed(6)}
+                          {formatEthBalance(walletData.balance)}
                         </p>
                         <p className="text-purple-100 mt-1">STT</p>
                       </div>
@@ -1051,8 +1104,8 @@ export default function SomniaStatsChecker() {
                             <div className="flex items-center justify-center mt-1">
                               <span className="font-mono text-white/80">{walletData.firstTxDate}</span>
                               <a
-                                href={`https://somnia-testnet.socialscan.io/tx/${walletData.firstTransaction.hash}`}
-                                target="_blank" 
+                                href={`${SOMNIA_EXPLORER_URL}/tx/${walletData.firstTransaction.hash}`}
+                                target="_blank"
                                 rel="noopener noreferrer"
                                 className="ml-2 text-white/90 hover:text-white inline-flex items-center"
                               >
@@ -1076,15 +1129,10 @@ export default function SomniaStatsChecker() {
                         </div>
                         <h3 className="text-lg font-bold text-white mb-1">Transactions</h3>
                         <p className="text-3xl font-extrabold text-white drop-shadow-md">
-                          {totalTxCountFromRPC > 0 
-                            ? totalTxCountFromRPC.toLocaleString() 
-                            : walletData.allTransactions.length.toLocaleString()}
+                          {walletData.transactionsCount.toLocaleString()}
                         </p>
                         <div className="flex items-center space-x-2 mt-1">
                           <span className="text-white/90 text-sm">Total Operations</span>
-                          {totalTxCountFromRPC > 0 && (
-                            <div className="bg-white/20 px-2 py-0.5 rounded text-xs text-white/90">via RPC</div>
-                          )}
                         </div>
                       </div>
                     </div>
@@ -1186,7 +1234,27 @@ export default function SomniaStatsChecker() {
                         {walletData.totalGasSpent.toFixed(6)} STT
                       </div>
                       <p className="mt-2 text-sm text-red-600 dark:text-red-300">
-                        Total gas fees paid
+                        Total gas used for transactions
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 gap-6 mt-6">
+                  <div className="bg-gradient-to-br from-indigo-50 to-blue-50 dark:from-indigo-900/20 dark:to-blue-900/20 rounded-xl overflow-hidden relative">
+                    <div className="absolute inset-0 bg-[url('/images/transfer-bg.svg')] opacity-5"></div>
+                    <div className="relative p-6">
+                      <div className="flex justify-between items-start mb-6">
+                        <h3 className="text-lg font-bold text-indigo-700 dark:text-indigo-400">Token Transfers</h3>
+                        <div className="bg-indigo-100 dark:bg-indigo-800/50 text-indigo-700 dark:text-indigo-300 text-xs font-bold px-2 py-1 rounded-md">
+                          Activity Metric
+                        </div>
+                      </div>
+                      <div className="text-4xl font-extrabold text-indigo-900 dark:text-indigo-100">
+                        {walletData.tokenTransfersCount.toLocaleString()}
+                      </div>
+                      <p className="mt-2 text-sm text-indigo-600 dark:text-indigo-300">
+                        Total token transfer operations
                       </p>
                     </div>
                   </div>
@@ -1255,7 +1323,7 @@ export default function SomniaStatsChecker() {
                             <tr key={index} className="hover:bg-purple-50 dark:hover:bg-purple-900/10 transition-colors">
                               <td className="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-700 dark:text-gray-300">
                                 <a 
-                                  href={`https://somnia-testnet.socialscan.io/tx/${tx.hash}`}
+                                  href={`${SOMNIA_EXPLORER_URL}/tx/${tx.hash}`}
                                   target="_blank"
                                   rel="noopener noreferrer"
                                   className="hover:underline text-blue-600 dark:text-blue-400"
@@ -1266,18 +1334,18 @@ export default function SomniaStatsChecker() {
                               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                                 <div className="flex items-center">
                                   <Calendar className="h-4 w-4 mr-2 text-purple-500" />
-                                  {format(parseISO(tx.block_timestamp), 'PPp')}
+                                  {format(parseISO(tx.timeStamp), 'PPp')}
                                 </div>
                               </td>
                               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                                {tx.receipt_contract_address ? (
+                                {tx.contractAddress ? (
                                   <a
-                                    href={`https://somnia-testnet.socialscan.io/address/${tx.receipt_contract_address}`}
+                                    href={`${SOMNIA_EXPLORER_URL}/address/${tx.contractAddress}`}
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="text-blue-600 hover:text-blue-800 dark:text-blue-400 hover:underline inline-flex items-center"
                                   >
-                                    {formatAddress(tx.receipt_contract_address)}
+                                    {formatAddress(tx.contractAddress)}
                                     <ExternalLink size={12} className="ml-1" />
                                   </a>
                                 ) : (
@@ -1286,7 +1354,7 @@ export default function SomniaStatsChecker() {
                               </td>
                               <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
                                 <a
-                                  href={`https://somnia-testnet.socialscan.io/tx/${tx.hash}`}
+                                  href={`${SOMNIA_EXPLORER_URL}/tx/${tx.hash}`}
                                   target="_blank"
                                   rel="noopener noreferrer"
                                   className="text-blue-600 hover:text-blue-800 dark:text-blue-400 hover:underline inline-flex items-center"
@@ -1372,7 +1440,7 @@ export default function SomniaStatsChecker() {
                             <tr key={index} className="hover:bg-indigo-50 dark:hover:bg-indigo-900/10 transition-colors">
                               <td className="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-700 dark:text-gray-300">
                                 <a
-                                  href={`https://somnia-testnet.socialscan.io/address/${contractAddress}`}
+                                  href={`${SOMNIA_EXPLORER_URL}/address/${contractAddress}`}
                                   target="_blank"
                                   rel="noopener noreferrer"
                                   className="text-blue-600 hover:text-blue-800 dark:text-blue-400 hover:underline"
@@ -1390,7 +1458,7 @@ export default function SomniaStatsChecker() {
                               </td>
                               <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
                                 <a
-                                  href={`https://somnia-testnet.socialscan.io/address/${contractAddress}`}
+                                  href={`${SOMNIA_EXPLORER_URL}/address/${contractAddress}`}
                                   target="_blank"
                                   rel="noopener noreferrer"
                                   className="text-blue-600 hover:text-blue-800 dark:text-blue-400 hover:underline inline-flex items-center"
@@ -1432,9 +1500,7 @@ export default function SomniaStatsChecker() {
                       </h2>
                       <div className="mt-1 flex items-center">
                         <span className="text-gray-500 dark:text-gray-400">
-                          {totalTxCountFromRPC > 0 
-                            ? `${totalTxCountFromRPC.toLocaleString()} transactions (via RPC)`
-                            : `${walletData.allTransactions?.length || 0} transactions`}
+                          {walletData.transactionsCount.toLocaleString()} transactions
                         </span>
                         <div className="ml-3 bg-red-100 dark:bg-red-800/30 text-red-700 dark:text-red-300 text-xs font-bold px-2 py-1 rounded-md">
                           {walletScore.transactionsScore} pts
@@ -1489,7 +1555,7 @@ export default function SomniaStatsChecker() {
                             <tr key={index} className="hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors">
                               <td className="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-700 dark:text-gray-300">
                                 <a
-                                  href={`https://somnia-testnet.socialscan.io/tx/${tx.hash}`}
+                                  href={`${SOMNIA_EXPLORER_URL}/tx/${tx.hash}`}
                                   target="_blank"
                                   rel="noopener noreferrer"
                                   className="hover:underline text-blue-600 dark:text-blue-400"
@@ -1499,34 +1565,34 @@ export default function SomniaStatsChecker() {
                               </td>
                               <td className="px-6 py-4 whitespace-nowrap text-sm font-mono">
                                 <span className={`${
-                                  tx.from_address.toLowerCase() === walletData.address.toLowerCase()
+                                  tx.from.toLowerCase() === walletData.address.toLowerCase()
                                     ? 'text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 px-2 py-0.5 rounded-md font-medium'
                                     : 'text-blue-600 dark:text-blue-400'
                                 }`}>
                                   <a
-                                    href={`https://somnia-testnet.socialscan.io/address/${tx.from_address}`}
+                                    href={`${SOMNIA_EXPLORER_URL}/address/${tx.from}`}
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="hover:underline"
                                   >
-                                    {formatAddress(tx.from_address)}
+                                    {formatAddress(tx.from)}
                                   </a>
                                 </span>
                               </td>
                               <td className="px-6 py-4 whitespace-nowrap text-sm font-mono">
-                                {tx.to_address ? (
+                                {tx.to ? (
                                   <span className={`${
-                                    tx.to_address.toLowerCase() === walletData.address.toLowerCase()
+                                    tx.to.toLowerCase() === walletData.address.toLowerCase()
                                       ? 'text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 px-2 py-0.5 rounded-md font-medium'
                                       : 'text-blue-600 dark:text-blue-400'
                                   }`}>
                                     <a
-                                      href={`https://somnia-testnet.socialscan.io/address/${tx.to_address}`}
+                                      href={`${SOMNIA_EXPLORER_URL}/address/${tx.to}`}
                                       target="_blank"
                                       rel="noopener noreferrer"
                                       className="hover:underline"
                                     >
-                                      {formatAddress(tx.to_address)}
+                                      {formatAddress(tx.to)}
                                     </a>
                                   </span>
                                 ) : (
@@ -1539,11 +1605,11 @@ export default function SomniaStatsChecker() {
                                 {parseFloat(tx.value).toFixed(6)} STT
                               </td>
                               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">
-                                {formatDate(tx.block_timestamp)}
+                                {formatDate(tx.timeStamp)}
                               </td>
                               <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
                                 <a
-                                  href={`https://somnia-testnet.socialscan.io/tx/${tx.hash}`}
+                                  href={`${SOMNIA_EXPLORER_URL}/tx/${tx.hash}`}
                                   target="_blank"
                                   rel="noopener noreferrer"
                                   className="text-blue-600 hover:text-blue-800 dark:text-blue-400 hover:underline inline-flex items-center"
@@ -1651,7 +1717,7 @@ export default function SomniaStatsChecker() {
                             </div>
                           </div>
                           <a
-                            href={`https://somnia-testnet.socialscan.io/token/${collection.token.address}`}
+                            href={`${SOMNIA_EXPLORER_URL}/token/${collection.token.address}`}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="text-pink-600 hover:text-pink-700 dark:text-pink-400 dark:hover:text-pink-300 font-medium flex items-center bg-white dark:bg-gray-800 px-4 py-2 rounded-lg shadow-sm hover:shadow transition-all"
@@ -1724,7 +1790,7 @@ export default function SomniaStatsChecker() {
                               
                               <div className="px-4 pb-4 mt-auto">
                                 <a
-                                  href={`https://somnia-testnet.socialscan.io/token/${collection.token.address}/instance/${nft.id}`}
+                                  href={`${SOMNIA_EXPLORER_URL}/token/${collection.token.address}/instance/${nft.id}`}
                                   target="_blank"
                                   rel="noopener noreferrer"
                                   className="w-full flex items-center justify-center py-2 bg-pink-100 hover:bg-pink-200 dark:bg-pink-900/20 dark:hover:bg-pink-800/30 text-pink-700 dark:text-pink-300 rounded-lg text-sm font-medium transition-colors"
@@ -1739,7 +1805,7 @@ export default function SomniaStatsChecker() {
                         {collection.token_instances.length > 8 && (
                           <div className="mt-6 text-center">
                             <a
-                              href={`https://somnia-testnet.socialscan.io/address/${walletAddress}/tokens?filter=nft`}
+                              href={`${SOMNIA_EXPLORER_URL}/address/${walletAddress}/tokens?filter=nft`}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="inline-flex items-center justify-center px-6 py-3 bg-gradient-to-r from-pink-500 to-purple-600 text-white rounded-xl shadow-md hover:shadow-lg transition-all"
@@ -1869,7 +1935,7 @@ export default function SomniaStatsChecker() {
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
                               <a
-                                href={`https://somnia-testnet.socialscan.io/token/${holding.token.address}`}
+                                href={`${SOMNIA_EXPLORER_URL}/token/${holding.token.address}`}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 font-medium inline-flex items-center"

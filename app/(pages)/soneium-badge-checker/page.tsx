@@ -295,10 +295,10 @@ export default function SoneiumBadgeChecker() {
       const options = { method: 'GET', headers: { accept: 'application/json' } };
       const response = await fetch(url, options);
       
-      if (!response.ok) {
-        throw new Error(`API responded with status ${response.status}`);
-      }
-      
+        if (!response.ok) {
+          throw new Error(`API responded with status ${response.status}`);
+        }
+        
       const data: AlchemyNftsResponse = await response.json();
       console.log("NFT response data:", data);
       
@@ -325,7 +325,7 @@ export default function SoneiumBadgeChecker() {
           ownedNftsByTokenId.set(tokenKey, nft);
         }
       });
-      
+              
       // Debug: Log the found contracts
       console.log("Found contracts in map:", Array.from(ownedNftsByContract.keys()));
       
@@ -381,10 +381,10 @@ export default function SoneiumBadgeChecker() {
       });
       
       return { updatedOgBadges, updatedEcosystemBadges };
-    } catch (err) {
+      } catch (err) {
       console.error('Error checking badges:', err);
       throw err;
-    }
+      }
   };
 
   // Check all badges when address is submitted
@@ -782,44 +782,44 @@ export default function SoneiumBadgeChecker() {
                       {renderBadgeImage(badge)}
                       
                       <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 w-full">
-                        <div className="flex items-center gap-3 flex-shrink-0">
-                          <div className={`p-3 rounded-full shadow-md ${
-                            badge.owned === undefined
-                              ? 'bg-gray-100'
-                              : badge.owned
-                                ? 'bg-gradient-to-br from-amber-400 to-yellow-500 text-white'
-                                : 'bg-gradient-to-br from-red-400 to-rose-500 text-white'
-                          }`}>
-                            {badge.owned === undefined ? (
-                              <HelpCircle size={22} className="text-gray-500" />
-                            ) : badge.owned ? (
-                              <CheckCircle2 size={22} className="text-white" />
-                            ) : (
-                              <XCircle size={22} className="text-white" />
-                            )}
-                          </div>
+                      <div className="flex items-center gap-3 flex-shrink-0">
+                        <div className={`p-3 rounded-full shadow-md ${
+                          badge.owned === undefined
+                            ? 'bg-gray-100'
+                            : badge.owned
+                              ? 'bg-gradient-to-br from-amber-400 to-yellow-500 text-white'
+                              : 'bg-gradient-to-br from-red-400 to-rose-500 text-white'
+                        }`}>
+                          {badge.owned === undefined ? (
+                            <HelpCircle size={22} className="text-gray-500" />
+                          ) : badge.owned ? (
+                            <CheckCircle2 size={22} className="text-white" />
+                          ) : (
+                            <XCircle size={22} className="text-white" />
+                          )}
                         </div>
-                        
-                        <div className="flex-1">
-                          <h3 className={`font-bold text-lg ${badge.owned ? 'text-amber-800' : 'text-gray-700'}`}>
-                            {badge.name}
-                            {badge.tokenId && <span className="ml-1 text-xs font-normal text-gray-500">(ID: {badge.tokenId})</span>}
-                          </h3>
-                          <div className="flex flex-wrap gap-2 mt-1">
-                            <span className="text-sm text-gray-500">{truncateAddress(badge.contractAddress)}</span>
-                            {renderBadgeStatus(badge)}
-                          </div>
+                      </div>
+                      
+                      <div className="flex-1">
+                        <h3 className={`font-bold text-lg ${badge.owned ? 'text-amber-800' : 'text-gray-700'}`}>
+                          {badge.name}
+                          {badge.tokenId && <span className="ml-1 text-xs font-normal text-gray-500">(ID: {badge.tokenId})</span>}
+                        </h3>
+                        <div className="flex flex-wrap gap-2 mt-1">
+                          <span className="text-sm text-gray-500">{truncateAddress(badge.contractAddress)}</span>
+                          {renderBadgeStatus(badge)}
                         </div>
-                        
-                        <a
-                          href={`https://soneium.blockscout.com/token/${badge.contractAddress}${badge.tokenId ? '/instance/' + badge.tokenId : ''}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex-shrink-0 text-amber-600 hover:text-amber-700 flex items-center gap-1 group bg-amber-50 hover:bg-amber-100 px-3 py-2 rounded-lg transition-all duration-200 border border-amber-100 mt-2 sm:mt-0"
-                        >
-                          <span className="text-sm font-medium">View on Explorer</span>
-                          <ExternalLink size={16} className="group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
-                        </a>
+                      </div>
+                      
+                      <a
+                        href={`https://soneium.blockscout.com/token/${badge.contractAddress}${badge.tokenId ? '/instance/' + badge.tokenId : ''}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex-shrink-0 text-amber-600 hover:text-amber-700 flex items-center gap-1 group bg-amber-50 hover:bg-amber-100 px-3 py-2 rounded-lg transition-all duration-200 border border-amber-100 mt-2 sm:mt-0"
+                      >
+                        <span className="text-sm font-medium">View on Explorer</span>
+                        <ExternalLink size={16} className="group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+                      </a>
                       </div>
                     </div>
                   </div>
@@ -863,12 +863,12 @@ export default function SoneiumBadgeChecker() {
                   </div>
                 ) : (
                   filteredEcosystemBadges.map((badge) => (
-                    <div 
-                      key={badge.contractAddress}
+            <div 
+              key={badge.contractAddress}
                       className={`p-5 rounded-xl shadow-md hover:shadow-lg transition-all duration-300 border ${
-                        badge.owned === undefined
+                badge.owned === undefined
                           ? 'bg-white/90 border-gray-100 hover:border-gray-200'
-                          : badge.owned
+                  : badge.owned
                             ? 'bg-gradient-to-br from-green-50 to-white border-green-100 hover:border-green-200'
                             : 'bg-gradient-to-br from-red-50 to-white border-red-100 hover:border-red-200'
                       }`}
@@ -877,43 +877,43 @@ export default function SoneiumBadgeChecker() {
                         {renderBadgeImage(badge)}
                         
                         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 w-full">
-                          <div className="flex items-center gap-3 flex-shrink-0">
-                            <div className={`p-3 rounded-full shadow-md ${
-                              badge.owned === undefined
-                                ? 'bg-gray-100'
-                                : badge.owned
-                                  ? 'bg-gradient-to-br from-green-400 to-emerald-500 text-white'
-                                  : 'bg-gradient-to-br from-red-400 to-rose-500 text-white'
-                            }`}>
-                              {badge.owned === undefined ? (
-                                <HelpCircle size={22} className="text-gray-500" />
-                              ) : badge.owned ? (
-                                <CheckCircle2 size={22} className="text-white" />
-                              ) : (
-                                <XCircle size={22} className="text-white" />
-                              )}
-                            </div>
-                          </div>
-                          
-                          <div className="flex-1">
-                            <h3 className={`font-semibold text-lg ${badge.owned ? 'text-emerald-800' : 'text-gray-800'}`}>
-                              {searchTerm ? highlightText(badge.name, searchTerm) : badge.name}
-                            </h3>
-                            <div className="flex flex-wrap gap-2 mt-1">
-                              <span className="text-sm text-gray-500">{truncateAddress(badge.contractAddress)}</span>
-                              {renderBadgeStatus(badge)}
-                            </div>
-                          </div>
-                          
-                          <a
-                            href={`https://soneium.blockscout.com/token/${badge.contractAddress}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex-shrink-0 text-emerald-600 hover:text-emerald-700 flex items-center gap-1 group bg-emerald-50 hover:bg-emerald-100 px-3 py-2 rounded-lg transition-all duration-200 border border-emerald-100 mt-2 sm:mt-0"
-                          >
-                            <span className="text-sm font-medium">View on Explorer</span>
-                            <ExternalLink size={16} className="group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
-                          </a>
+                        <div className="flex items-center gap-3 flex-shrink-0">
+                          <div className={`p-3 rounded-full shadow-md ${
+                    badge.owned === undefined
+                      ? 'bg-gray-100'
+                      : badge.owned
+                        ? 'bg-gradient-to-br from-green-400 to-emerald-500 text-white'
+                        : 'bg-gradient-to-br from-red-400 to-rose-500 text-white'
+                  }`}>
+                    {badge.owned === undefined ? (
+                              <HelpCircle size={22} className="text-gray-500" />
+                    ) : badge.owned ? (
+                      <CheckCircle2 size={22} className="text-white" />
+                    ) : (
+                      <XCircle size={22} className="text-white" />
+                    )}
+                  </div>
+                        </div>
+                        
+                        <div className="flex-1">
+                          <h3 className={`font-semibold text-lg ${badge.owned ? 'text-emerald-800' : 'text-gray-800'}`}>
+                            {searchTerm ? highlightText(badge.name, searchTerm) : badge.name}
+                          </h3>
+                          <div className="flex flex-wrap gap-2 mt-1">
+                            <span className="text-sm text-gray-500">{truncateAddress(badge.contractAddress)}</span>
+                            {renderBadgeStatus(badge)}
+                  </div>
+                </div>
+                        
+                <a
+                  href={`https://soneium.blockscout.com/token/${badge.contractAddress}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                          className="flex-shrink-0 text-emerald-600 hover:text-emerald-700 flex items-center gap-1 group bg-emerald-50 hover:bg-emerald-100 px-3 py-2 rounded-lg transition-all duration-200 border border-emerald-100 mt-2 sm:mt-0"
+                >
+                          <span className="text-sm font-medium">View on Explorer</span>
+                  <ExternalLink size={16} className="group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+                </a>
                         </div>
                       </div>
                     </div>

@@ -47,6 +47,22 @@ const nextConfig = {
       },
     ];
   },
+  // Add rewrites to ensure direct API access
+  async rewrites() {
+    return {
+      fallback: [
+        // Ensure Somnia API calls go directly to the intended endpoints
+        {
+          source: '/api/somnia/:path*',
+          destination: 'https://somnia-poc.w3us.site/api/v2/:path*',
+        },
+        {
+          source: '/api/shannon/:path*',
+          destination: 'https://shannon-explorer.somnia.network/api/:path*',
+        },
+      ],
+    };
+  },
   env: {
     // Alchemy API keys (10 keys as mentioned by user)
     VITE_ALCHEMY_API_KEY_1: process.env.VITE_ALCHEMY_API_KEY_1 || 'FBKOVxVYW0yobV1ntzs7u5qM0E6_xRwO',
