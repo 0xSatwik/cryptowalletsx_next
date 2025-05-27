@@ -20,6 +20,11 @@ const posts = [
     slug: 'monad-testnet-score-calculation',
     title: "How Monad Testnet Score is Calculated: Complete Guide",
     image: "https://images.unsplash.com/photo-1620712943543-bcc4688e7485?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80",
+  },
+  {
+    slug: 'sahara-ai-score-calculation',
+    title: "Sahara AI Testnet Score: Unveiling the Calculation Method",
+    image: "https://images.unsplash.com/photo-1639755982994-8825056a25c6?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80",
   }
 ];
 

@@ -34,6 +34,17 @@ export default function Web3Tools() {
       iconBg: 'bg-purple-400 bg-opacity-30'
     },
     {
+      title: 'Sahara AI Stats Checker',
+      description: 'Check your wallet activity, score, and stats on the Sahara AI Testnet.',
+      link: '/sahara-ai-stats-checker',
+      icon: <BarChart2 className="h-6 w-6 text-white" />,
+      tags: ['wallet', 'stats', 'analytics', 'sahara ai', 'testnet', 'score'],
+      chain: 'Sahara AI',
+      featured: false,
+      bgGradient: 'from-green-500 to-green-700',
+      iconBg: 'bg-green-400 bg-opacity-30'
+    },
+    {
       title: 'MegaETH Stats Checker',
       description: 'Analyze your Ethereum wallet activity, transaction history, and on-chain performance.',
       link: '/megaeth',

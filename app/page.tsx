@@ -65,6 +65,14 @@ export default function Home() {
       chain: 'Mitosis'
     },
     {
+      name: 'Sahara AI Stats Checker',
+      description: 'Check your wallet activity on the Sahara AI Testnet',
+      path: '/sahara-ai-stats-checker',
+      icon: <Zap size={20} />,
+      logoColor: 'bg-green-600 text-white',
+      chain: 'Sahara AI'
+    },
+    {
       name: 'Linea Bulk Checker',
       description: 'Check multiple Linea wallets at once',
       path: '/linea/bulk',
