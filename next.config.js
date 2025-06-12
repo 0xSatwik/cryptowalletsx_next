@@ -19,6 +19,11 @@ const nextConfig = {
         permanent: true,
       },
       {
+        source: '/mitosis-rank',
+        destination: '/mitosis',
+        permanent: true,
+      },
+      {
         source: '/zora-eligibility',
         destination: '/zora',
         permanent: true,
