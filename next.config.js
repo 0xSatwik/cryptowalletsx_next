@@ -10,7 +10,7 @@ const nextConfig = {
       // Original redirects
       {
         source: '/zora',
-        destination: '/',
+        destination: '/web3-tools',
         permanent: true,
       },
       {
