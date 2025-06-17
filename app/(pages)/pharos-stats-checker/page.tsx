@@ -5,10 +5,10 @@ import { formatDistanceToNow, format, parseISO } from 'date-fns';
 import { ExternalLink, Twitter, Activity, Zap, Wallet, Calendar, Image, Package, Coins, FileText, Shield, Repeat, ArrowDown, ArrowUp } from 'lucide-react';
 
 // Constants for API and Explorer
-const PHAROS_PROFILE_API_URL = '/api/pharos/v1/explorer/address';
-const PHAROS_TRANSACTIONS_API_URL = '/api/pharos/v1/explorer/transactions';
-const PHAROS_TOKEN_HOLDINGS_API_URL = '/api/pharos/v2/explorer/address';
-const PHAROS_TOKEN_TRANSFERS_API_URL = '/api/pharos/v1/explorer/token_transfers';
+const PHAROS_PROFILE_API_URL = 'https://api.socialscan.io/pharos-testnet/v1/explorer/address';
+const PHAROS_TRANSACTIONS_API_URL = 'https://api.socialscan.io/pharos-testnet/v1/explorer/transactions';
+const PHAROS_TOKEN_HOLDINGS_API_URL = 'https://api.socialscan.io/pharos-testnet/v2/explorer/address';
+const PHAROS_TOKEN_TRANSFERS_API_URL = 'https://api.socialscan.io/pharos-testnet/v1/explorer/token_transfers';
 const PHAROS_EXPLORER_URL = 'https://pharos-testnet.socialscan.io';
 
 const TRANSACTIONS_PER_PAGE = 20;
