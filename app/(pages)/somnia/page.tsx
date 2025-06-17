@@ -619,33 +619,42 @@ export default function SomniaStatsChecker() {
 
   // Helper function to format token balance with proper decimals
   const formatTokenBalance = (value: string, decimals: string): string => {
-    if (!value || !decimals) return '0';
+    if (!value) return '0';
     
-    const decimalPlaces = parseInt(decimals);
-    const valueBigInt = BigInt(value);
-    
-    // For small values, we'll need to handle leading zeros
-    const valueStr = valueBigInt.toString();
-    
-    // If the value is less than 10^decimals, we need to add leading zeros
-    if (valueStr.length <= decimalPlaces) {
-      const leadingZeros = decimalPlaces - valueStr.length;
-      const formattedValue = '0.' + '0'.repeat(leadingZeros) + valueStr;
-      return parseFloat(formattedValue).toString();
+    const decimalPlaces = parseInt(decimals || '0');
+    if (isNaN(decimalPlaces)) {
+      return '0';
     }
-    
-    // Insert decimal point at the right position
-    const integerPart = valueStr.slice(0, valueStr.length - decimalPlaces);
-    const fractionalPart = valueStr.slice(valueStr.length - decimalPlaces);
-    
-    // Truncate trailing zeros in fractional part
-    const trimmedFractionalPart = fractionalPart.replace(/0+$/, '');
-    
-    if (trimmedFractionalPart.length === 0) {
-      return integerPart;
+
+    try {
+      const valueBigInt = BigInt(value);
+      
+      // For small values, we'll need to handle leading zeros
+      const valueStr = valueBigInt.toString();
+      
+      // If the value is less than 10^decimals, we need to add leading zeros
+      if (valueStr.length <= decimalPlaces) {
+        const leadingZeros = decimalPlaces - valueStr.length;
+        const formattedValue = '0.' + '0'.repeat(leadingZeros) + valueStr;
+        return parseFloat(formattedValue).toString();
+      }
+      
+      // Insert decimal point at the right position
+      const integerPart = valueStr.slice(0, valueStr.length - decimalPlaces);
+      const fractionalPart = valueStr.slice(valueStr.length - decimalPlaces);
+      
+      // Truncate trailing zeros in fractional part
+      const trimmedFractionalPart = fractionalPart.replace(/0+$/, '');
+      
+      if (trimmedFractionalPart.length === 0) {
+        return integerPart;
+      }
+      
+      return `${integerPart}.${trimmedFractionalPart}`;
+    } catch (e) {
+      console.error(`Error formatting token balance with value: ${value} and decimals: ${decimals}`, e);
+      return '0'; // Return 0 if BigInt conversion fails
     }
-    
-    return `${integerPart}.${trimmedFractionalPart}`;
   };
 
   // Format for displaying wallet balance in ETH, not wei
@@ -1898,24 +1907,39 @@ export default function SomniaStatsChecker() {
                       <tbody className="bg-white dark:bg-gray-800 divide-y divide-blue-100 dark:divide-blue-800/20">
                         {tokenHoldings
                           .sort((a, b) => {
-                            // Convert values to BigInt for comparison, accounting for different decimals
-                            const aValueNum = BigInt(a.value) / (10n ** BigInt(parseInt(a.token.decimals)));
-                            const bValueNum = BigInt(b.value) / (10n ** BigInt(parseInt(b.token.decimals)));
-                            return bValueNum > aValueNum ? 1 : -1;
+                            const aDecimals = parseInt(a.token.decimals || '18');
+                            const bDecimals = parseInt(b.token.decimals || '18');
+
+                            if (isNaN(aDecimals) || isNaN(bDecimals)) {
+                              return 0;
+                            }
+
+                            try {
+                              const aValue = BigInt(a.value || '0');
+                              const bValue = BigInt(b.value || '0');
+                              const aValueNum = aValue / (10n ** BigInt(aDecimals));
+                              const bValueNum = bValue / (10n ** BigInt(bDecimals));
+                              if (bValueNum > aValueNum) return 1;
+                              if (bValueNum < aValueNum) return -1;
+                              return 0;
+                            } catch (e) {
+                              console.error('Error sorting token holdings:', e);
+                              return 0;
+                            }
                           })
                           .map((holding, index) => (
                           <tr key={index} className="hover:bg-blue-50 dark:hover:bg-blue-900/10 transition-colors">
                             <td className="px-6 py-4 whitespace-nowrap">
                               <div className="flex items-center">
                                 <div className="flex-shrink-0 h-10 w-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white font-bold text-sm">
-                                  {holding.token.symbol.slice(0, 2)}
+                                  {(holding.token?.symbol || '??').slice(0, 2)}
                                 </div>
                                 <div className="ml-4">
                                   <div className="text-sm font-medium text-gray-900 dark:text-white">
-                                    {holding.token.name}
+                                    {holding.token?.name || 'Unknown Token'}
                                   </div>
-                                  <div className="text-sm text-gray-500 dark:text-gray-400 font-mono">
-                                    {holding.token.symbol}
+                                  <div className="text-sm text-gray-500 dark:text-gray-400">
+                                    {holding.token?.symbol || 'N/A'}
                                   </div>
                                 </div>
                               </div>

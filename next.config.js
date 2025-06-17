@@ -65,6 +65,23 @@ const nextConfig = {
           source: '/api/shannon/:path*',
           destination: 'https://shannon-explorer.somnia.network/api/:path*',
         },
+        // Pharos API rewrites
+        {
+          source: '/api/pharos/v1/explorer/:path*',
+          destination: 'https://api.socialscan.io/pharos-testnet/v1/explorer/:path*',
+        },
+        {
+          source: '/api/pharos/v2/explorer/:path*',
+          destination: 'https://api.socialscan.io/pharos-testnet/v2/explorer/:path*',
+        },
+        {
+          source: '/api/pharos/v2/explorer/address/:address/token_holdings',
+          destination: 'https://api.socialscan.io/pharos-testnet/v2/explorer/address/:address/token_holdings',
+        },
+        {
+          source: '/api/pharos/v1/explorer/token_transfers',
+          destination: 'https://api.socialscan.io/pharos-testnet/v1/explorer/token_transfers',
+        },
       ],
     };
   },
