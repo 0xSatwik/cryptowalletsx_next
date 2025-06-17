@@ -18,6 +18,14 @@ const nextConfig = {
         destination: '/mitosis',
         permanent: true,
       },
+
+
+      {
+        source: '/pharos',
+        destination: '/pharos-stats-checker',
+        permanent: true,
+      },
+
       {
         source: '/mitosis-rank',
         destination: '/mitosis',
