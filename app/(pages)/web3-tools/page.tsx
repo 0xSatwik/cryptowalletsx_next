@@ -50,7 +50,7 @@ export default function Web3Tools() {
     {
       title: 'Pharos testnet Stats Checker',
       description: 'Check your wallet activity, score, and stats on the Pharos Testnet.',
-      link: '/pharos',
+      link: '/pharos-stats-checker',
       icon: <BarChart2 className="h-6 w-6 text-white" />,
       tags: ['wallet', 'stats', 'analytics', 'pharos', 'testnet', 'score'],
       chain: 'Pharos testnet',
