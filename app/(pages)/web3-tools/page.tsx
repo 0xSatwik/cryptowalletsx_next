@@ -44,13 +44,30 @@ export default function Web3Tools() {
       bgGradient: 'from-green-500 to-green-700',
       iconBg: 'bg-green-400 bg-opacity-30'
     },
+
+
+
+    {
+      title: 'Pharos testnet Stats Checker',
+      description: 'Check your wallet activity, score, and stats on the Pharos Testnet.',
+      link: '/pharos',
+      icon: <BarChart2 className="h-6 w-6 text-white" />,
+      tags: ['wallet', 'stats', 'analytics', 'pharos', 'testnet', 'score'],
+      chain: 'Pharos testnet',
+      featured: false,
+      bgGradient: 'from-violet-500 to-orange-900',
+      iconBg: 'bg-blue-400 bg-opacity-30'
+    },
+
+
+
     {
       title: 'MegaETH Stats Checker',
       description: 'Analyze your Ethereum wallet activity, transaction history, and on-chain performance.',
       link: '/megaeth',
       icon: <BarChart2 className="h-6 w-6 text-white" />,
       tags: ['wallet', 'stats', 'analytics', 'ethereum', 'eth', 'score'],
-      chain: 'Ethereum',
+      chain: 'MegaETH',
       bgGradient: 'from-blue-500 to-blue-700',
       iconBg: 'bg-blue-400 bg-opacity-30'
     },
