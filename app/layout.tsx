@@ -10,7 +10,7 @@ const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
   title: {
-    template: '%s | WalletsX',
+    template: '%s',
     default: 'WalletsX - Crypto Wallet Analytics',
   },
   description: 'Comprehensive analytics for your crypto wallets across multiple platforms and ecosystems.',

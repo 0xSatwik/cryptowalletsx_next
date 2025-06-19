@@ -13,6 +13,14 @@ const nextConfig = {
         destination: '/web3-tools',
         permanent: true,
       },
+
+
+      {
+        source: '/sahara',
+        destination: '/sahara-ai-stats-checker',
+        permanent: true,
+      },
+
       {
         source: '/mitosis-matrix',
         destination: '/mitosis',

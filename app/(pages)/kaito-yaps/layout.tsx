@@ -1,7 +1,7 @@
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Kaito YAPS Checker | Track Twitter Engagement',
+  title: 'Kaito YAPS Checker | Check kaito YAPS',
   description: 'Check Kaito YAPS scores for Twitter users. Track engagement metrics and analyze performance across multiple timeframes.',
   keywords: 'Kaito, YAPS, Twitter, engagement, metrics, analytics'
 }

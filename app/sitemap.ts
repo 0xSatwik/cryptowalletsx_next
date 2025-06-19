@@ -27,6 +27,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     '/monad-testnet',
     '/layerzero-stats',
     '/linea',
+    '/sahara-ai-stats-checker',
     '/mitosis',
     '/game-of-mito',
     '/somnia',
@@ -35,6 +36,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     '/galxe-airdrops',
     '/kaito-yaps',
     '/ink',
+    '/pharos-stats-checker',
     '/gitcoin'
   ];
   

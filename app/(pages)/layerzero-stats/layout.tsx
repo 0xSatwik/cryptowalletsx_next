@@ -1,7 +1,7 @@
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'LayerZero Stats Checker | WalletsX',
+  title: 'LayerZero Stats Checker | Check layerzero stats',
   description: 'Check your LayerZero transactions statistics for the second airdrop. Track your cross-chain activity since May 1, 2024.',
   keywords: 'LayerZero, airdrop, cross-chain, transactions, blockchain, wallet stats',
   openGraph: {

@@ -1,7 +1,7 @@
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Linea Chain Stats | Track Your Wallet Activity | WalletsX',
+  title: 'Linea stats checker | linea rank checker',
   description: 'Analyze your wallet statistics on Linea Chain. Track transactions, LXP points, gas usage, NFTs, tokens, and more with detailed insights.',
   keywords: 'Linea Chain, wallet tracker, blockchain stats, NFT holdings, token balance, gas usage, contract interactions, LXP points',
   openGraph: {

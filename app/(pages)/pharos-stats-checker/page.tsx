@@ -366,10 +366,10 @@ export default function PharosStatsChecker() {
                 <div className="flex flex-col space-y-8">
                     <div className="text-center">
                         <h1 className="text-4xl md:text-5xl font-extrabold text-gray-800 tracking-tight">
-                            Pharos Stats Explorer
+                            Pharos testnet stats checker
                         </h1>
                         <p className="mt-4 text-lg text-gray-500 max-w-2xl mx-auto">
-                            Explore detailed wallet analytics, transaction history, and calculate your Pharos wallet score.
+                            Explore detailed wallet analytics, transaction history, and calculate your Pharos testnet score.
                         </p>
                     </div>
 

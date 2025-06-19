@@ -1,7 +1,7 @@
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Soneium Chain Stats | Track Your Wallet Activity | WalletsX',
+  title: 'Soneium Chain Stats | Track Your Wallet soneium Activity',
   description: 'Analyze your wallet statistics on Soneium Chain. Track transactions, gas usage, NFTs, tokens, and more with detailed insights.',
   keywords: 'Soneium Chain, wallet tracker, blockchain stats, NFT holdings, token balance, gas usage, contract interactions',
   openGraph: {
