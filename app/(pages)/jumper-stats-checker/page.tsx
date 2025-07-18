@@ -71,6 +71,12 @@ interface WalletStats {
   totalTransactions: number;
   totalVolumeUSD: number;
   uniqueChains: number;
+  uniqueDays: number;
+  uniqueWeeks: number;
+  uniqueMonths: number;
+  walletAge: number;
+  firstTransactionDate: Date | null;
+  lastTransactionDate: Date | null;
   transactions: JumperTransfer[];
   chainUsage: { [chainId: number]: { count: number; volumeUSD: number; name: string; logoURI: string } };
   activityTimeline: {
@@ -83,9 +89,6 @@ interface WalletStats {
     uniqueWeeks: number;
     uniqueMonths: number;
   };
-  walletAge: number; // in days
-  firstTransactionDate: Date | null;
-  lastTransactionDate: Date | null;
 }
 
 const JumperStatsChecker = () => {
@@ -119,8 +122,8 @@ const JumperStatsChecker = () => {
     return chains[chainId]?.name || `Chain ${chainId}`;
   };
 
-  const getChainIcon = (chainId: number): string | null => {
-    return chains[chainId]?.logoURI || null;
+  const getChainIcon = (chainId: number): string | undefined => {
+    return chains[chainId]?.logoURI;
   };
 
   const formatNumber = (num: number): string => {
@@ -207,9 +210,7 @@ const JumperStatsChecker = () => {
     });
 
     // Calculate wallet age in days
-    const walletAge = firstTransactionDate && lastTransactionDate
-      ? Math.ceil((lastTransactionDate.getTime() - firstTransactionDate.getTime()) / (24 * 60 * 60 * 1000))
-      : 0;
+    const walletAge = transfers.length > 0 ? Math.ceil((Date.now() - transfers[transfers.length - 1].sending.timestamp * 1000) / (24 * 60 * 60 * 1000)) : 0;
 
     return {
       totalTransactions: transfers.length,

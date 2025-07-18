@@ -208,7 +208,7 @@ export default function RelayStatsChecker() {
       do {
         setLoadingProgress(`Fetching page ${pageCount + 1}... (${allTransactions.length} transactions found)`);
 
-        const url = continuation
+        const url: string = continuation
           ? `https://api.relay.link/requests/v2?user=${walletAddress}&continuation=${continuation}`
           : `https://api.relay.link/requests/v2?user=${walletAddress}`;
 
