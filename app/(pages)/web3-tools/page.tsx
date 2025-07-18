@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { Search, ArrowRight, Wallet, BarChart2, ClipboardList, Boxes, Gift, Zap, Coins, CheckCircle2, Trophy, FileBarChart2, Database, Shield, Sparkles, Layers, Star, Network } from 'lucide-react';
+import { Search, ArrowRight, Wallet, BarChart2, ClipboardList, Boxes, Gift, Zap, Coins, CheckCircle2, Trophy, FileBarChart2, Database, Shield, Sparkles, Layers, Star, Network, ArrowUpDown } from 'lucide-react';
 
 interface Tool {
   title: string;
@@ -43,6 +43,17 @@ export default function Web3Tools() {
       featured: false,
       bgGradient: 'from-green-500 to-green-700',
       iconBg: 'bg-green-400 bg-opacity-30'
+    },
+    {
+      title: 'Relay Stats Checker',
+      description: 'Check your Relay bridge activity including transactions, volume, and chain usage.',
+      link: '/relay-stats-checker',
+      icon: <ArrowUpDown className="h-6 w-6 text-white" />,
+      tags: ['wallet', 'stats', 'analytics', 'relay', 'bridge', 'cross-chain'],
+      chain: 'Relay',
+      featured: true,
+      bgGradient: 'from-blue-500 to-purple-600',
+      iconBg: 'bg-blue-400 bg-opacity-30'
     },
 
 

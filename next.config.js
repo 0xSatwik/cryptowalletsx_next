@@ -35,6 +35,12 @@ const nextConfig = {
       },
 
       {
+        source: '/relay',
+        destination: '/relay-stats-checker',
+        permanent: true,
+      },
+
+      {
         source: '/mitosis-rank',
         destination: '/mitosis',
         permanent: true,

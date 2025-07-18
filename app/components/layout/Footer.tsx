@@ -48,26 +48,26 @@ const Footer = () => {
       
       {/* Main Footer Content */}
       <div className="max-w-7xl mx-auto py-16 px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 md:grid-cols-6 gap-12">
+        <div className="grid grid-cols-1 lg:grid-cols-6 gap-8 lg:gap-12">
           {/* Logo and description - 2 columns */}
-          <div className="md:col-span-2">
-            <div className="bg-white p-8 rounded-2xl shadow-lg border border-blue-100 transform transition-transform hover:shadow-xl">
+          <div className="lg:col-span-2">
+            <div className="bg-white p-6 lg:p-8 rounded-2xl shadow-lg border border-blue-100 transform transition-transform hover:shadow-xl">
               <Link href="/" className="flex items-center">
-                <div className="h-16 w-16 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 flex items-center justify-center transform rotate-12 shadow-lg">
-                  <Wallet className="h-8 w-8 text-white" />
+                <div className="h-12 w-12 lg:h-16 lg:w-16 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 flex items-center justify-center transform rotate-12 shadow-lg">
+                  <Wallet className="h-6 w-6 lg:h-8 lg:w-8 text-white" />
                 </div>
-                <div className="ml-4">
-                  <span className="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">
+                <div className="ml-3 lg:ml-4">
+                  <span className="text-2xl lg:text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">
                     WalletsX
                   </span>
                   <span className="block text-xs font-medium text-blue-400 mt-0">Analytics & Tools</span>
                 </div>
               </Link>
-              <div className="h-px bg-gradient-to-r from-transparent via-blue-200 to-transparent my-6"></div>
-              <p className="text-gray-600 text-lg leading-relaxed">
+              <div className="h-px bg-gradient-to-r from-transparent via-blue-200 to-transparent my-4 lg:my-6"></div>
+              <p className="text-gray-600 text-base lg:text-lg leading-relaxed">
                 Track your crypto wallets across multiple networks with our comprehensive analytics tools.
               </p>
-              <div className="mt-8 flex space-x-3">
+              <div className="mt-6 lg:mt-8 flex space-x-3">
                 {socialLinks.map((item) => {
                   const Icon = item.icon;
                   return (
@@ -76,10 +76,10 @@ const Footer = () => {
                       href={item.href}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className={`p-4 ${item.color} rounded-xl text-white shadow-md hover:shadow-lg transform hover:-translate-y-1 transition-all duration-300`}
+                      className={`p-3 lg:p-4 ${item.color} rounded-xl text-white shadow-md hover:shadow-lg transform hover:-translate-y-1 transition-all duration-300`}
                     >
                       <span className="sr-only">{item.name}</span>
-                      <Icon className="h-5 w-5" />
+                      <Icon className="h-4 w-4 lg:h-5 lg:w-5" />
                     </a>
                   );
                 })}
@@ -88,28 +88,28 @@ const Footer = () => {
           </div>
           
           {/* Tools Navigation - 2 columns */}
-          <div className="md:col-span-2">
-            <div className="bg-white p-8 rounded-2xl shadow-lg border border-blue-100 h-full transform transition-transform hover:shadow-xl">
-              <h3 className="text-xl font-extrabold text-gray-800 mb-8 flex items-center">
-                <span className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center mr-3">
-                  <Wrench className="h-5 w-5 text-blue-600" />
+          <div className="lg:col-span-2">
+            <div className="bg-white p-6 lg:p-8 rounded-2xl shadow-lg border border-blue-100 h-full transform transition-transform hover:shadow-xl">
+              <h3 className="text-lg lg:text-xl font-extrabold text-gray-800 mb-6 lg:mb-8 flex items-center">
+                <span className="w-8 h-8 lg:w-10 lg:h-10 rounded-full bg-blue-100 flex items-center justify-center mr-2 lg:mr-3">
+                  <Wrench className="h-4 w-4 lg:h-5 lg:w-5 text-blue-600" />
                 </span>
                 Tools & Networks
               </h3>
-              <ul className="space-y-5">
+              <ul className="space-y-3 lg:space-y-5">
                 {mainLinks.map((item) => {
                   const Icon = item.icon;
                   return (
                     <li key={item.name}>
                       <Link
                         href={item.href}
-                        className="flex items-center p-3 rounded-xl hover:bg-blue-50 transition-all duration-200 group"
+                        className="flex items-center p-2 lg:p-3 rounded-xl hover:bg-blue-50 transition-all duration-200 group"
                       >
-                        <div className={`${item.color} p-3 rounded-xl text-white shadow-md group-hover:shadow-lg transition-all duration-300`}>
-                          <Icon className="h-5 w-5" />
+                        <div className={`${item.color} p-2 lg:p-3 rounded-xl text-white shadow-md group-hover:shadow-lg transition-all duration-300`}>
+                          <Icon className="h-4 w-4 lg:h-5 lg:w-5" />
                         </div>
-                        <span className="ml-4 font-medium text-gray-700 group-hover:text-blue-600 transition-colors duration-200">{item.name}</span>
-                        <ChevronRight className="ml-auto h-5 w-5 text-gray-300 group-hover:text-blue-500 transform group-hover:translate-x-1 transition-all duration-300" />
+                        <span className="ml-3 lg:ml-4 font-medium text-gray-700 group-hover:text-blue-600 transition-colors duration-200 text-sm lg:text-base">{item.name}</span>
+                        <ChevronRight className="ml-auto h-4 w-4 lg:h-5 lg:w-5 text-gray-300 group-hover:text-blue-500 transform group-hover:translate-x-1 transition-all duration-300" />
                       </Link>
                     </li>
                   );
@@ -119,23 +119,23 @@ const Footer = () => {
           </div>
           
           {/* Important Links - 2 columns */}
-          <div className="md:col-span-2">
-            <h3 className="text-lg font-bold text-gray-800 mb-6">
+          <div className="lg:col-span-2">
+            <h3 className="text-lg font-bold text-gray-800 mb-4 lg:mb-6">
               Important Links
             </h3>
-            <div className="grid gap-4">
+            <div className="grid gap-3 lg:gap-4">
               {importantLinks.map((item) => {
                 const Icon = item.icon;
                 return (
                   <Link
                     key={item.name}
                     href={item.href}
-                    className="flex items-center p-4 bg-white rounded-lg shadow-md hover:shadow-lg transition-all duration-300 hover:-translate-y-1 transform border-l-4 border-blue-600"
+                    className="flex items-center p-3 lg:p-4 bg-white rounded-lg shadow-md hover:shadow-lg transition-all duration-300 hover:-translate-y-1 transform border-l-4 border-blue-600"
                   >
-                    <div className={`${item.color} p-3 rounded-lg`}>
-                      <Icon className="h-5 w-5 text-white" />
+                    <div className={`${item.color} p-2 lg:p-3 rounded-lg`}>
+                      <Icon className="h-4 w-4 lg:h-5 lg:w-5 text-white" />
                     </div>
-                    <span className="ml-4 font-medium text-gray-800">{item.name}</span>
+                    <span className="ml-3 lg:ml-4 font-medium text-gray-800 text-sm lg:text-base">{item.name}</span>
                   </Link>
                 );
               })}
@@ -144,26 +144,26 @@ const Footer = () => {
         </div>
         
         {/* Bottom section */}
-        <div className="mt-16 relative">
+        <div className="mt-12 lg:mt-16 relative">
           <div className="absolute left-0 right-0 h-px bg-gradient-to-r from-transparent via-blue-300 to-transparent"></div>
-          <div className="pt-8 mt-3 bg-white/50 backdrop-blur-sm rounded-2xl p-6 flex flex-col md:flex-row justify-between items-center shadow-sm">
-            <div className="flex items-center mb-4 md:mb-0">
-              <div className="h-8 w-8 rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 flex items-center justify-center mr-3">
-                <Wallet className="h-4 w-4 text-white" />
+          <div className="pt-6 lg:pt-8 mt-3 bg-white/50 backdrop-blur-sm rounded-2xl p-4 lg:p-6 flex flex-col lg:flex-row justify-between items-center shadow-sm">
+            <div className="flex items-center mb-4 lg:mb-0">
+              <div className="h-6 w-6 lg:h-8 lg:w-8 rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 flex items-center justify-center mr-2 lg:mr-3">
+                <Wallet className="h-3 w-3 lg:h-4 lg:w-4 text-white" />
               </div>
-              <p className="text-base font-medium text-gray-600">
+              <p className="text-sm lg:text-base font-medium text-gray-600">
                 &copy; {currentYear} <span className="text-blue-600">WalletsX</span>. All rights reserved.
               </p>
             </div>
-            <div className="flex flex-wrap justify-center md:justify-end gap-4 md:space-x-8">
-              <Link href="/privacy" className="text-gray-600 hover:text-blue-600 transition-colors flex items-center">
-                <Lock className="h-4 w-4 mr-1" /> Privacy Policy
+            <div className="flex flex-wrap justify-center lg:justify-end gap-3 lg:gap-4 lg:space-x-8">
+              <Link href="/privacy" className="text-gray-600 hover:text-blue-600 transition-colors flex items-center text-sm lg:text-base">
+                <Lock className="h-3 w-3 lg:h-4 lg:w-4 mr-1" /> Privacy Policy
               </Link>
-              <Link href="/terms" className="text-gray-600 hover:text-blue-600 transition-colors flex items-center">
-                <Info className="h-4 w-4 mr-1" /> Terms of Service
+              <Link href="/terms" className="text-gray-600 hover:text-blue-600 transition-colors flex items-center text-sm lg:text-base">
+                <Info className="h-3 w-3 lg:h-4 lg:w-4 mr-1" /> Terms of Service
               </Link>
-              <Link href="/contact" className="text-gray-600 hover:text-blue-600 transition-colors flex items-center">
-                <Mail className="h-4 w-4 mr-1" /> Support
+              <Link href="/contact" className="text-gray-600 hover:text-blue-600 transition-colors flex items-center text-sm lg:text-base">
+                <Mail className="h-3 w-3 lg:h-4 lg:w-4 mr-1" /> Support
               </Link>
             </div>
           </div>

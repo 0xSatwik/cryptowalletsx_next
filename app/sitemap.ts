@@ -28,6 +28,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     '/layerzero-stats',
     '/linea',
     '/sahara-ai-stats-checker',
+    '/relay-stats-checker',
     '/mitosis',
     '/game-of-mito',
     '/somnia',
