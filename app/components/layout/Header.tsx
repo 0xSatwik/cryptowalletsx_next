@@ -93,6 +93,7 @@ const Header = () => {
         { name: 'All Tools', href: '/web3-tools', icon: Wrench },
         { name: 'Relay Stats Checker', href: '/relay-stats-checker', icon: Activity },
         { name: 'Jumper Stats Checker', href: '/jumper-stats-checker', icon: Zap },
+        { name: 'Fogo Stats Checker', href: '/fogo-stats-checker', icon: Database },
         { name: 'Gitcoin Passport', href: '/gitcoin/bulk', icon: Shield },
         { name: 'Balance Checker', href: '/balance-checker', icon: Coins },
         { name: 'Galxe Points', href: '/galxe-airdrops', icon: Gift },

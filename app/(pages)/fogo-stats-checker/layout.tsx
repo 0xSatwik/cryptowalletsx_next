@@ -3,7 +3,7 @@ import { metadata } from './metadata';
 
 export { metadata };
 
-export default function RelayStatsCheckerLayout({
+export default function FogoStatsCheckerLayout({
   children,
 }: {
   children: React.ReactNode;
@@ -17,9 +17,9 @@ export default function RelayStatsCheckerLayout({
           __html: JSON.stringify({
             "@context": "https://schema.org",
             "@type": "WebApplication",
-            "name": "Relay Stats Checker",
-            "description": "Comprehensive Relay Network wallet analyzer and stats checker. Check Relay wallet rank, activity, transaction history, and bridge analytics.",
-            "url": "https://cryptowalletsx.com/relay-stats-checker",
+            "name": "Fogo Chain Stats Checker",
+            "description": "Comprehensive Fogo Chain wallet analyzer and stats checker. Check FogoChain wallet rank, activity, transaction history, and on-chain analytics.",
+            "url": "https://cryptowalletsx.com/fogo-stats-checker",
             "applicationCategory": "FinanceApplication",
             "operatingSystem": "Any",
             "offers": {
@@ -33,26 +33,26 @@ export default function RelayStatsCheckerLayout({
               "url": "https://cryptowalletsx.com"
             },
             "featureList": [
-              "Relay Network wallet stats checking",
-              "Relay rank analysis",
-              "Bridge transaction tracking",
-              "Cross-chain analytics",
-              "Portfolio monitoring",
-              "On-chain activity analysis",
+              "Fogo Chain wallet stats checking",
+              "FogoChain rank analysis",
+              "Transaction history tracking",
+              "Staking rewards calculation",
+              "Portfolio analytics",
+              "On-chain activity monitoring",
               "Wallet performance metrics",
               "Real-time blockchain data"
             ],
-            "screenshot": "https://cryptowalletsx.com/og-relay-stats-checker.jpg",
+            "screenshot": "https://cryptowalletsx.com/og-fogo-stats-checker.jpg",
             "softwareVersion": "1.0",
             "datePublished": "2025-01-23",
             "dateModified": "2025-01-23",
             "inLanguage": "en-US",
             "isAccessibleForFree": true,
-            "keywords": "relay stats checker, relay network rank checker, relay stats, relay wallet rank, relay activity checker"
+            "keywords": "fogo chain stats checker, fogochain rank checker, fogo stats, fogochain wallet rank, fogochain activity checker"
           })
         }}
       />
-
+      
       {/* Breadcrumb Schema */}
       <script
         type="application/ld+json"
@@ -76,8 +76,8 @@ export default function RelayStatsCheckerLayout({
               {
                 "@type": "ListItem",
                 "position": 3,
-                "name": "Relay Stats Checker",
-                "item": "https://cryptowalletsx.com/relay-stats-checker"
+                "name": "Fogo Chain Stats Checker",
+                "item": "https://cryptowalletsx.com/fogo-stats-checker"
               }
             ]
           })
@@ -94,41 +94,41 @@ export default function RelayStatsCheckerLayout({
             "mainEntity": [
               {
                 "@type": "Question",
-                "name": "What is Relay Stats Checker?",
+                "name": "What is Fogo Chain Stats Checker?",
                 "acceptedAnswer": {
                   "@type": "Answer",
-                  "text": "Relay Stats Checker is a comprehensive wallet analyzer that provides detailed analytics for Relay Network addresses including bridge transactions, cross-chain activity, wallet rank, and on-chain metrics."
+                  "text": "Fogo Chain Stats Checker is a comprehensive wallet analyzer that provides detailed analytics for FogoChain addresses including transaction history, staking rewards, wallet rank, and on-chain activity metrics."
+                }
+              },
+              {
+                "@type": "Question", 
+                "name": "How do I check my FogoChain wallet rank?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "Simply enter your FogoChain wallet address in our stats checker tool. It will analyze your wallet activity, transaction volume, staking history, and provide comprehensive ranking metrics."
                 }
               },
               {
                 "@type": "Question",
-                "name": "How do I check my Relay Network wallet rank?",
+                "name": "Is the Fogo stats checker free to use?",
                 "acceptedAnswer": {
                   "@type": "Answer",
-                  "text": "Simply enter your Relay Network wallet address in our stats checker tool. It will analyze your wallet activity, bridge transactions, cross-chain volume, and provide comprehensive ranking metrics."
+                  "text": "Yes, our FogoChain stats checker is completely free to use. You can analyze any Fogo wallet address without any registration or fees."
                 }
               },
               {
                 "@type": "Question",
-                "name": "Is the Relay stats checker free to use?",
+                "name": "What data does the FogoChain activity checker show?",
                 "acceptedAnswer": {
                   "@type": "Answer",
-                  "text": "Yes, our Relay Network stats checker is completely free to use. You can analyze any Relay wallet address without any registration or fees."
-                }
-              },
-              {
-                "@type": "Question",
-                "name": "What data does the Relay activity checker show?",
-                "acceptedAnswer": {
-                  "@type": "Answer",
-                  "text": "Our tool shows comprehensive wallet analytics including bridge transactions, cross-chain activity, transaction volume, wallet ranking, and detailed on-chain metrics across multiple networks."
+                  "text": "Our tool shows comprehensive wallet analytics including FOGO balance, transaction history, staking rewards, unique activity periods, total volume, validator status, and detailed on-chain metrics."
                 }
               }
             ]
           })
         }}
       />
-
+      
       {children}
     </>
   );
