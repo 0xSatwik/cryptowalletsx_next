@@ -351,7 +351,17 @@ export default function BaseStatsChecker() {
     };
 
     // Process transactions to calculate stats
-    const processTransactions = (transactions: Transaction[], address: string) => {
+    const processTransactions = (transactions: Transaction[], address: string): {
+        firstTransaction: Transaction | null;
+        lastTransaction: Transaction | null;
+        uniqueDays: number;
+        uniqueWeeks: number;
+        uniqueMonths: number;
+        contractsCreated: Array<{ hash: string; timestamp: string; isVerified: boolean; name?: string }>;
+        contractsInteracted: Array<{ address: string; name?: string; isVerified: boolean; interactionCount: number }>;
+        totalVolume: number;
+        totalDeposited: number;
+    } => {
         const uniqueDatesSet = new Set<string>();
         const uniqueWeeksSet = new Set<string>();
         const uniqueMonthsSet = new Set<string>();
@@ -359,9 +369,8 @@ export default function BaseStatsChecker() {
         const contractInteractions = new Map<string, { name?: string; isVerified: boolean; count: number }>();
         let firstTransaction: Transaction | null = null;
         let lastTransaction: Transaction | null = null;
-        let totalGasSpentWei = BigInt(0);
+        let totalVolumeWei = BigInt(0);
         let totalDepositedWei = BigInt(0);
-        let bridgeUsed = false;
 
         transactions.forEach(tx => {
             const txDate = new Date(Number(tx.timeStamp) * 1000);
@@ -376,25 +385,16 @@ export default function BaseStatsChecker() {
                 lastTransaction = tx;
             }
 
-            // Track bridge usage - check if transaction is to/from Base bridge
-            if (tx.to && (tx.to.toLowerCase() === BASE_BRIDGE_ADDRESS || tx.to.toLowerCase() === BASE_PORTAL_ADDRESS)) {
-                bridgeUsed = true;
-            }
-            if (tx.from && (tx.from.toLowerCase() === BASE_BRIDGE_ADDRESS || tx.from.toLowerCase() === BASE_PORTAL_ADDRESS)) {
-                bridgeUsed = true;
+            // Calculate total volume (outgoing transactions from this wallet)
+            if (tx.from.toLowerCase() === address.toLowerCase()) {
+                const value = BigInt(tx.value || 0);
+                totalVolumeWei += value;
             }
 
             // Calculate total deposited (incoming transactions to this wallet)
             if (tx.to && tx.to.toLowerCase() === address.toLowerCase()) {
                 const value = BigInt(tx.value || 0);
                 totalDepositedWei += value;
-            }
-
-            // Calculate gas spent (only for transactions from this address)
-            if (tx.from.toLowerCase() === address.toLowerCase()) {
-                const gasUsed = BigInt(tx.gasUsed || 0);
-                const gasPrice = BigInt(tx.gasPrice || 0);
-                totalGasSpentWei += gasUsed * gasPrice;
             }
 
             // Track unique dates, weeks, months
@@ -428,15 +428,15 @@ export default function BaseStatsChecker() {
             }
         });
 
-        const contractsInteracted = Array.from(contractInteractions.entries()).map(([address, data]) => ({
-            address,
+        const contractsInteracted = Array.from(contractInteractions.entries()).map(([addr, data]) => ({
+            address: addr,
             name: data.name,
             isVerified: data.isVerified,
             interactionCount: data.count
         })).sort((a, b) => b.interactionCount - a.interactionCount);
 
         // Convert values from Wei to ETH
-        const totalGasSpentETH = Number(totalGasSpentWei) / 1e18;
+        const totalVolume = Number(totalVolumeWei) / 1e18;
         const totalDeposited = Number(totalDepositedWei) / 1e18;
 
         return {
@@ -447,9 +447,8 @@ export default function BaseStatsChecker() {
             uniqueMonths: uniqueMonthsSet.size,
             contractsCreated: createdContracts.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()),
             contractsInteracted,
-            totalGasSpentETH,
-            totalDeposited,
-            bridgeUsed
+            totalVolume,
+            totalDeposited
         };
     };
 
