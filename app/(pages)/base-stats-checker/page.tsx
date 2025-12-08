@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { formatDistanceToNow, format } from 'date-fns';
-import { ExternalLink, Search, Loader2, AlertCircle, TrendingUp, Zap, Activity, Clock, Calendar, Frame, Boxes, Building2, Users, ImageIcon, Coins, ChevronDown, ChevronUp, CheckCircle2, XCircle, Sparkles } from 'lucide-react';
+import { ExternalLink, Search, Loader2, AlertCircle, TrendingUp, Zap, Activity, Clock, Calendar, Frame, Boxes, Building2, Users, ImageIcon, Coins, ChevronDown, ChevronUp, CheckCircle2, XCircle, Sparkles, Twitter } from 'lucide-react';
 import { JsonRpcProvider } from 'ethers';
 
 // Constants for API and Explorer
@@ -132,10 +132,11 @@ export default function BaseStatsChecker() {
         walletAgeDays: number;
         firstTxDate: string;
         lastActivity: string;
+        lastActivityDays: number;
+        lastTxHash: string;
         uniqueDays: number;
         uniqueWeeks: number;
         uniqueMonths: number;
-        totalDeposited: number;
         isBaseBuilderNFTHolder: boolean;
         isBaseIntroducedNFTHolder: boolean;
         contractsCreated: Array<{ hash: string; timestamp: string; isVerified: boolean; name?: string }>;
@@ -360,7 +361,6 @@ export default function BaseStatsChecker() {
         contractsCreated: Array<{ hash: string; timestamp: string; isVerified: boolean; name?: string }>;
         contractsInteracted: Array<{ address: string; name?: string; isVerified: boolean; interactionCount: number }>;
         totalVolume: number;
-        totalDeposited: number;
     } => {
         const uniqueDatesSet = new Set<string>();
         const uniqueWeeksSet = new Set<string>();
@@ -370,7 +370,6 @@ export default function BaseStatsChecker() {
         let firstTransaction: Transaction | null = null;
         let lastTransaction: Transaction | null = null;
         let totalVolumeWei = BigInt(0);
-        let totalDepositedWei = BigInt(0);
 
         transactions.forEach(tx => {
             const txDate = new Date(Number(tx.timeStamp) * 1000);
@@ -389,12 +388,6 @@ export default function BaseStatsChecker() {
             if (tx.from.toLowerCase() === address.toLowerCase()) {
                 const value = BigInt(tx.value || 0);
                 totalVolumeWei += value;
-            }
-
-            // Calculate total deposited (incoming transactions to this wallet)
-            if (tx.to && tx.to.toLowerCase() === address.toLowerCase()) {
-                const value = BigInt(tx.value || 0);
-                totalDepositedWei += value;
             }
 
             // Track unique dates, weeks, months
@@ -437,7 +430,6 @@ export default function BaseStatsChecker() {
 
         // Convert values from Wei to ETH
         const totalVolume = Number(totalVolumeWei) / 1e18;
-        const totalDeposited = Number(totalDepositedWei) / 1e18;
 
         return {
             firstTransaction,
@@ -447,8 +439,7 @@ export default function BaseStatsChecker() {
             uniqueMonths: uniqueMonthsSet.size,
             contractsCreated: createdContracts.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()),
             contractsInteracted,
-            totalVolume,
-            totalDeposited
+            totalVolume
         };
     };
 
@@ -508,6 +499,8 @@ export default function BaseStatsChecker() {
             let walletAgeDays = 0;
             let firstTxDate = '';
             let lastActivity = 'Unknown';
+            let lastActivityDays = 0;
+            let lastTxHash = '';
 
             if (processedData.firstTransaction) {
                 const parsedDate = new Date(Number(processedData.firstTransaction.timeStamp) * 1000);
@@ -519,7 +512,10 @@ export default function BaseStatsChecker() {
 
             if (processedData.lastTransaction) {
                 const lastTxDate = new Date(Number(processedData.lastTransaction.timeStamp) * 1000);
+                const today = new Date();
+                lastActivityDays = Math.floor((today.getTime() - lastTxDate.getTime()) / (1000 * 60 * 60 * 24));
                 lastActivity = formatDistanceToNow(lastTxDate, { addSuffix: true });
+                lastTxHash = processedData.lastTransaction.hash;
             }
 
             // Set complete wallet data
@@ -536,10 +532,11 @@ export default function BaseStatsChecker() {
                 walletAgeDays,
                 firstTxDate,
                 lastActivity,
+                lastActivityDays,
+                lastTxHash,
                 uniqueDays: processedData.uniqueDays,
                 uniqueWeeks: processedData.uniqueWeeks,
                 uniqueMonths: processedData.uniqueMonths,
-                totalDeposited: processedData.totalDeposited,
                 isBaseBuilderNFTHolder: isBaseBuilderHolder,
                 isBaseIntroducedNFTHolder: isBaseIntroducedHolder,
                 contractsCreated: processedData.contractsCreated,
@@ -586,6 +583,30 @@ export default function BaseStatsChecker() {
         const decimalPlaces = parseInt(decimals || '0');
         const balance = parseFloat(value) / Math.pow(10, decimalPlaces);
         return balance.toLocaleString();
+    };
+
+    // Generate Twitter share text
+    const generateTwitterShareText = () => {
+        if (!walletData) return '';
+
+        const lines = [
+            `🔵 My #Base Network Stats:`,
+            `💰 Balance: ${formatEthBalance(walletData.balance)} ETH`,
+            `📊 Transactions: ${walletData.transactionsCount.toLocaleString()}`,
+            `🧠 Activity: ${walletData.uniqueDays} days | ${walletData.uniqueWeeks} weeks | ${walletData.uniqueMonths} months`,
+            `📅 Wallet Age: ${walletData.walletAgeDays} days`,
+            walletData.isBaseBuilderNFTHolder ? `🏆 Base Builder NFT Holder ✓` : '',
+            walletData.isBaseIntroducedNFTHolder ? `🎖️ Base Introduced NFT Holder ✓` : '',
+            `\nCheck your stats at cryptowalletsx.com/base-stats-checker`
+        ].filter(line => line !== '');
+
+        return encodeURIComponent(lines.join('\n'));
+    };
+
+    // Share on Twitter function
+    const shareOnTwitter = () => {
+        const shareText = generateTwitterShareText();
+        window.open(`https://twitter.com/intent/tweet?text=${shareText}`, '_blank');
     };
 
     return (
@@ -679,6 +700,17 @@ export default function BaseStatsChecker() {
                 {/* Wallet Data Display */}
                 {walletData && (
                     <div className="max-w-7xl mx-auto space-y-6 animate-fade-in">
+                        {/* Share Button Header */}
+                        <div className="flex justify-end">
+                            <button
+                                onClick={shareOnTwitter}
+                                className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-xl font-semibold hover:from-blue-600 hover:to-indigo-700 transition-all shadow-lg hover:shadow-xl hover:scale-105"
+                            >
+                                <Twitter className="w-5 h-5" />
+                                Share on X
+                            </button>
+                        </div>
+
                         {/* Main Stats Grid */}
                         <div className="bg-white/10 backdrop-blur-lg rounded-3xl p-6 shadow-2xl border border-white/20 hover:border-white/30 transition-all">
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -782,15 +814,23 @@ export default function BaseStatsChecker() {
                                 </div>
                             </div>
 
-                            {/* New Extended Stats - Updated with Total Volume */}
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
+                            {/* New Extended Stats - Updated */}
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-6">
                                 {/* Last Activity */}
                                 <div className="bg-gradient-to-br from-violet-500/20 to-purple-500/20 backdrop-blur-sm rounded-2xl p-4 border border-violet-500/30 hover:border-violet-500/50 transition-all">
                                     <div className="flex items-center gap-3">
                                         <Activity className="w-6 h-6 text-violet-300" />
                                         <div>
                                             <p className="text-xs text-gray-300">Last Activity</p>
-                                            <p className="text-lg font-bold text-white">{walletData.lastActivity}</p>
+                                            <a
+                                                href={`${BASE_EXPLORER_URL}/tx/${walletData.lastTxHash}`}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="text-lg font-bold text-white hover:text-violet-300 transition-colors flex items-center gap-1"
+                                            >
+                                                {walletData.lastActivityDays} days ago
+                                                <ExternalLink className="w-4 h-4" />
+                                            </a>
                                         </div>
                                     </div>
                                 </div>
@@ -802,17 +842,6 @@ export default function BaseStatsChecker() {
                                         <div>
                                             <p className="text-xs text-gray-300">Total Volume</p>
                                             <p className="text-lg font-bold text-white">{walletData.totalVolume.toFixed(4)} ETH</p>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* Total Deposited */}
-                                <div className="bg-gradient-to-br from-emerald-500/20 to-green-500/20 backdrop-blur-sm rounded-2xl p-4 border border-emerald-500/30 hover:border-emerald-500/50 transition-all">
-                                    <div className="flex items-center gap-3">
-                                        <TrendingUp className="w-6 h-6 text-emerald-300" />
-                                        <div>
-                                            <p className="text-xs text-gray-300">Total Deposited</p>
-                                            <p className="text-lg font-bold text-white">{walletData.totalDeposited.toFixed(4)} ETH</p>
                                         </div>
                                     </div>
                                 </div>
