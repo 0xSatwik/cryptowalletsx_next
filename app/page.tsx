@@ -19,24 +19,24 @@ export default function Home() {
     function handleClickOutside(event: MouseEvent) {
       // Only close dropdown if clicking outside the dropdown area
       if (
-        dropdownRef.current && 
+        dropdownRef.current &&
         !dropdownRef.current.contains(event.target as Node)
       ) {
         // Add a small delay to allow navigation to complete first
         setTimeout(() => {
-        setIsDropdownOpen(false);
+          setIsDropdownOpen(false);
         }, 100);
       }
-      
+
       // Only unfocus search if clicking outside the search area and dropdown
       if (
-        searchInputRef.current && 
+        searchInputRef.current &&
         !searchInputRef.current.contains(event.target as Node) &&
         !dropdownRef.current?.contains(event.target as Node)
       ) {
         // Add a small delay to allow navigation to complete first
         setTimeout(() => {
-        setIsSearchFocused(false);
+          setIsSearchFocused(false);
         }, 100);
       }
     }
@@ -48,6 +48,14 @@ export default function Home() {
 
   // Only include tools that have actual implemented pages
   const allTools = [
+    {
+      name: 'Base Stats Checker',
+      description: 'Comprehensive Base Network wallet analytics with NFT tracking',
+      path: '/base-stats-checker',
+      icon: <Shield size={20} />,
+      logoColor: 'bg-blue-600 text-white',
+      chain: 'Base'
+    },
     {
       name: 'Monad Testnet Stats',
       description: 'Track your Monad testnet activity and statistics',
@@ -132,12 +140,12 @@ export default function Home() {
 
   const uniqueChains = Array.from(new Set(allTools.map(tool => tool.chain)));
   const filteredTools = allTools.filter(tool => {
-    const matchesSearch = searchQuery === '' || 
+    const matchesSearch = searchQuery === '' ||
       tool.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       tool.description.toLowerCase().includes(searchQuery.toLowerCase());
-    
+
     const matchesChain = selectedChain === null || tool.chain === selectedChain;
-    
+
     return matchesSearch && matchesChain;
   });
 
@@ -171,7 +179,7 @@ export default function Home() {
       <div className="relative overflow-hidden">
         {/* Background gradient */}
         <div className="absolute inset-0 bg-gradient-to-b from-blue-50 to-white"></div>
-        
+
         {/* Hero content */}
         <div className="relative pt-8 pb-4 sm:pb-8">
           <div className="mt-8 mx-auto max-w-7xl px-4 sm:mt-12 sm:px-6">
@@ -183,11 +191,11 @@ export default function Home() {
                 </span>
               </h1>
               <p className="mt-2 max-w-md mx-auto text-base text-gray-500 sm:text-lg md:mt-3 md:text-xl md:max-w-3xl">
-                Track your wallet statistics across multiple blockchain networks including Mitosis, Monad, and Somnia with comprehensive analytics and insights.
+                Track your wallet statistics across multiple blockchain networks including Mitosis, Base, and Somnia with comprehensive analytics and insights.
               </p>
               <div className="mt-5 max-w-md mx-auto md:max-w-2xl">
                 <div className="relative" ref={dropdownRef}>
-                  <div 
+                  <div
                     className={`flex items-center rounded-lg border ${isSearchFocused ? 'border-blue-500 ring-2 ring-blue-200' : 'border-gray-300'} bg-white shadow-sm overflow-hidden transition-all duration-200`}
                     onClick={() => {
                       setIsSearchFocused(true);
@@ -208,10 +216,10 @@ export default function Home() {
                       onChange={(e) => setSearchQuery(e.target.value)}
                       onFocus={() => setIsSearchFocused(true)}
                     />
-                </div>
-                  
+                  </div>
+
                   {isSearchFocused && (
-                    <div 
+                    <div
                       className="mt-2 max-h-64 overflow-y-auto rounded-lg bg-white shadow-lg border border-gray-200 animate-fadeIn"
                       onClick={(e) => {
                         // Prevent clicks within the dropdown from closing it
@@ -255,7 +263,7 @@ export default function Home() {
             </div>
           </div>
         </div>
-        
+
         {/* Curved wave separator */}
         <div className="relative">
           <div className="absolute inset-0 h-12 bg-white"></div>
@@ -301,7 +309,7 @@ export default function Home() {
                     <p className="ml-16 text-lg leading-6 font-medium text-gray-900">Multi-Chain Tracking</p>
                   </dt>
                   <dd className="mt-2 ml-16 text-base text-gray-500">
-                    Enter any wallet address to see detailed statistics and rankings across Mitosis, Monad, Somnia and other platforms.
+                    Enter any wallet address to see detailed statistics and rankings across Mitosis, Base, Somnia and other platforms.
                   </dd>
                 </div>
 
@@ -374,14 +382,14 @@ export default function Home() {
                             <span className="text-sm font-medium text-gray-900">5 txns</span>
                           </div>
                           <div className="mt-2 flex items-center justify-between">
-                        <div className="flex items-center">
+                            <div className="flex items-center">
                               <BarChart2 className="h-5 w-5 text-gray-400" />
                               <span className="ml-2 text-sm text-gray-500">Somnia Chain</span>
                             </div>
                             <span className="text-sm font-medium text-gray-900">Active</span>
                           </div>
                         </div>
-                  </div>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -418,12 +426,12 @@ export default function Home() {
                   iconBg: 'bg-blue-400 bg-opacity-30',
                 },
                 {
-                  name: 'Monad Testnet Stats',
-                  description: 'Track your Monad testnet activity, contract interactions, and token holdings.',
-                  icon: Zap,
-                  href: '/monad-testnet',
-                  bgGradient: 'from-purple-500 to-indigo-600',
-                  iconBg: 'bg-purple-400 bg-opacity-30',
+                  name: 'Base Stats Checker',
+                  description: 'Comprehensive analytics for your Base Network wallet with NFT tracking and advanced metrics.',
+                  icon: Shield,
+                  href: '/base-stats-checker',
+                  bgGradient: 'from-blue-600 to-indigo-700',
+                  iconBg: 'bg-blue-400 bg-opacity-30',
                 },
                 {
                   name: 'Somnia Chain Stats',
@@ -442,20 +450,20 @@ export default function Home() {
                       {/* Card header with gradient */}
                       <div className={`h-24 bg-gradient-to-r ${feature.bgGradient} flex items-center justify-between px-6`}>
                         <h3 className="text-xl font-bold text-white">
-                            {feature.name}
-                          </h3>
+                          {feature.name}
+                        </h3>
                         <div className={`${feature.iconBg} p-3 rounded-full`}>
                           <Icon className="h-6 w-6 text-white" aria-hidden="true" />
                         </div>
                       </div>
-                      
+
                       {/* Card body */}
                       <div className="flex-1 p-6">
                         <p className="text-gray-600">
                           {feature.description}
                         </p>
                       </div>
-                      
+
                       {/* Card footer */}
                       <div className="p-6 pt-0 border-t border-gray-100">
                         <Link
@@ -464,14 +472,14 @@ export default function Home() {
                         >
                           Learn more
                           <ArrowRight className="ml-2 h-4 w-4 transform group-hover:translate-x-1 transition-transform duration-200" />
-          </Link>
+                        </Link>
                       </div>
                     </div>
-        </div>
+                  </div>
                 );
               })}
-              </div>
-            
+            </div>
+
             {/* View all tools button */}
             <div className="mt-12 text-center">
               <Link
@@ -482,7 +490,7 @@ export default function Home() {
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Link>
             </div>
-              </div>
+          </div>
         </div>
       </div>
 
@@ -495,10 +503,10 @@ export default function Home() {
                 <h2 className="text-3xl font-extrabold text-white sm:text-4xl">
                   <span className="block">Ready to dive in?</span>
                   <span className="block">Start using our tools today.</span>
-          </h2>
+                </h2>
                 <p className="mt-4 text-lg leading-6 text-blue-100">
                   Track your wallet statistics, check your rankings, and explore multi-chain analytics with our comprehensive tools.
-          </p>
+                </p>
                 <div className="mt-8 flex space-x-4">
                   <Link
                     href="/web3-tools"
@@ -506,15 +514,15 @@ export default function Home() {
                   >
                     Get started
                   </Link>
-          <Link
+                  <Link
                     href="/about"
                     className="inline-flex py-3 px-6 border border-white border-opacity-25 rounded-md shadow-sm text-base font-medium text-white bg-blue-500 bg-opacity-20 hover:bg-opacity-30"
-          >
+                  >
                     Learn more
-          </Link>
-        </div>
-          </div>
-          </div>
+                  </Link>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
