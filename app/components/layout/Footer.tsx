@@ -6,9 +6,9 @@ import { Wallet, Twitter, Github, ExternalLink, Zap, BarChart2, Database, Shield
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
-  
+
   const mainLinks = [
-    { name: 'Mitosis', href: '/mitosis', icon: BarChart2, color: 'bg-indigo-500' },
+    { name: 'Tempo', href: '/tempo', icon: Zap, color: 'bg-indigo-500' },
     { name: 'Monad', href: '/monad-testnet', icon: Zap, color: 'bg-purple-500' },
     { name: 'Web3 Tools', href: '/web3-tools', icon: Wrench, color: 'bg-rose-500' },
   ];
@@ -34,10 +34,10 @@ const Footer = () => {
               <h3 className="text-2xl font-extrabold text-white">Join Our Telegram Community</h3>
               <p className="mt-2 text-blue-100">Get real-time updates, support, and connect with other users</p>
             </div>
-            <a 
-              href="https://t.me/cwxstats" 
-              target="_blank" 
-              rel="noopener noreferrer" 
+            <a
+              href="https://t.me/cwxstats"
+              target="_blank"
+              rel="noopener noreferrer"
               className="inline-flex items-center px-8 py-4 rounded-lg bg-white text-blue-600 font-bold text-lg shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300"
             >
               <Send className="h-6 w-6 mr-3" /> Join Telegram
@@ -45,7 +45,7 @@ const Footer = () => {
           </div>
         </div>
       </div>
-      
+
       {/* Main Footer Content */}
       <div className="max-w-7xl mx-auto py-16 px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 lg:grid-cols-6 gap-8 lg:gap-12">
@@ -86,7 +86,7 @@ const Footer = () => {
               </div>
             </div>
           </div>
-          
+
           {/* Tools Navigation - 2 columns */}
           <div className="lg:col-span-2">
             <div className="bg-white p-6 lg:p-8 rounded-2xl shadow-lg border border-blue-100 h-full transform transition-transform hover:shadow-xl">
@@ -117,7 +117,7 @@ const Footer = () => {
               </ul>
             </div>
           </div>
-          
+
           {/* Important Links - 2 columns */}
           <div className="lg:col-span-2">
             <h3 className="text-lg font-bold text-gray-800 mb-4 lg:mb-6">
@@ -142,7 +142,7 @@ const Footer = () => {
             </div>
           </div>
         </div>
-        
+
         {/* Bottom section */}
         <div className="mt-12 lg:mt-16 relative">
           <div className="absolute left-0 right-0 h-px bg-gradient-to-r from-transparent via-blue-300 to-transparent"></div>

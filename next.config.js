@@ -60,7 +60,7 @@ const nextConfig = {
         destination: '/mitosis-rank',
         permanent: true,
       },
-      
+
       // New redirects
       {
         source: '/monad',
@@ -70,6 +70,11 @@ const nextConfig = {
       {
         source: '/how-monad-stats-score-works',
         destination: '/post/monad-testnet-score-calculation',
+        permanent: true,
+      },
+      {
+        source: '/tempo-chain-stats-checker',
+        destination: '/tempo',
         permanent: true,
       },
     ];
@@ -114,12 +119,12 @@ const nextConfig = {
     VITE_ALCHEMY_API_KEY_8: process.env.VITE_ALCHEMY_API_KEY_8 || 'FBKOVxVYW0yobV1ntzs7u5qM0E6_xRwO',
     VITE_ALCHEMY_API_KEY_9: process.env.VITE_ALCHEMY_API_KEY_9 || 'FBKOVxVYW0yobV1ntzs7u5qM0E6_xRwO',
     VITE_ALCHEMY_API_KEY_10: process.env.VITE_ALCHEMY_API_KEY_10 || 'FBKOVxVYW0yobV1ntzs7u5qM0E6_xRwO',
-    
+
     // Lineascan API keys
     VITE_LINEASCAN_API_KEY_1: process.env.VITE_LINEASCAN_API_KEY_1 || 'ZUXE1TFGQHSXPVKBDXCK2YFQ1CQ33XK1A3',
     VITE_LINEASCAN_API_KEY_2: process.env.VITE_LINEASCAN_API_KEY_2 || '8GR7KCJBGDJBPP2WCGG36MI87SVFW8JCSY',
     VITE_LINEASCAN_API_KEY_3: process.env.VITE_LINEASCAN_API_KEY_3 || 'TK37XWG5B3V21RHF7HU9Y2ZW8RYDXB3KPZ',
-    
+
     // ThirdWeb Client IDs (1-17 excluding 13)
     VITE_THIRDWEB_CLIENT_ID_1: process.env.VITE_THIRDWEB_CLIENT_ID_1 || '',
     VITE_THIRDWEB_CLIENT_ID_2: process.env.VITE_THIRDWEB_CLIENT_ID_2 || '',
@@ -138,7 +143,7 @@ const nextConfig = {
     VITE_THIRDWEB_CLIENT_ID_16: process.env.VITE_THIRDWEB_CLIENT_ID_16 || '',
     VITE_THIRDWEB_CLIENT_ID_17: process.env.VITE_THIRDWEB_CLIENT_ID_17 || '',
     VITE_THIRDWEB_CLIENT_ID: process.env.VITE_THIRDWEB_CLIENT_ID || '',
-    
+
     // Make ThirdWeb API keys available in browser with NEXT_PUBLIC_ prefix
     NEXT_PUBLIC_THIRDWEB_CLIENT_ID_1: process.env.VITE_THIRDWEB_CLIENT_ID_1 || '',
     NEXT_PUBLIC_THIRDWEB_CLIENT_ID_2: process.env.VITE_THIRDWEB_CLIENT_ID_2 || '',

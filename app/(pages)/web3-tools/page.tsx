@@ -12,6 +12,7 @@ interface Tool {
   tags: string[];
   chain: string;
   featured?: boolean;
+  ended?: boolean;
   bgGradient?: string;
   iconBg?: string;
 }
@@ -23,13 +24,25 @@ export default function Web3Tools() {
 
   const tools: Tool[] = [
     {
+      title: 'Tempo Chain Stats Checker',
+      description: 'Comprehensive wallet analytics on Tempo Chain. Track transactions, gas, contracts & activity patterns with wallet scoring.',
+      link: '/tempo',
+      icon: <Sparkles className="h-6 w-6 text-white" />,
+      tags: ['wallet', 'stats', 'analytics', 'tempo', 'score', 'transactions'],
+      chain: 'Tempo',
+      featured: true,
+      bgGradient: 'from-indigo-500 to-purple-600',
+      iconBg: 'bg-indigo-400 bg-opacity-30'
+    },
+    {
       title: 'Monad Testnet Stats',
       description: 'Track your Monad testnet activity, points, and wallet analytics.',
       link: '/monad-testnet',
       icon: <Zap className="h-6 w-6 text-white" />,
       tags: ['wallet', 'stats', 'analytics', 'monad', 'points'],
       chain: 'Monad',
-      featured: true,
+      featured: false,
+      ended: true,
       bgGradient: 'from-purple-500 to-indigo-600',
       iconBg: 'bg-purple-400 bg-opacity-30'
     },
@@ -79,6 +92,7 @@ export default function Web3Tools() {
       icon: <BarChart2 className="h-6 w-6 text-white" />,
       tags: ['wallet', 'stats', 'analytics', 'ethereum', 'eth', 'score'],
       chain: 'MegaETH',
+      ended: true,
       bgGradient: 'from-blue-500 to-blue-700',
       iconBg: 'bg-blue-400 bg-opacity-30'
     },
@@ -99,6 +113,7 @@ export default function Web3Tools() {
       icon: <BarChart2 className="h-6 w-6 text-white" />,
       tags: ['wallet', 'stats', 'analytics', 'linea', 'lxp'],
       chain: 'Linea',
+      ended: true,
       bgGradient: 'from-gray-700 to-gray-900',
       iconBg: 'bg-gray-600 bg-opacity-30'
     },
@@ -109,6 +124,7 @@ export default function Web3Tools() {
       icon: <ClipboardList className="h-6 w-6 text-white" />,
       tags: ['bulk', 'wallet', 'analytics', 'linea', 'lxp'],
       chain: 'Linea',
+      ended: true,
       bgGradient: 'from-gray-700 to-gray-900',
       iconBg: 'bg-gray-600 bg-opacity-30'
     },
@@ -202,7 +218,8 @@ export default function Web3Tools() {
       icon: <Database className="h-6 w-6 text-white" />,
       tags: ['wallet', 'stats', 'analytics', 'mitosis', 'matrix', 'expedition', 'morse', 'nft', 'portfolio'],
       chain: 'Mitosis',
-      featured: true,
+      featured: false,
+      ended: true,
       bgGradient: 'from-blue-500 to-indigo-600',
       iconBg: 'bg-blue-400 bg-opacity-30'
     },
@@ -213,6 +230,7 @@ export default function Web3Tools() {
       icon: <ClipboardList className="h-6 w-6 text-white" />,
       tags: ['bulk', 'wallet', 'rank', 'mitosis', 'portfolio', 'multiple'],
       chain: 'Mitosis',
+      ended: true,
       bgGradient: 'from-blue-500 to-indigo-600',
       iconBg: 'bg-blue-400 bg-opacity-30'
     },
@@ -223,6 +241,7 @@ export default function Web3Tools() {
       icon: <Trophy className="h-6 w-6 text-white" />,
       tags: ['wallet', 'rank', 'stats', 'mitosis', 'token', 'leaderboard'],
       chain: 'Mitosis',
+      ended: true,
       bgGradient: 'from-blue-500 to-indigo-600',
       iconBg: 'bg-blue-400 bg-opacity-30'
     }
@@ -233,11 +252,19 @@ export default function Web3Tools() {
   const filteredTools = tools.filter(tool => {
     const searchTerms = searchQuery.toLowerCase().split(' ');
     const searchableText = `${tool.title} ${tool.description} ${tool.tags.join(' ')} ${tool.chain}`.toLowerCase();
-    
+
     const matchesSearch = searchTerms.every(term => searchableText.includes(term));
     const matchesChain = selectedChain === null || tool.chain === selectedChain;
-    
+
     return matchesSearch && matchesChain;
+  }).sort((a, b) => {
+    // Put ended tools at the end
+    if (a.ended && !b.ended) return 1;
+    if (!a.ended && b.ended) return -1;
+    // Featured tools first among non-ended
+    if (a.featured && !b.featured) return -1;
+    if (!a.featured && b.featured) return 1;
+    return 0;
   });
 
   // Group tools by chain for category view
@@ -247,7 +274,7 @@ export default function Web3Tools() {
   }, {} as Record<string, Tool[]>);
 
   // Get featured tools
-  const featuredTools = filteredTools.filter(tool => tool.featured);
+  const featuredTools = filteredTools.filter(tool => tool.featured && !tool.ended);
 
   return (
     <>
@@ -270,26 +297,24 @@ export default function Web3Tools() {
               Explore our comprehensive suite of tools for analyzing blockchain wallets and tracking statistics across multiple chains.
             </p>
             <div className="flex flex-wrap justify-center gap-4">
-              <button 
+              <button
                 onClick={() => setViewMode('categories')}
-                className={`px-6 py-3 rounded-lg font-medium transition-all ${
-                  viewMode === 'categories' 
-                    ? 'bg-white text-purple-600 shadow-md' 
-                    : 'bg-purple-700/30 text-white hover:bg-purple-700/50'
-                }`}
+                className={`px-6 py-3 rounded-lg font-medium transition-all ${viewMode === 'categories'
+                  ? 'bg-white text-purple-600 shadow-md'
+                  : 'bg-purple-700/30 text-white hover:bg-purple-700/50'
+                  }`}
               >
                 <div className="flex items-center gap-2">
                   <Layers size={20} />
                   <span>Categories View</span>
                 </div>
               </button>
-              <button 
+              <button
                 onClick={() => setViewMode('grid')}
-                className={`px-6 py-3 rounded-lg font-medium transition-all ${
-                  viewMode === 'grid' 
-                    ? 'bg-white text-purple-600 shadow-md' 
-                    : 'bg-purple-700/30 text-white hover:bg-purple-700/50'
-                }`}
+                className={`px-6 py-3 rounded-lg font-medium transition-all ${viewMode === 'grid'
+                  ? 'bg-white text-purple-600 shadow-md'
+                  : 'bg-purple-700/30 text-white hover:bg-purple-700/50'
+                  }`}
               >
                 <div className="flex items-center gap-2">
                   <Boxes size={20} />
@@ -313,28 +338,26 @@ export default function Web3Tools() {
               />
               <Search className="absolute left-4 top-3.5 text-gray-400" size={20} />
             </div>
-            
+
             <div className="flex flex-wrap gap-2 items-center">
               <button
                 onClick={() => setSelectedChain(null)}
-                className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  selectedChain === null
-                    ? 'bg-purple-100 text-purple-700'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
+                className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${selectedChain === null
+                  ? 'bg-purple-100 text-purple-700'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
               >
                 All Chains
               </button>
-              
+
               {chains.map(chain => (
                 <button
                   key={chain}
                   onClick={() => setSelectedChain(chain === selectedChain ? null : chain)}
-                  className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    selectedChain === chain
-                      ? 'bg-purple-100 text-purple-700'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                  }`}
+                  className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${selectedChain === chain
+                    ? 'bg-purple-100 text-purple-700'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
                 >
                   {chain}
                 </button>
@@ -366,37 +389,47 @@ export default function Web3Tools() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {filteredTools.map((tool, index) => (
               <div key={index} className="relative group">
-                <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-blue-100 to-indigo-100 transform group-hover:scale-105 transition-all duration-300 shadow-lg opacity-0 group-hover:opacity-100"></div>
-                <div className="relative h-full flex flex-col overflow-hidden rounded-2xl bg-white border border-gray-100 shadow-md group-hover:shadow-xl transition-all duration-300">
+                <div className={`absolute inset-0 rounded-2xl bg-gradient-to-r ${tool.ended ? 'from-red-100 to-rose-100' : 'from-blue-100 to-indigo-100'} transform group-hover:scale-105 transition-all duration-300 shadow-lg opacity-0 group-hover:opacity-100`}></div>
+                <div className={`relative h-full flex flex-col overflow-hidden rounded-2xl bg-white ${tool.ended ? 'border-2 border-red-200' : 'border border-gray-100'} shadow-md group-hover:shadow-xl transition-all duration-300`}>
                   {/* Card header with gradient */}
-                  <div className={`h-24 bg-gradient-to-r ${tool.bgGradient || 'from-blue-500 to-indigo-600'} flex items-center justify-between px-6`}>
+                  <div className={`h-24 bg-gradient-to-r ${tool.ended ? 'from-red-500 to-rose-600' : (tool.bgGradient || 'from-blue-500 to-indigo-600')} flex items-center justify-between px-6 relative`}>
+                    {tool.ended && (
+                      <span className="absolute top-2 right-2 px-2 py-0.5 bg-white/90 text-red-600 rounded-full text-[10px] font-bold uppercase tracking-wider">
+                        Airdrop Ended
+                      </span>
+                    )}
                     <h3 className="text-xl font-bold text-white">
                       {tool.title}
                     </h3>
-                    <div className={`${tool.iconBg || 'bg-blue-400 bg-opacity-30'} p-3 rounded-full`}>
+                    <div className={`${tool.ended ? 'bg-red-400 bg-opacity-30' : (tool.iconBg || 'bg-blue-400 bg-opacity-30')} p-3 rounded-full`}>
                       {tool.icon}
                     </div>
                   </div>
-                  
+
                   {/* Card body */}
                   <div className="flex-1 p-6">
                     <p className="text-gray-600">
                       {tool.description}
                     </p>
                     <div className="mt-4 flex flex-wrap gap-2">
-                      <span className="px-2 py-1 bg-purple-100 text-purple-700 rounded-md text-xs font-medium">
+                      <span className={`px-2 py-1 ${tool.ended ? 'bg-red-100 text-red-700' : 'bg-purple-100 text-purple-700'} rounded-md text-xs font-medium`}>
                         {tool.chain}
                       </span>
+                      {tool.ended && (
+                        <span className="px-2 py-1 bg-gray-100 text-gray-500 rounded-md text-xs font-medium">
+                          Historical Stats Only
+                        </span>
+                      )}
                     </div>
                   </div>
-                  
+
                   {/* Card footer */}
                   <div className="p-6 pt-0 border-t border-gray-100">
                     <Link
                       href={tool.link}
-                      className={`inline-flex items-center justify-center w-full px-4 py-3 bg-gradient-to-r ${tool.bgGradient || 'from-blue-500 to-indigo-600'} text-white font-medium rounded-lg transition-all duration-200 hover:shadow-lg transform hover:-translate-y-0.5 group`}
+                      className={`inline-flex items-center justify-center w-full px-4 py-3 bg-gradient-to-r ${tool.ended ? 'from-red-500 to-rose-600' : (tool.bgGradient || 'from-blue-500 to-indigo-600')} text-white font-medium rounded-lg transition-all duration-200 hover:shadow-lg transform hover:-translate-y-0.5 group`}
                     >
-                      Explore Tool
+                      {tool.ended ? 'View Stats' : 'Explore Tool'}
                       <ArrowRight className="ml-2 h-4 w-4 transform group-hover:translate-x-1 transition-transform duration-200" />
                     </Link>
                   </div>
@@ -409,7 +442,7 @@ export default function Web3Tools() {
         {/* Tools Display - Categories View */}
         {viewMode === 'categories' && filteredTools.length > 0 && (
           <div className="space-y-16">
-            {Object.entries(toolsByChain).map(([chain, chainTools]) => 
+            {Object.entries(toolsByChain).map(([chain, chainTools]) =>
               chainTools.length > 0 ? (
                 <div key={chain}>
                   <div className="flex items-center gap-3 mb-6 border-b border-gray-200 pb-2">
@@ -433,14 +466,14 @@ export default function Web3Tools() {
                               {tool.icon}
                             </div>
                           </div>
-                          
+
                           {/* Card body */}
                           <div className="flex-1 p-6">
                             <p className="text-gray-600">
                               {tool.description}
                             </p>
                           </div>
-                          
+
                           {/* Card footer */}
                           <div className="p-6 pt-0 border-t border-gray-100">
                             <Link

@@ -65,6 +65,14 @@ export default function Home() {
       chain: 'Monad'
     },
     {
+      name: 'Tempo Stats Checker',
+      description: 'Comprehensive wallet analytics on Tempo Chain with scoring',
+      path: '/tempo',
+      icon: <Zap size={20} />,
+      logoColor: 'bg-indigo-600 text-white',
+      chain: 'Tempo'
+    },
+    {
       name: 'Mitosis Stats Checker',
       description: 'Track your Mitosis wallet stats across Game of Mito, Matrix & Morse',
       path: '/mitosis',
@@ -418,12 +426,12 @@ export default function Home() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               {[
                 {
-                  name: 'Mitosis Analytics',
-                  description: 'Comprehensive analytics for your Mitosis wallet across Game of Mito, Matrix, Expedition, and Morse NFTs.',
-                  icon: Activity,
-                  href: '/mitosis',
-                  bgGradient: 'from-blue-500 to-indigo-600',
-                  iconBg: 'bg-blue-400 bg-opacity-30',
+                  name: 'Tempo Analytics',
+                  description: 'Comprehensive wallet analytics on Tempo Chain with wallet scoring, transactions, and contract interactions.',
+                  icon: Zap,
+                  href: '/tempo',
+                  bgGradient: 'from-indigo-500 to-purple-600',
+                  iconBg: 'bg-indigo-400 bg-opacity-30',
                 },
                 {
                   name: 'Base Stats Checker',
