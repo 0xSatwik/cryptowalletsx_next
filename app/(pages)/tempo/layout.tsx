@@ -2,7 +2,7 @@ import { Metadata } from 'next';
 
 export const metadata: Metadata = {
     title: 'Tempo Chain Stats Checker | CryptoWalletsX',
-    description: 'Track your Tempo Chain wallet stats, transactions, gas spent, and activity patterns. Detailed analytics and score for Tempo blockchain users.',
+    description: 'Track your Tempo Chain wallet stats, transactions, gas spent, and activity patterns.',
     keywords: [
         'Tempo Chain',
         'Tempo blockchain',
