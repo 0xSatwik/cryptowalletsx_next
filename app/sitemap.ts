@@ -3,10 +3,10 @@ import { MetadataRoute } from 'next';
 export default function sitemap(): MetadataRoute.Sitemap {
   // Base URL of your website
   const baseUrl = 'https://cryptowalletsx.com';
-  
+
   // Current date for lastModified
   const currentDate = new Date();
-  
+
   // Define all your routes
   const routes = [
     // Main pages
@@ -14,12 +14,13 @@ export default function sitemap(): MetadataRoute.Sitemap {
     '/about',
     '/contact',
     '/post',
+    '/tempo',
     '/privacy',
     '/web3-tools',
-    
-// posts
-'/post/monad-testnet-score-calculation',
-'/post/mitosis-defi-revolution',
+
+    // posts
+    '/post/monad-testnet-score-calculation',
+    '/post/mitosis-defi-revolution',
 
     // Tool pages
     '/balance-checker',
@@ -40,7 +41,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     '/pharos-stats-checker',
     '/gitcoin'
   ];
-  
+
   // Generate sitemap items
   const sitemap = routes.map(route => ({
     url: `${baseUrl}${route}`,
@@ -48,6 +49,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
     changeFrequency: route === '' ? 'daily' : 'weekly',  // Home page changes more frequently
     priority: route === '' ? 1.0 : 0.8,                  // Home page has highest priority
   })) as MetadataRoute.Sitemap;
-  
+
   return sitemap;
 } 
