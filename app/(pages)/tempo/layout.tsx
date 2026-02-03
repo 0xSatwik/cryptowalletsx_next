@@ -2,7 +2,7 @@ import { Metadata } from 'next';
 
 export const metadata: Metadata = {
     title: 'Tempo Chain Stats Checker | CryptoWalletsX',
-    description: 'Check comprehensive wallet statistics on Tempo Chain. Analyze total transactions, gas spending, contract deployments, contract interactions, and temporal activity patterns.',
+    description: 'Track your Tempo Chain wallet stats, transactions, gas spent, and activity patterns. Detailed analytics and score for Tempo blockchain users.',
     keywords: [
         'Tempo Chain',
         'Tempo blockchain',
@@ -13,13 +13,18 @@ export const metadata: Metadata = {
         'contract analyzer',
         'blockchain analytics',
         'wallet activity',
-        'transaction history'
+        'transaction history',
+        'Tempo chain airdrop'
     ],
     openGraph: {
-        title: 'Tempo Chain Stats Checker | CryptoWalletsX',
-        description: 'Comprehensive wallet analytics for Tempo Chain. Track transactions, gas spending, contracts, and activity patterns.',
+        title: 'Tempo Chain Stats Checker | Wallet Analytics & Gas Tracker',
+        description: 'Track your Tempo Chain wallet stats, transactions, gas spent, and activity patterns. Detailed analytics and score for Tempo blockchain users.',
         type: 'website',
+        url: 'https://cryptowalletsx.com/tempo',
     },
+    alternates: {
+        canonical: 'https://cryptowalletsx.com/tempo',
+    }
 };
 
 export default function TempoChainStatsCheckerLayout({

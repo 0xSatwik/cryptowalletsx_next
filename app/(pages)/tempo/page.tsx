@@ -766,6 +766,134 @@ export default function TempoChainStatsChecker() {
                         </div>
                     </div>
                 )}
+
+                {/* SEO Friendly Content */}
+                <div className="mt-16 space-y-12 text-gray-800">
+                    <section>
+                        <h2 className="text-2xl font-bold mb-4 text-indigo-900">What is Tempo Chain?</h2>
+                        <p className="leading-relaxed">
+                            Tempo Chain is a high-performance blockchain ecosystem designed for speed and efficiency.
+                            As the blockchain space evolves, tracking your activity on-chain becomes crucial for understanding your footprint,
+                            optimizing gas costs, and potentially qualifying for future ecosystem rewards. Our Tempo Chain Stats Checker
+                            provides a comprehensive window into any wallet address on the network.
+                        </p>
+                    </section>
+
+                    <section className="grid md:grid-cols-2 gap-8">
+                        <div>
+                            <h2 className="text-2xl font-bold mb-4 text-indigo-900">Why Check Your Tempo Stats?</h2>
+                            <ul className="space-y-2 list-disc pl-5">
+                                <li><strong>Transaction Analytics:</strong> Get a clear count of your total interactions.</li>
+                                <li><strong>Gas Tracking:</strong> See exactly how much you've spent on fees in USD.</li>
+                                <li><strong>Smart Contract Insights:</strong> Identify which contracts you interact with most frequently.</li>
+                                <li><strong>Wallet Age & Activity:</strong> Track your longevity and consistency on the Tempo network.</li>
+                            </ul>
+                        </div>
+                        <div>
+                            <h2 className="text-2xl font-bold mb-4 text-indigo-900">Improve Your Wallet Score</h2>
+                            <p className="leading-relaxed mb-4">
+                                Our proprietary <strong>Wallet Score</strong> algorithm weighs your activity across multiple dimensions:
+                            </p>
+                            <div className="bg-indigo-50 p-4 rounded-xl border border-indigo-100 text-sm">
+                                <p>Points are awarded for unique days, weeks, and months of activity, as well as the variety of smart contracts
+                                    you've interacted with. High-scoring wallets typically represent active, long-term participants in the Tempo ecosystem.</p>
+                            </div>
+                        </div>
+                    </section>
+
+                    {/* FAQ Section */}
+                    <section id="faq" className="bg-white rounded-2xl p-8 shadow-sm border border-gray-100">
+                        <h2 className="text-3xl font-bold mb-8 text-center text-indigo-900">Frequently Asked Questions</h2>
+                        <div className="space-y-6">
+                            <div>
+                                <h3 className="text-xl font-semibold mb-2 text-indigo-800">How is the Wallet Score calculated?</h3>
+                                <p className="text-gray-600">The score is based on several factors: unique days/weeks/months of activity, total transaction count, and the number of unique smart contracts you have interacted with or deployed.</p>
+                            </div>
+                            <div>
+                                <h3 className="text-xl font-semibold mb-2 text-indigo-800">Is the gas spent accurate?</h3>
+                                <p className="text-gray-600">We calculate gas spent by multiplying the gas used in each transaction by the gas price, then converting it to USD for easier understanding.</p>
+                            </div>
+                            <div>
+                                <h3 className="text-xl font-semibold mb-2 text-indigo-800">Does this include all Tempo Chain transactions?</h3>
+                                <p className="text-gray-600">Yes, our tool fetches all historical transactions for the provided wallet address to ensure full transparency and accurate statistics.</p>
+                            </div>
+                            <div>
+                                <h3 className="text-xl font-semibold mb-2 text-indigo-800">Why is my wallet age showing "Recently"?</h3>
+                                <p className="text-gray-600">If your first transaction was very recent, the age calculation might appear as "Recently" until a significant amount of time has passed.</p>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+
+                {/* Schema Markup */}
+                <script
+                    type="application/ld+json"
+                    dangerouslySetInnerHTML={{
+                        __html: JSON.stringify([
+                            {
+                                "@context": "https://schema.org",
+                                "@type": "SoftwareApplication",
+                                "name": "Tempo Chain Stats Checker",
+                                "operatingSystem": "All",
+                                "applicationCategory": "ToolApplication",
+                                "description": "A comprehensive wallet analytics tool for Tempo Chain that tracks transactions, gas spending, and wallet scores.",
+                                "offers": {
+                                    "@type": "Offer",
+                                    "price": "0",
+                                    "priceCurrency": "USD"
+                                }
+                            },
+                            {
+                                "@context": "https://schema.org",
+                                "@type": "FAQPage",
+                                "mainEntity": [
+                                    {
+                                        "@type": "Question",
+                                        "name": "How is the Wallet Score calculated?",
+                                        "acceptedAnswer": {
+                                            "@type": "Answer",
+                                            "text": "The score is based on several factors: unique days/weeks/months of activity, total transaction count, and the number of unique smart contracts you have interacted with or deployed."
+                                        }
+                                    },
+                                    {
+                                        "@type": "Question",
+                                        "name": "Is the gas spent accurate?",
+                                        "acceptedAnswer": {
+                                            "@type": "Answer",
+                                            "text": "We calculate gas spent by multiplying the gas used in each transaction by the gas price, then converting it to USD for easier understanding."
+                                        }
+                                    },
+                                    {
+                                        "@type": "Question",
+                                        "name": "Does this include all Tempo Chain transactions?",
+                                        "acceptedAnswer": {
+                                            "@type": "Answer",
+                                            "text": "Yes, our tool fetches all historical transactions for the provided wallet address to ensure full transparency and accurate statistics."
+                                        }
+                                    }
+                                ]
+                            },
+                            {
+                                "@context": "https://schema.org",
+                                "@type": "BreadcrumbList",
+                                "itemListElement": [
+                                    {
+                                        "@type": "ListItem",
+                                        "position": 1,
+                                        "name": "Home",
+                                        "item": "https://cryptowalletsx.com"
+                                    },
+                                    {
+                                        "@type": "ListItem",
+                                        "position": 2,
+                                        "name": "Tempo Chain Stats Checker",
+                                        "item": "https://cryptowalletsx.com/tempo"
+                                    }
+                                ]
+                            }
+                        ])
+                    }}
+                />
             </div>
         </div>
     );
