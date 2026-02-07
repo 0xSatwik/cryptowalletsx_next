@@ -78,7 +78,7 @@ export default function RootLayout({
         <div className="flex flex-col min-h-screen">
           <Header />
           <Breadcrumbs />
-          <div className="mt-2">
+          <div>
             <HomePageWrapper>
               {children}
             </HomePageWrapper>

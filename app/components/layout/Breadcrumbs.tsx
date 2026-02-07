@@ -21,37 +21,71 @@ const Breadcrumbs = () => {
             .join(' ');
     };
 
+    // Generate BreadcrumbList Schema
+    const breadcrumbSchema = {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+            {
+                "@type": "ListItem",
+                "position": 1,
+                "name": "Home",
+                "item": "https://cryptowalletsx.com"
+            },
+            ...pathSegments.map((segment, index) => ({
+                "@type": "ListItem",
+                "position": index + 2,
+                "name": formatSegment(segment),
+                "item": `https://cryptowalletsx.com/${pathSegments.slice(0, index + 1).join('/')}`
+            }))
+        ]
+    };
+
     return (
-        <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3" aria-label="Breadcrumb">
-            <ol className="flex items-center space-x-2 text-sm text-gray-500">
-                <li className="flex items-center">
-                    <Link href="/" className="hover:text-blue-600 transition-colors flex items-center gap-1">
-                        <Home className="w-3.5 h-3.5" />
-                        <span className="hidden sm:inline">Home</span>
-                    </Link>
-                </li>
-
-                {pathSegments.map((segment, index) => {
-                    const href = `/${pathSegments.slice(0, index + 1).join('/')}`;
-                    const isLast = index === pathSegments.length - 1;
-
-                    return (
-                        <li key={href} className="flex items-center">
-                            <ChevronRight className="w-4 h-4 mx-1 text-gray-400" />
-                            {isLast ? (
-                                <span className="font-semibold text-blue-600 truncate max-w-[150px] sm:max-w-none">
-                                    {formatSegment(segment)}
-                                </span>
-                            ) : (
-                                <Link href={href} className="hover:text-blue-600 transition-colors">
-                                    {formatSegment(segment)}
-                                </Link>
-                            )}
+        <>
+            <script
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
+            />
+            <nav className="bg-gradient-to-r from-slate-50 to-white border-b border-slate-100" aria-label="Breadcrumb">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <ol className="flex items-center h-10 space-x-1 text-sm">
+                        <li className="flex items-center">
+                            <Link
+                                href="/"
+                                className="flex items-center gap-1.5 px-2 py-1 rounded-md text-slate-500 hover:text-blue-600 hover:bg-blue-50 transition-all"
+                            >
+                                <Home className="w-3.5 h-3.5" />
+                                <span className="hidden sm:inline font-medium">Home</span>
+                            </Link>
                         </li>
-                    );
-                })}
-            </ol>
-        </nav>
+
+                        {pathSegments.map((segment, index) => {
+                            const href = `/${pathSegments.slice(0, index + 1).join('/')}`;
+                            const isLast = index === pathSegments.length - 1;
+
+                            return (
+                                <li key={href} className="flex items-center">
+                                    <ChevronRight className="w-4 h-4 text-slate-300 flex-shrink-0" />
+                                    {isLast ? (
+                                        <span className="ml-1 px-2 py-1 rounded-md font-semibold text-blue-600 bg-blue-50 truncate max-w-[180px] sm:max-w-none">
+                                            {formatSegment(segment)}
+                                        </span>
+                                    ) : (
+                                        <Link
+                                            href={href}
+                                            className="ml-1 px-2 py-1 rounded-md text-slate-500 hover:text-blue-600 hover:bg-blue-50 transition-all font-medium"
+                                        >
+                                            {formatSegment(segment)}
+                                        </Link>
+                                    )}
+                                </li>
+                            );
+                        })}
+                    </ol>
+                </div>
+            </nav>
+        </>
     );
 };
 

@@ -39,7 +39,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
     '/kaito-yaps',
     '/ink',
     '/pharos-stats-checker',
-    '/gitcoin'
+    '/gitcoin',
+    '/binance-wotd-solver'
   ];
 
   // Generate sitemap items
