@@ -10,7 +10,7 @@ const Footer = () => {
   const mainLinks = [
     { name: 'Tempo', href: '/tempo', icon: Zap, color: 'bg-indigo-500' },
     { name: 'Binance wotd solver', href: '/binance-wotd-solver', icon: Zap, color: 'bg-purple-500' },
-    { name: 'Binance wotd answer', href: '/binance-word-of-the-day-answer-today', icon: Zap, color: 'bg-purple-500' },
+    { name: 'Binance wotd answer', href: '/binance-wotd-answer-today', icon: Zap, color: 'bg-purple-500' },
 
     { name: 'Web3 Tools', href: '/web3-tools', icon: Wrench, color: 'bg-rose-500' },
   ];

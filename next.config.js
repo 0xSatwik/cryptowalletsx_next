@@ -83,8 +83,8 @@ const nextConfig = {
         permanent: true,
       },
       {
-        source: '/binance-wotd-answer-today',
-        destination: '/binance-word-of-the-day-answer-today',
+        source: '/binance-word-of-the-day-answer-today',
+        destination: '/binance-wotd-answer-today',
         permanent: true,
       },
     ];
