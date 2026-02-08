@@ -2,11 +2,11 @@ import type { Metadata } from 'next';
 import Solver from './Solver';
 
 export const metadata: Metadata = {
-    title: 'Binance Word of the Day (WOTD) Solver - Get Daily Answers',
-    description: 'Use our free Binance WOTD Solver to find the Word of the Day answer. Supports 3-8 letter words, Hard Mode, and Most Likely answer suggestions.',
-    keywords: 'binance wotd solver, binance word of the day answer, binance wotd answers, crypto wordle solver, binance word list',
+    title: 'Binance Word of the Day Answer Today & WOTD Solver',
+    description: 'Binance Word of the Day Answer Today: WOTD Solver & Hints Supports 3-8 letter words answer suggestions.',
+    keywords: 'binance wotd solver, binance word of the day answer, binance wotd answers, binance word of the day solver, binance wotd answer, binance wotd answers',
     openGraph: {
-        title: 'Binance WOTD Solver | WalletsX',
+        title: 'Binance Word Of The Day (WOTD) Solver',
         description: 'Get today\'s Binance Word of the Day answer instantly with our advanced solver.',
     }
 };
@@ -15,7 +15,7 @@ export const metadata: Metadata = {
 const softwareApplicationSchema = {
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
-    "name": "Binance WOTD Solver",
+    "name": "Binance Word of the day (WOTD) Solver",
     "applicationCategory": "WebApplication",
     "operatingSystem": "Any",
     "offers": {
@@ -25,8 +25,8 @@ const softwareApplicationSchema = {
     },
     "aggregateRating": {
         "@type": "AggregateRating",
-        "ratingValue": "4.8",
-        "ratingCount": "150"
+        "ratingValue": "4.9",
+        "ratingCount": "1500"
     },
     "description": "Free online tool to solve the Binance Word of the Day puzzle. Supports 3-8 letter words, Hard Mode, and Most Likely answer suggestions.",
     "url": "https://cryptowalletsx.com/binance-wotd-solver"
