@@ -6,9 +6,7 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
-/wordlebot
-wordlebot/
-wordlebot
+
 scripts/
 node_modules
 dist

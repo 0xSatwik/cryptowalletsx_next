@@ -1,0 +1,58 @@
+{
+  "theme": "AI\r\n                                        Innovation",
+  "words": [
+    {
+      "length": 3,
+      "words": [
+        "TAO",
+        "BIT"
+      ],
+      "correctAnswers": []
+    },
+    {
+      "length": 4,
+      "words": [
+        "BIBI",
+        "DATA",
+        "TOOL"
+      ],
+      "correctAnswers": []
+    },
+    {
+      "length": 5,
+      "words": [
+        "TREND",
+        "TOKEN",
+        "TRACK"
+      ],
+      "correctAnswers": []
+    },
+    {
+      "length": 6,
+      "words": [
+        "SEARCH",
+        "SIGNAL",
+        "SIMPLE"
+      ],
+      "correctAnswers": []
+    },
+    {
+      "length": 7,
+      "words": [
+        "CONTENT"
+      ],
+      "correctAnswers": []
+    },
+    {
+      "length": 8,
+      "words": [
+        "FUNCTION",
+        "ANALYSIS",
+        "STRATEGY",
+        "LANGUAGE",
+        "INSIGHTS"
+      ],
+      "correctAnswers": []
+    }
+  ]
+}

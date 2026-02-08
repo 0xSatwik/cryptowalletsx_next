@@ -85,8 +85,23 @@ export default function Solver() {
 
     const solver = useMemo(() => {
         if (!wordData) return null;
-        return new BinanceWotdSolver(wordData, wordLength, hardMode);
-    }, [wordData, wordLength, hardMode]);
+
+        // Clone and merge daily answers into the data passed to the solver
+        // This ensures the solver "knows" about these words for validity and suggestions
+        const todayWords = dailyAnswers[wordLength] || [];
+
+        // We must merge into BOTH 'all' and 'answers' to satisfy the user's request:
+        // "when most likely or even all word mode use the ... api word list"
+
+        const mergedData: WordData = {
+            ...wordData,
+            all: [...new Set([...todayWords, ...wordData.all])].sort(),
+            answers: [...new Set([...todayWords, ...wordData.answers])].sort(),
+            // Rankings might be missing for new words, but solver handles that (defaults to lower priority or just entropy)
+        };
+
+        return new BinanceWotdSolver(mergedData, wordLength, hardMode);
+    }, [wordData, wordLength, hardMode, dailyAnswers]);
 
     useEffect(() => {
         if (!solver || !wordData) return;

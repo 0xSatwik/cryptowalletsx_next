@@ -137,25 +137,30 @@ export class BinanceWotdSolver {
                 buckets[diff] = (buckets[diff] || 0) + 1;
             }
 
-            // Calculate score: Average bucket size? Or Max bucket size?
-            // wordlebot uses 'average' (guesses needed).
-            // Minimizing Sum(size^2) is good proxy for entropy.
+            // Wordlebot logic:
+            // "weighted" = Sum(freq^2) / N
+            // "threes" = B / N (where B is number of buckets)
+            // "adjusted" = (1 - threes) * weighted
 
             let sumSquares = 0;
+            let bucketCount = 0;
+
             for (const key in buckets) {
-                sumSquares += buckets[key] * buckets[key];
+                const size = buckets[key];
+                sumSquares += size * size;
+                bucketCount++;
             }
 
-            // Weighted average bucket size = Sum(size^2) / total
-            const score = sumSquares / possibleAnswers.length;
+            const weighted = sumSquares / possibleAnswers.length;
+            const threes = bucketCount / possibleAnswers.length;
+            const adjusted = (1 - threes) * weighted;
 
-            // Adjust score: if it's a possible answer, slight bonus?
-            // In wordlebot, "average" is guesses. Lower is better.
-            // This score mimics "expected remaining candidates". Lower is better.
+            // Wordlebot sorts by 'adjusted' (ascending).
+            // It also tracks 'wrong' % but uses 'adjusted' as primary sort.
 
             return {
                 word: guess,
-                score: score,
+                score: adjusted,
                 isAnswer: possibleAnswers.includes(guess)
             };
         });

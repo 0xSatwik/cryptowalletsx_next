@@ -115,22 +115,30 @@ export default {
     },
 
     async scrapeAndStore(env: Env) {
-        const url = "https://www.coinfantasy.io/crypto-wodl-binance-answers-today";
-        const response = await fetch(url);
-        const html = await response.text();
+        // Fetch from all 3 sources in parallel
+        const [gfinityData, miningData, incomediaData] = await Promise.all([
+            this.fetchGfinityData(),
+            this.fetchMiningComboData(),
+            this.fetchIncomediaData()
+        ]);
 
-        const data = this.parseWodl(html);
+        // Merge logic with 3 sources (priority: mining -> incomedia -> gfinity)
+        const finalData = this.mergeData(miningData, incomediaData, gfinityData);
         const results = [];
 
-        if (data.theme && data.words.length > 0) {
+        if (finalData.theme && finalData.words.length > 0) {
             const today = new Date().toISOString().split("T")[0];
 
-            for (const entry of data.words) {
+            // Delete existing data for today to avoid stale merges if re-run
+            // actually, REPLACE INTO handles it row by row. But if we want to be clean...
+            // We'll stick to INSERT OR REPLACE as per original logic.
+
+            for (const entry of finalData.words) {
                 try {
                     await env.DB.prepare(
                         "INSERT OR REPLACE INTO wodl_data (publish_date, theme, word_length, words, correct_answers) VALUES (?, ?, ?, ?, ?)"
                     )
-                        .bind(today, data.theme, entry.length, JSON.stringify(entry.words), JSON.stringify(entry.correctAnswers))
+                        .bind(today, finalData.theme, entry.length, JSON.stringify(entry.words), JSON.stringify(entry.correctAnswers))
                         .run();
                     results.push({ length: entry.length, status: "saved" });
                 } catch (e: any) {
@@ -139,71 +147,225 @@ export default {
             }
         }
 
-        return { theme: data.theme, results };
+        return { theme: finalData.theme, results, sources: { gfinity: !!gfinityData.theme, mining: !!miningData.theme, incomedia: !!incomediaData.theme } };
     },
 
-    parseWodl(html: string) {
+    async fetchGfinityData() {
+        try {
+            const url = "https://www.gfinityesports.com/article/binance-crypto-wodl-answers";
+            const response = await fetch(url);
+            const html = await response.text();
+            return this.parseGfinity(html);
+        } catch (e) {
+            console.error("Error fetching Gfinity:", e);
+            return { theme: "", words: [] };
+        }
+    },
+
+    async fetchMiningComboData() {
+        try {
+            const url = "https://miningcombo.com/binance-word-of-the-day/";
+            const response = await fetch(url);
+            const html = await response.text();
+            return this.parseMiningCombo(html);
+        } catch (e) {
+            console.error("Error fetching MiningCombo:", e);
+            return { theme: "", words: [] };
+        }
+    },
+
+    async fetchIncomediaData() {
+        try {
+            const url = "https://incomopedia.com/binance-word-of-the-day-answers-today/";
+            const response = await fetch(url);
+            const html = await response.text();
+            return this.parseIncomedia(html);
+        } catch (e) {
+            console.error("Error fetching Incomedia:", e);
+            return { theme: "", words: [] };
+        }
+    },
+
+    parseGfinity(html: string) {
         const wordsByLength: { length: number; words: string[]; correctAnswers: string[] }[] = [];
         let theme = "";
 
-        // Extract Theme - Robust regex for various patterns
-        const themePatterns = [
-            /theme\s*[‘'“"]([^’'”"]+)[’'”"]/i,
-            /theme\s+is\s+["']([^"']+)["']/i,
-            /Binance\s+WODL\s+theme\s+[^‘'“"]*[‘'“"]([^’'”"]+)[’'”"]/i,
-            /class="font-extrabold">.*?theme\s+[^‘'“"]*[‘'“"]([^’'”"]+)[’'”"]/si
-        ];
-
-        for (const pattern of themePatterns) {
-            const match = html.match(pattern);
-            if (match) {
-                theme = match[1].replace(/<!--.*?-->/sg, '').trim();
-                break;
-            }
+        // Attempt to find theme
+        // Search for "Theme:" strictly
+        const themeMatch = html.match(/>\s*Theme\s*:\s*<[^>]+>\s*([^<]+)/i) || html.match(/Theme\s*:\s*([^<]+)/i);
+        if (themeMatch) {
+            theme = themeMatch[1].replace(/\s+/g, ' ').trim();
         }
 
-        // List of CSS IDs to check
+        // Parsing logic for Gfinity's list structure
+        // Look for "X-letter words" and then the following <ul>
         const lengths = [3, 4, 5, 6, 7, 8];
-
         for (const len of lengths) {
-            const id = `${len}-letter-words`;
-            const idRegex = new RegExp(`id=["']${id}["'][^>]*>(.*?)<\/section>`, 'si');
-            const match = html.match(idRegex);
+            // Regex to find "X-letter words" followed by a UL list
+            const regex = new RegExp(`${len}-letter words:.*?<ul[^>]*>(.*?)<\\/ul>`, 'si');
+            const match = html.match(regex);
 
-            let sectionContent = "";
             if (match) {
-                sectionContent = match[1];
-            } else {
-                // Fallback: Search by text label
-                const textLabelRegex = new RegExp(`${len}\\s*Letter\\s*WODL\\s*Words.*?<ul[^>]*>(.*?)<\/ul>`, 'si');
-                const textMatch = html.match(textLabelRegex);
-                if (textMatch) {
-                    sectionContent = textMatch[1];
-                }
-            }
-
-            if (sectionContent) {
-                const words = [...sectionContent.matchAll(/<li[^>]*>(.*?)<\/li>/gi)]
-                    .map(m => m[1].replace(/<[^>]*>/g, '').replace(/←/g, '').trim())
+                const listContent = match[1];
+                const words = [...listContent.matchAll(/<li[^>]*>(.*?)<\/li>/gi)]
+                    .map(m => m[1].replace(/<[^>]*>/g, '').trim())
                     .filter(w => w && w.length === len);
 
                 if (words.length > 0) {
-                    // Extract correct answers (those with ←)
-                    const correctAnswers = [...sectionContent.matchAll(/<li[^>]*>(.*?)←.*?<\/li>/gi)]
-                        .map(m => m[1].replace(/<[^>]*>/g, '').trim())
-                        .filter(w => w && w.length === len);
+                    wordsByLength.push({ length: len, words, correctAnswers: [] });
+                }
+            }
+        }
 
-                    // If no explicit correct answer found, fallback logic (optional, currently empty)
-                    // If you want to default to the FIRST word as "recommended", uncomment below:
-                    // if (correctAnswers.length === 0 && words.length > 0) {
-                    //     correctAnswers.push(words[0]);
-                    // }
+        return { theme, words: wordsByLength };
+    },
 
+    parseMiningCombo(html: string) {
+        const wordsByLength: { length: number; words: string[]; correctAnswers: string[] }[] = [];
+        let theme = "";
+
+        // MiningCombo: <strong>Theme:</strong> AI Innovation
+        const themeMatch = html.match(/Theme\s*:\s*(?:<\/strong>)?\s*([^<]+)/i);
+        if (themeMatch) {
+            theme = themeMatch[1].replace(/\s+/g, ' ').trim();
+        }
+
+        const lengths = [3, 4, 5, 6, 7, 8];
+        for (const len of lengths) {
+            // Look for headers like "Today’s Binance word of the day Answer 3 letters"
+            // followed by a <ul class="wp-block-list">
+            const regex = new RegExp(`${len}\\s*letters.*?<ul[^>]*>(.*?)<\\/ul>`, 'si');
+            const match = html.match(regex);
+
+            if (match) {
+                const listContent = match[1];
+                const rawLines = [...listContent.matchAll(/<li[^>]*>(.*?)<\/li>/gi)];
+
+                const words: string[] = [];
+                const correctAnswers: string[] = [];
+
+                for (const m of rawLines) {
+                    const rawText = m[1].replace(/<[^>]*>/g, '').trim(); // Strip tags
+                    const cleanWord = rawText.replace(/←.*/, '').trim(); // Remove arrow and text after
+
+                    if (cleanWord.length === len) {
+                        words.push(cleanWord);
+                        if (rawText.includes("←")) {
+                            correctAnswers.push(cleanWord);
+                        }
+                    }
+                }
+
+                if (words.length > 0) {
                     wordsByLength.push({ length: len, words, correctAnswers });
                 }
             }
         }
 
         return { theme, words: wordsByLength };
+    },
+
+    parseIncomedia(html: string) {
+        const wordsByLength: { length: number; words: string[]; correctAnswers: string[] }[] = [];
+        let theme = "";
+
+        // Incomedia theme: <p><strong>Theme:</strong> AI INNOVATION
+        const themeMatch = html.match(/<strong>Theme:<\/strong>\s*([^<\n]+)/i);
+        if (themeMatch) {
+            theme = themeMatch[1].replace(/\s+/g, ' ').trim();
+        }
+
+        // Word lists: <h3 class=wp-block-heading>WOTD X-Letter Words</h3> followed by <ul class=wp-block-list>
+        const lengths = [3, 4, 5, 6, 7, 8];
+        for (const len of lengths) {
+            // Match "WOTD X-Letter Words" header and the following ul
+            const regex = new RegExp(`WOTD\\s+${len}-Letter\\s+Words</h3>\\s*<ul[^>]*class=['"]?wp-block-list['"]?[^>]*>(.*?)</ul>`, 'si');
+            const match = html.match(regex);
+
+            if (match) {
+                const listContent = match[1];
+                // Words are in <li> tags (may not have closing tags)
+                const words = [...listContent.matchAll(/<li[^>]*>([^<]+)/gi)]
+                    .map(m => m[1].replace(/\s+/g, '').trim().toUpperCase())
+                    .filter(w => w && w.length === len && /^[A-Z]+$/.test(w));
+
+                if (words.length > 0) {
+                    wordsByLength.push({ length: len, words, correctAnswers: [] });
+                }
+            }
+        }
+
+        return { theme, words: wordsByLength };
+    },
+
+    mergeData(mining: any, incomedia: any, gfinity: any) {
+        // Priority: mining -> incomedia -> gfinity
+        // Theme priority
+        let theme = mining.theme || incomedia.theme || gfinity.theme || "Crypto";
+
+        const mergedWordsByLength: { length: number; words: string[]; correctAnswers: string[] }[] = [];
+        const lengths = [3, 4, 5, 6, 7, 8];
+
+        // Collect all words from each source for intersection check
+        const allMiningWords = new Set(mining.words.flatMap((w: any) => w.words));
+        const allIncomediaWords = new Set(incomedia.words.flatMap((w: any) => w.words));
+        const allGfinityWords = new Set(gfinity.words.flatMap((w: any) => w.words));
+
+        // Check for any intersection between sources
+        let hasIntersection = false;
+        for (const w of allMiningWords) {
+            if (allIncomediaWords.has(w) || allGfinityWords.has(w)) {
+                hasIntersection = true;
+                break;
+            }
+        }
+        if (!hasIntersection) {
+            for (const w of allIncomediaWords) {
+                if (allGfinityWords.has(w)) {
+                    hasIntersection = true;
+                    break;
+                }
+            }
+        }
+
+        // If no intersection and mining has data, use mining only
+        if (!hasIntersection && allMiningWords.size > 0 && (allIncomediaWords.size > 0 || allGfinityWords.size > 0)) {
+            console.log("No intersection found between sources. Using mining only.");
+            return mining;
+        }
+
+        // Merge/union all sources for each length
+        // IMPORTANT: Fill in missing lengths from any available source
+        for (const len of lengths) {
+            const mEntry = mining.words.find((w: any) => w.length === len);
+            const iEntry = incomedia.words.find((w: any) => w.length === len);
+            const gEntry = gfinity.words.find((w: any) => w.length === len);
+
+            const mWords = mEntry ? mEntry.words : [];
+            const iWords = iEntry ? iEntry.words : [];
+            const gWords = gEntry ? gEntry.words : [];
+
+            const mCorrect = mEntry ? mEntry.correctAnswers : [];
+            const iCorrect = iEntry ? iEntry.correctAnswers : [];
+            const gCorrect = gEntry ? gEntry.correctAnswers : [];
+
+            // Union of words from all sources
+            const unionWords = Array.from(new Set([...mWords, ...iWords, ...gWords]));
+            // Union of correct answers from all sources
+            const unionCorrect = Array.from(new Set([...mCorrect, ...iCorrect, ...gCorrect]));
+
+            if (unionWords.length > 0) {
+                mergedWordsByLength.push({
+                    length: len,
+                    words: unionWords,
+                    correctAnswers: unionCorrect
+                });
+            } else {
+                // Log missing lengths for debugging
+                console.log(`No words found for ${len}-letter length from any source`);
+            }
+        }
+
+        return { theme, words: mergedWordsByLength };
     }
 };
