@@ -77,6 +77,16 @@ const nextConfig = {
         destination: '/tempo',
         permanent: true,
       },
+      {
+        source: '/binance-word-of-the-day-solver',
+        destination: '/binance-wotd-solver',
+        permanent: true,
+      },
+      {
+        source: '/binance-wotd-answer-today',
+        destination: '/binance-word-of-the-day-answer-today',
+        permanent: true,
+      },
     ];
   },
   // Add rewrites to ensure direct API access

@@ -40,7 +40,11 @@ export default function sitemap(): MetadataRoute.Sitemap {
     '/ink',
     '/pharos-stats-checker',
     '/gitcoin',
-    '/binance-wotd-solver'
+    '/base-stats-checker',
+    '/fogochain-checker',
+    '/jumper-stats-checker',
+    '/binance-word-of-the-day-solver',
+    '/binance-wotd-answer-today'
   ];
 
   // Generate sitemap items

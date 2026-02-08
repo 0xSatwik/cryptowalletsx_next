@@ -128,9 +128,9 @@ export default {
             for (const entry of data.words) {
                 try {
                     await env.DB.prepare(
-                        "INSERT OR REPLACE INTO wodl_data (publish_date, theme, word_length, words) VALUES (?, ?, ?, ?)"
+                        "INSERT OR REPLACE INTO wodl_data (publish_date, theme, word_length, words, correct_answers) VALUES (?, ?, ?, ?, ?)"
                     )
-                        .bind(today, data.theme, entry.length, JSON.stringify(entry.words))
+                        .bind(today, data.theme, entry.length, JSON.stringify(entry.words), JSON.stringify(entry.correctAnswers))
                         .run();
                     results.push({ length: entry.length, status: "saved" });
                 } catch (e: any) {
@@ -143,7 +143,7 @@ export default {
     },
 
     parseWodl(html: string) {
-        const wordsByLength: { length: number; words: string[] }[] = [];
+        const wordsByLength: { length: number; words: string[]; correctAnswers: string[] }[] = [];
         let theme = "";
 
         // Extract Theme - Robust regex for various patterns
@@ -188,7 +188,18 @@ export default {
                     .filter(w => w && w.length === len);
 
                 if (words.length > 0) {
-                    wordsByLength.push({ length: len, words });
+                    // Extract correct answers (those with ←)
+                    const correctAnswers = [...sectionContent.matchAll(/<li[^>]*>(.*?)←.*?<\/li>/gi)]
+                        .map(m => m[1].replace(/<[^>]*>/g, '').trim())
+                        .filter(w => w && w.length === len);
+
+                    // If no explicit correct answer found, fallback logic (optional, currently empty)
+                    // If you want to default to the FIRST word as "recommended", uncomment below:
+                    // if (correctAnswers.length === 0 && words.length > 0) {
+                    //     correctAnswers.push(words[0]);
+                    // }
+
+                    wordsByLength.push({ length: len, words, correctAnswers });
                 }
             }
         }

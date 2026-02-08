@@ -7,6 +7,7 @@ interface WodlEntry {
     theme: string;
     word_length: number;
     words: string; // JSON string array
+    correct_answers?: string; // JSON string array for highlighted words
 }
 
 export default function AnswerDisplay() {
@@ -14,6 +15,8 @@ export default function AnswerDisplay() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [revealed, setRevealed] = useState<{ [key: number]: boolean }>({});
+
+
 
     useEffect(() => {
         fetch('https://wodl-scraper.moneydropcrypto.workers.dev/today')
@@ -80,6 +83,7 @@ export default function AnswerDisplay() {
                     {[3, 4, 5, 6, 7, 8].map((len) => {
                         const entry = data.find((d) => d.word_length === len);
                         const words: string[] = entry ? JSON.parse(entry.words) : [];
+                        const correctAnswers: string[] = entry && entry.correct_answers ? JSON.parse(entry.correct_answers) : [];
                         const isRevealed = revealed[len];
 
                         return (
@@ -103,22 +107,40 @@ export default function AnswerDisplay() {
                                             Reveal Answers
                                         </button>
                                     ) : (
-                                        <div className="flex flex-wrap gap-2 animate-reveal">
-                                            {words.length > 0 ? words.map((word, idx) => (
-                                                <span
-                                                    key={idx}
-                                                    className="bg-[#F8F9FA] text-[#0B0E11] px-4 py-2 rounded-lg font-mono font-bold border border-[#E6E8EA] group-hover:border-[#FCD535]/30 transition-colors"
-                                                >
-                                                    {word}
-                                                </span>
-                                            )) : (
-                                                <span className="text-gray-400 italic text-sm">No {len}-letter words found</span>
+                                        <div className="flex flex-col gap-3 w-full animate-reveal">
+                                            {/* Correct Answers (Best Choice) */}
+                                            {correctAnswers.length > 0 && (
+                                                <div className="flex flex-wrap gap-2 justify-center border-b border-gray-100 pb-3">
+                                                    {correctAnswers.map((word, idx) => (
+                                                        <span
+                                                            key={`correct-${idx}`}
+                                                            className="flex items-center gap-1.5 bg-green-100 text-green-800 px-4 py-2 rounded-lg font-mono font-bold border border-green-200 shadow-sm"
+                                                        >
+                                                            <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>
+                                                            {word}
+                                                        </span>
+                                                    ))}
+                                                </div>
                                             )}
+
+                                            {/* All Other Words */}
+                                            <div className="flex flex-wrap gap-2 justify-center">
+                                                {words.length > 0 ? words.filter(w => !correctAnswers.includes(w)).map((word, idx) => (
+                                                    <span
+                                                        key={idx}
+                                                        className="bg-[#F8F9FA] text-[#0B0E11] px-4 py-2 rounded-lg font-mono font-bold border border-[#E6E8EA] group-hover:border-[#FCD535]/30 transition-colors"
+                                                    >
+                                                        {word}
+                                                    </span>
+                                                )) : (
+                                                    correctAnswers.length === 0 && <span className="text-gray-400 italic text-sm">No {len}-letter words found</span>
+                                                )}
+                                            </div>
                                         </div>
                                     )}
 
                                     {!isRevealed && (
-                                        <div className="absolute inset-0 flex gap-2 blur-md opacity-40 select-none">
+                                        <div className="absolute inset-0 flex gap-2 blur-md opacity-40 select-none justify-center">
                                             {["WORDS", "HERE", "WODL"].map((w, i) => (
                                                 <span key={i} className="bg-gray-100 h-10 w-20 rounded"></span>
                                             ))}
