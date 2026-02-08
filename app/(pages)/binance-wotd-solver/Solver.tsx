@@ -15,6 +15,7 @@ export default function Solver() {
     const [guesses, setGuesses] = useState<GuessResult[]>([]);
     const [bestGuesses, setBestGuesses] = useState<{ word: string; score: number; isAnswer: boolean }[]>([]);
     const [possibleWords, setPossibleWords] = useState<string[]>([]);
+    const [dailyAnswers, setDailyAnswers] = useState<Record<number, string[]>>({});
 
     // Preferences
     const [hardMode, setHardMode] = useState(true);
@@ -47,7 +48,11 @@ export default function Solver() {
                 if (!res.ok) throw new Error('Failed to load word data');
                 const data: WordData = await res.json();
                 setWordData(data);
-                setPossibleWords(useAllWords ? data.all : data.answers);
+                // Merge daily answers into the pool
+                const todayWords = dailyAnswers[wordLength] || [];
+                const baseList = useAllWords ? data.all : data.answers;
+                const mergedList = [...new Set([...todayWords, ...baseList])];
+                setPossibleWords(mergedList);
             } catch (err: any) {
                 setError(err.message);
             } finally {
@@ -55,7 +60,24 @@ export default function Solver() {
             }
         }
         loadData();
-    }, [wordLength, useAllWords]);
+    }, [wordLength, useAllWords, dailyAnswers]);
+
+    // Fetch daily WODL answers from API
+    useEffect(() => {
+        fetch('https://wodl-scraper.moneydropcrypto.workers.dev/today')
+            .then(res => res.json())
+            .then(data => {
+                const byLength: Record<number, string[]> = {};
+                for (const entry of data) {
+                    try {
+                        const words = JSON.parse(entry.words);
+                        byLength[entry.word_length] = words.map((w: string) => w.toUpperCase());
+                    } catch { /* ignore parse errors */ }
+                }
+                setDailyAnswers(byLength);
+            })
+            .catch(() => setDailyAnswers({})); // Fail silently
+    }, []);
 
     useEffect(() => {
         setCurrentEvaluation(Array(wordLength).fill('absent'));
@@ -69,18 +91,21 @@ export default function Solver() {
     useEffect(() => {
         if (!solver || !wordData) return;
 
+        // Merge daily answers into the pool
+        const todayWords = dailyAnswers[wordLength] || [];
+        const baseList = useAllWords ? wordData.all : wordData.answers;
+        const mergedList = [...new Set([...todayWords, ...baseList])];
+
         if (guesses.length === 0) {
-            const baseList = useAllWords ? wordData.all : wordData.answers;
-            setPossibleWords(baseList);
+            setPossibleWords(mergedList);
             return;
         }
 
-        const baseList = useAllWords ? wordData.all : wordData.answers;
-        const filtered = BinanceWotdSolver.filterPossibilities(baseList, guesses);
+        const filtered = BinanceWotdSolver.filterPossibilities(mergedList, guesses);
         setPossibleWords(filtered);
         const suggestions = solver.getBestGuesses(filtered, guesses);
         setBestGuesses(suggestions);
-    }, [guesses, solver, wordData, useAllWords]);
+    }, [guesses, solver, wordData, useAllWords, dailyAnswers, wordLength]);
 
     const handleAddGuess = () => {
         if (currentWord.length !== wordLength) return;
