@@ -5,9 +5,6 @@ export const metadata: Metadata = {
     title: 'Binance Word of the Day Answer Today & WOTD Solver',
     description: 'Binance Word of the Day Answer Today: WOTD Solver & Hints Supports 3-8 letter words answer suggestions.',
     keywords: 'binance wotd solver, binance word of the day answer, binance wotd answers, binance word of the day solver, binance wotd answer, binance wotd answers',
-    alternates: {
-        canonical: 'https://cryptowalletsx.com/binance-word-of-the-day-solver',
-    },
     openGraph: {
         title: 'Binance Word Of The Day (WOTD) Solver',
         description: 'Get today\'s Binance Word of the Day answer instantly with our advanced solver.',

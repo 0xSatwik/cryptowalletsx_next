@@ -13,9 +13,6 @@ export const metadata: Metadata = {
     title: `Binance Word of the Day Answer Today ${formattedDate}`,
     description: `Get the 100% correct Binance Word of the Day answer for ${formattedDate}. Daily updated Binance WODL theme words for 3, 4, 5, 6, 7, and 8 letters. Verified answers revealed instantly!`,
     keywords: 'binance word of the day answer today, binance wodl answers today, binance wotd answers, binance word of the day theme, binance wodl theme words, binance wodl today, crypto word puzzle',
-    alternates: {
-        canonical: 'https://cryptowalletsx.com/binance-wotd-answer-today',
-    },
     openGraph: {
         title: `Binance Word of the Day Answer Today ${formattedDate}`,
         description: `Instant reveal for today's Binance WODL answers (${formattedDate}). All word lengths from 3 to 8 letters covered.`,
