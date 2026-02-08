@@ -1,11 +1,11 @@
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {
-    title: 'Tempo Chain Stats Checker | CryptoWalletsX',
+    title: 'Tempo Stats Checker - Tempo rank checker',
     description: 'Track your Tempo Chain wallet stats, transactions, gas spent, and activity patterns.',
     keywords: [
         'Tempo Chain',
-        'Tempo blockchain',
+        'Tempo stats checker',
         'wallet stats',
         'blockchain explorer',
         'Tempo stats checker',
