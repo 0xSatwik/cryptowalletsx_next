@@ -52,9 +52,9 @@ const Header = () => {
       hasDropdown: false
     },
     {
-      name: 'Monad',
-      href: '/monad-testnet',
-      icon: Zap,
+      name: 'WODL Solver',
+      href: '/binance-wotd-solver',
+      icon: Gift,
       hasDropdown: false
     },
     {
@@ -76,8 +76,8 @@ const Header = () => {
         { name: 'Somnia', href: '/somnia', icon: Shield },
         { name: 'Soneium', href: '/soneium', icon: Database },
         { name: 'Ink Chain', href: '/ink', icon: Layers },
-        { name: 'MegaETH', href: '/megaeth', icon: Coins },
-        { name: 'Mitosis', href: '/mitosis', icon: BarChart2 }
+        { name: 'MegaETH', href: '/megaeth', icon: Coins }
+
       ]
     },
     {
@@ -93,8 +93,8 @@ const Header = () => {
         { name: 'Fogo Stats Checker', href: '/fogo-stats-checker', icon: Database },
         { name: 'Gitcoin Passport', href: '/gitcoin/bulk', icon: Shield },
         { name: 'Balance Checker', href: '/balance-checker', icon: Coins },
-        { name: 'Galxe Points', href: '/galxe-airdrops', icon: Gift },
-        { name: 'Kaito Yaps', href: '/kaito-yaps', icon: BarChart2 }
+        { name: 'Galxe Points', href: '/galxe-airdrops', icon: Gift }
+
       ]
     },
     {

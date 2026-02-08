@@ -157,29 +157,7 @@ export default function Home() {
     return matchesSearch && matchesChain;
   });
 
-  const popularTools = [
-    {
-      title: 'Monad Testnet Activity Checker',
-      description: 'Track your Monad Testnet wallet activity, contract interactions, and token holdings.',
-      link: '/monad-testnet',
-      icon: <Zap className="h-8 w-8 text-white" />,
-      bgColor: 'bg-gradient-to-r from-purple-600 to-purple-700'
-    },
-    {
-      title: 'Mitosis Analytics Dashboard',
-      description: 'Comprehensive analytics for your Mitosis wallet across Game of Mito, Matrix, Expedition, and Morse NFTs.',
-      link: '/mitosis',
-      icon: <Activity className="h-8 w-8 text-white" />,
-      bgColor: 'bg-gradient-to-r from-blue-500 to-indigo-600'
-    },
-    {
-      title: 'Somnia Chain Explorer',
-      description: 'Monitor your Somnia Chain activity, token balances, and ecosystem participation.',
-      link: '/somnia',
-      icon: <Shield className="h-8 w-8 text-white" />,
-      bgColor: 'bg-gradient-to-r from-teal-500 to-teal-600'
-    }
-  ];
+
 
   return (
     <div className="bg-white">
@@ -442,12 +420,12 @@ export default function Home() {
                   iconBg: 'bg-blue-400 bg-opacity-30',
                 },
                 {
-                  name: 'Somnia Chain Stats',
-                  description: 'Monitor your Somnia Chain activity, token balances, and ecosystem participation.',
-                  icon: Shield,
-                  href: '/somnia',
-                  bgGradient: 'from-teal-500 to-blue-600',
-                  iconBg: 'bg-teal-400 bg-opacity-30',
+                  name: 'Binance WODL Solver',
+                  description: 'Solve the daily Binance WODL puzzle instantly with our advanced solver tool.',
+                  icon: Gift,
+                  href: '/binance-wotd-solver',
+                  bgGradient: 'from-yellow-500 to-amber-500',
+                  iconBg: 'bg-yellow-400 bg-opacity-30',
                 },
               ].map((feature) => {
                 const Icon = feature.icon;

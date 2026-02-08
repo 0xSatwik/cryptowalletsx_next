@@ -25,6 +25,11 @@ const posts = [
     slug: 'sahara-ai-score-calculation',
     title: "Sahara AI Testnet Score: Unveiling the Calculation Method",
     image: "https://images.unsplash.com/photo-1639755982994-8825056a25c6?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80",
+  },
+  {
+    slug: '/binance-word-of-the-day-answer-today',
+    title: "Binance Word of the Day Answer Today (Confirmed)",
+    image: "https://images.unsplash.com/photo-1621416894569-0f39ed31d247?ixlib=rb-4.0.3&auto=format&fit=crop&w=2069&q=80",
   }
 ];
 
@@ -45,14 +50,14 @@ export default function PostsPage() {
       {/* Posts Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
         {posts.map((post) => (
-          <Link 
-            href={`/post/${post.slug}`} 
+          <Link
+            href={post.slug.startsWith('/') ? post.slug : `/post/${post.slug}`}
             key={post.slug}
             className="group"
           >
             <div className="bg-white rounded-2xl shadow-lg overflow-hidden transform transition-all duration-300 hover:shadow-xl hover:-translate-y-1 h-full flex flex-col">
               <div className="aspect-[16/9] relative overflow-hidden">
-                <div 
+                <div
                   className="w-full h-full bg-cover bg-center"
                   style={{ backgroundImage: `url(${post.image})` }}
                 >

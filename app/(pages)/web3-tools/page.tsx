@@ -97,14 +97,14 @@ export default function Web3Tools() {
       iconBg: 'bg-blue-400 bg-opacity-30'
     },
     {
-      title: 'Somnia Stats Checker',
-      description: 'Analyze your Somnia wallet activity, transaction history, and calculate your wallet score.',
-      link: '/somnia',
-      icon: <BarChart2 className="h-6 w-6 text-white" />,
-      tags: ['wallet', 'stats', 'analytics', 'somnia', 'dream', 'score'],
-      chain: 'Somnia',
-      bgGradient: 'from-pink-500 to-purple-600',
-      iconBg: 'bg-pink-400 bg-opacity-30'
+      title: 'Binance WODL Solver',
+      description: 'Solve the daily Binance WODL puzzle instantly. Features smart suggestions and daily answer integration.',
+      link: '/binance-wotd-solver',
+      icon: <Gift className="h-6 w-6 text-white" />,
+      tags: ['binance', 'wodl', 'solver', 'tool', 'crypto', 'puzzle'],
+      chain: 'Binance',
+      bgGradient: 'from-yellow-500 to-amber-500',
+      iconBg: 'bg-yellow-400 bg-opacity-30'
     },
     {
       title: 'Linea Chain Stats',
