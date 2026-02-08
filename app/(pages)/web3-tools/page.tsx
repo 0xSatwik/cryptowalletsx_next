@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import Link from 'next/link';
+import Link from '@/app/components/Link';
 import { Search, ArrowRight, Wallet, BarChart2, ClipboardList, Boxes, Gift, Zap, Coins, CheckCircle2, Trophy, FileBarChart2, Database, Shield, Sparkles, Layers, Star, Network, ArrowUpDown } from 'lucide-react';
 
 interface Tool {

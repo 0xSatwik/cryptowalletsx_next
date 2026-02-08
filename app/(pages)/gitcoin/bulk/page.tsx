@@ -1,7 +1,7 @@
 "use client";
 
 import React from 'react';
-import Link from 'next/link';
+import Link from '@/app/components/Link';
 
 export default function GitcoinBulkPage() {
   return (
@@ -11,6 +11,6 @@ export default function GitcoinBulkPage() {
       <Link href="/" className="text-blue-600 hover:text-blue-800">
         Return to home page
       </Link>
-      </div>
+    </div>
   );
 }

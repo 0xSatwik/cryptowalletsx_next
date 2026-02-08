@@ -2,7 +2,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import Head from 'next/head';
-import Link from 'next/link';
+import Link from '@/app/components/Link';
 import { Search, Loader2, ExternalLink, Wallet, Clock, ArrowRightLeft, Coins, Frame, Boxes, Twitter, Calendar, ChevronDown, ChevronUp, Building2, Users, ChevronRight, Clock3, Image, ArrowRight } from 'lucide-react';
 import { fetchMonadTestnetStats } from '../../../lib/monadTestnet';
 import type { MonadTestnetStats as BaseMonadTestnetStats, ERC1155Token, ERC20Token, ERC721NFT } from '../../../lib/monadTestnet';
@@ -47,12 +47,12 @@ interface SocialScanProfile {
 async function fetchWalletProfile(address: string): Promise<SocialScanProfile | null> {
   try {
     const response = await fetch(`https://api.socialscan.io/rest/monad-testnet/v1/explorer/address/${address}/profile`);
-    
+
     if (!response.ok) {
       console.error('Error fetching from SocialScan API:', response.status);
       return null;
     }
-    
+
     const data = await response.json();
     return data as SocialScanProfile;
   } catch (error) {
@@ -74,56 +74,56 @@ function calculateWalletAge(stats: MonadTestnetStats): { days: number; creationD
   // We should use whichever is earlier for the true wallet age
   if (stats.profileData) {
     // Get timestamps from both first_transaction and funding_transaction
-    const firstTxTime = stats.profileData.first_transaction?.block_timestamp 
+    const firstTxTime = stats.profileData.first_transaction?.block_timestamp
       ? new Date(stats.profileData.first_transaction.block_timestamp).getTime()
       : Number.MAX_SAFE_INTEGER;
-    
+
     const fundingTxTime = stats.profileData.funding_transaction?.block_timestamp
       ? new Date(stats.profileData.funding_transaction.block_timestamp).getTime()
       : Number.MAX_SAFE_INTEGER;
-    
+
     // Use the earlier timestamp (first activity on the wallet)
     const earliestTimestamp = Math.min(firstTxTime, fundingTxTime);
-    
+
     if (earliestTimestamp !== Number.MAX_SAFE_INTEGER) {
       const firstTxDate = new Date(earliestTimestamp);
       const now = new Date();
       const days = Math.floor((now.getTime() - firstTxDate.getTime()) / (1000 * 60 * 60 * 24));
-      
+
       return {
         days,
         creationDate: firstTxDate.toLocaleDateString('en-US', {
           year: 'numeric',
-          month: 'long', 
+          month: 'long',
           day: 'numeric'
         })
       };
     }
   }
-  
+
   // Fallback to traditional calculation
   if (!stats.transactions || stats.transactions.length === 0) {
     return { days: 0, creationDate: 'N/A' };
   }
-  
+
   // Find the earliest transaction timestamp
   const earliestTimestamp = stats.transactions.reduce((earliest, tx) => {
     return tx.block_timestamp < earliest ? tx.block_timestamp : earliest;
   }, Number.MAX_SAFE_INTEGER);
-  
+
   if (earliestTimestamp === Number.MAX_SAFE_INTEGER) {
     return { days: 0, creationDate: 'N/A' };
   }
-  
+
   const earliestDate = new Date(earliestTimestamp * 1000);
   const now = new Date();
   const days = Math.floor((now.getTime() - earliestDate.getTime()) / (1000 * 60 * 60 * 24));
-  
+
   return {
     days,
     creationDate: earliestDate.toLocaleDateString('en-US', {
       year: 'numeric',
-      month: 'long', 
+      month: 'long',
       day: 'numeric'
     })
   };
@@ -132,22 +132,22 @@ function calculateWalletAge(stats: MonadTestnetStats): { days: number; creationD
 // Update the wallet score calculation function
 function calculateWalletScore(stats: MonadTestnetStats): number {
   if (!stats) return 0;
-  
+
   // Recalculate the score to ensure consistency with displayed breakdown
   // This fixes the discrepancy between displayed components and total score
   const transactionPoints = Math.min(stats.totalTransactions, 500) * 0.01;
   const consistencyPoints = stats.activityByDay * 0.1 + stats.activityByWeek * 0.25 + stats.activityByMonth * 0.5;
-  
+
   // Use the correct contractsInteracted.total value for contract points
-  const contractPoints = Math.min(stats.contractsCreated.addresses.length, 20) * 0.025 + 
-                         Math.min(stats.contractsInteracted.total, 30) * 0.03;
-  
+  const contractPoints = Math.min(stats.contractsCreated.addresses.length, 20) * 0.025 +
+    Math.min(stats.contractsInteracted.total, 30) * 0.03;
+
   const volumePoints = Math.min(parseFloat(stats.totalVolume) / 1000, 1);
-  
+
   // Add NFT bonuses (checking ownership from nftOwnership would require making this function take nftOwnership as a parameter)
   // For now, we'll infer from the difference between stored score and calculated base points
   const additionalPoints = stats.score - (transactionPoints + consistencyPoints + contractPoints + volumePoints);
-  
+
   // Calculate final score
   return transactionPoints + consistencyPoints + contractPoints + volumePoints + additionalPoints;
 }
@@ -162,7 +162,7 @@ function formatBalance(balance: string, decimals: number = 18): string {
     if (balance.startsWith('0x')) {
       balance = BigInt(balance).toString();
     }
-    
+
     // Handle string inputs that might be decimal numbers
     if (balance.includes('.')) {
       const [integerPart, decimalPart] = balance.split('.');
@@ -179,11 +179,11 @@ function formatBalance(balance: string, decimals: number = 18): string {
     const divisor = BigInt(10 ** decimals);
     const quotient = value / divisor;
     const remainder = value % divisor;
-    
+
     // Format to exactly 4 decimal places
     let decimalStr = remainder.toString().padStart(decimals, '0');
     decimalStr = decimalStr.substring(0, 4).padEnd(4, '0');
-    
+
     return `${quotient}.${decimalStr}`;
   } catch (error) {
     console.error('Error formatting balance:', error);
@@ -224,11 +224,11 @@ function getMonadRpcUrl(): string {
     process.env.VITE_ALCHEMY_API_KEY_9 || 'FBKOVxVYW0yobV1ntzs7u5qM0E6_xRwO',
     process.env.VITE_ALCHEMY_API_KEY_10 || 'FBKOVxVYW0yobV1ntzs7u5qM0E6_xRwO'
   ].filter(Boolean);
-  
+
   // Select a random API key
   const randomIndex = Math.floor(Math.random() * alchemyApiKeys.length);
   const apiKey = alchemyApiKeys[randomIndex];
-  
+
   return `https://monad-testnet.g.alchemy.com/v2/${apiKey}`;
 }
 
@@ -252,13 +252,13 @@ async function checkDirectNftOwnership(address: string): Promise<{
     const apiUrl = `https://monad-testnet.g.alchemy.com/nft/v3/${alchemyApiKey}/getNFTsForOwner?owner=${address}&contractAddresses%5B%5D=${NAD_NFT_CONTRACT_ADDRESS}&contractAddresses%5B%5D=${CIPHER_NFT_CONTRACT_ADDRESS}&withMetadata=false&pageSize=100`;
 
     console.log(`Checking NFT ownership with Alchemy API: ${apiUrl.substring(0, apiUrl.indexOf('?'))}`);
-    
+
     const response = await fetch(apiUrl);
-    
+
     if (!response.ok) {
       throw new Error(`Alchemy API error: ${response.status}`);
     }
-    
+
     const data = await response.json();
 
     // Parse the response to check for NFT ownership
@@ -267,7 +267,7 @@ async function checkDirectNftOwnership(address: string): Promise<{
     let nadBalance = "0";
     let cipherBalance = "0";
     let totalNfts = data.totalCount || 0;
-    
+
     // Check each NFT to determine which contracts we have
     if (data.ownedNfts && Array.isArray(data.ownedNfts)) {
       data.ownedNfts.forEach((nft: any) => {
@@ -281,7 +281,7 @@ async function checkDirectNftOwnership(address: string): Promise<{
         }
       });
     }
-    
+
     return {
       is1MillionNadHolder,
       isSecondNftHolder,
@@ -328,15 +328,15 @@ interface AlchemyTransfersResponse {
 // Helper functions for browser localStorage caching
 function getFromCache(key: string) {
   if (typeof window === 'undefined') return null;
-  
+
   try {
     const cachedItem = localStorage.getItem(`monad_cache_${key}`);
     if (!cachedItem) return null;
-    
+
     const parsedItem = JSON.parse(cachedItem);
     const now = Date.now();
     const CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
-    
+
     // Check if cache is still valid
     if (now - parsedItem.timestamp < CACHE_TTL) {
       return parsedItem.data;
@@ -353,7 +353,7 @@ function getFromCache(key: string) {
 
 function saveToCache(key: string, data: any) {
   if (typeof window === 'undefined') return;
-  
+
   try {
     const cacheItem = {
       timestamp: Date.now(),
@@ -367,10 +367,10 @@ function saveToCache(key: string, data: any) {
 
 // Add a function to fetch transactions using Alchemy API for users with large transaction counts
 async function fetchAlchemyTransactions(
-  address: string, 
+  address: string,
   statusCallback: (status: string) => void
-): Promise<{ 
-  transactions: any[]; 
+): Promise<{
+  transactions: any[];
   contractsInteracted: { addresses: string[]; interactionCounts: Record<string, number>; timestamps: Record<string, number>; total: number };
   contractsCreated: { addresses: string[]; timestamps: Record<string, number>; total: number; list: { address: string; timestamp: number; formattedTimestamp: string }[] };
   totalVolume: string;
@@ -381,13 +381,13 @@ async function fetchAlchemyTransactions(
   // Check the browser localStorage cache first (valid for 24 hours)
   const cacheKey = `alchemy_tx_${address.toLowerCase()}`;
   const cachedData = getFromCache(cacheKey);
-  
+
   if (cachedData) {
     console.log(`Using cached transaction data for high volume wallet ${address}`);
     statusCallback(`Using cached data...`);
     return cachedData;
   }
-  
+
   // Get the Alchemy API keys
   const alchemyApiKeys = [
     process.env.VITE_ALCHEMY_API_KEY_1 || 'FBKOVxVYW0yobV1ntzs7u5qM0E6_xRwO',
@@ -401,13 +401,13 @@ async function fetchAlchemyTransactions(
     process.env.VITE_ALCHEMY_API_KEY_9 || 'FBKOVxVYW0yobV1ntzs7u5qM0E6_xRwO',
     process.env.VITE_ALCHEMY_API_KEY_10 || 'FBKOVxVYW0yobV1ntzs7u5qM0E6_xRwO'
   ].filter(Boolean);
-  
+
   // Function to get a different API key for each request using round-robin
   const getApiKey = (pageNumber: number) => {
     const keyIndex = (pageNumber - 1) % alchemyApiKeys.length;
     return alchemyApiKeys[keyIndex];
   };
-  
+
   statusCallback(`Processing wallet data... 0% complete`);
   try {
     let transactions: any[] = [];
@@ -415,12 +415,12 @@ async function fetchAlchemyTransactions(
     let page = 1;
     const pageSize = 1000; // Maximum allowed by Alchemy
     const maxPages = 45; // Limit to 45,000 transactions (45 pages of 1000 each)
-    
+
     // Track unique dates, weeks, and months
     const uniqueDates = new Set<string>();
     const uniqueWeeks = new Set<string>();
     const uniqueMonths = new Set<string>();
-    
+
     // Track contract interactions
     const contractsInteracted: {
       addresses: string[];
@@ -433,7 +433,7 @@ async function fetchAlchemyTransactions(
       timestamps: {},
       total: 0
     };
-    
+
     // Track contract creations
     const contractsCreated: {
       addresses: string[];
@@ -448,14 +448,14 @@ async function fetchAlchemyTransactions(
     };
 
     let totalVolume = 0;
-    
+
     while (page <= maxPages) {
       // Get a different API key for each page request
       const apiKey = getApiKey(page);
       const apiUrl = `https://monad-testnet.g.alchemy.com/v2/${apiKey}`;
-      
+
       statusCallback(`Processing wallet data... ${Math.floor((page / maxPages) * 100)}% complete`);
-      
+
       const requestBody = {
         id: 1,
         jsonrpc: "2.0",
@@ -489,20 +489,20 @@ async function fetchAlchemyTransactions(
 
       const responseData = await response.json();
       const result: AlchemyTransfersResponse = responseData.result;
-      
+
       if (!result.transfers || !Array.isArray(result.transfers)) {
         break;
       }
-      
+
       // Transform Alchemy transfers to a compatible format
       const formattedTransfers = result.transfers.map(transfer => {
         // Parse timestamp to unix timestamp
         const timestamp = Math.floor(new Date(transfer.metadata.blockTimestamp).getTime() / 1000);
-        
+
         // Track unique dates
         const date = new Date(timestamp * 1000).toISOString().split('T')[0];
         uniqueDates.add(date);
-        
+
         // Track unique weeks (using year + week number)
         const dateObj = new Date(timestamp * 1000);
         const yearStart = new Date(dateObj.getFullYear(), 0, 1);
@@ -510,17 +510,17 @@ async function fetchAlchemyTransactions(
           ((dateObj.getTime() - yearStart.getTime()) / 86400000 + 1) / 7
         );
         uniqueWeeks.add(`${dateObj.getFullYear()}-W${weekNumber}`);
-        
+
         // Track unique months
         uniqueMonths.add(`${dateObj.getFullYear()}-${dateObj.getMonth() + 1}`);
-        
+
         // Check for contract creation (to field is null for contract creations)
         if (transfer.to === null) {
           // This is a contract creation transaction
           // We need to extract the contract address from transaction receipt (not available in this API)
           // Instead, we'll use the hash to identify it
           const creationId = transfer.hash.toLowerCase();
-          
+
           if (!contractsCreated.addresses.includes(creationId)) {
             contractsCreated.addresses.push(creationId);
             contractsCreated.timestamps[creationId] = timestamp;
@@ -537,7 +537,7 @@ async function fetchAlchemyTransactions(
         else if (transfer.to && transfer.to !== address.toLowerCase()) {
           // Convert to lowercase for case-insensitive comparison
           const contractAddress = transfer.to.toLowerCase();
-          
+
           // Add to addresses if not exists
           if (!contractsInteracted.addresses.includes(contractAddress)) {
             contractsInteracted.addresses.push(contractAddress);
@@ -545,19 +545,19 @@ async function fetchAlchemyTransactions(
             contractsInteracted.timestamps[contractAddress] = timestamp;
           } else {
             // Increment counter
-            contractsInteracted.interactionCounts[contractAddress] = 
+            contractsInteracted.interactionCounts[contractAddress] =
               (contractsInteracted.interactionCounts[contractAddress] || 0) + 1;
-            
+
             // Update timestamp if more recent
             if (timestamp > (contractsInteracted.timestamps[contractAddress] || 0)) {
               contractsInteracted.timestamps[contractAddress] = timestamp;
             }
           }
         }
-        
+
         // Add to total volume
         totalVolume += transfer.value || 0;
-        
+
         // Return transformed transaction
         return {
           hash: transfer.hash,
@@ -571,22 +571,22 @@ async function fetchAlchemyTransactions(
           function_selector: "", // Not available in this API
         };
       });
-      
+
       transactions = [...transactions, ...formattedTransfers];
-      
+
       // If no pageKey, we've reached the end
       if (!result.pageKey) {
         break;
       }
-      
+
       // Update pageKey for the next request
       pageKey = result.pageKey;
       page++;
     }
-    
+
     // Update the total count of contract interactions
     contractsInteracted.total = contractsInteracted.addresses.length;
-    
+
     // Prepare the result
     const result = {
       transactions,
@@ -597,11 +597,11 @@ async function fetchAlchemyTransactions(
       activityByWeek: uniqueWeeks.size,
       activityByMonth: uniqueMonths.size
     };
-    
+
     // Store in browser localStorage cache for future use
     saveToCache(cacheKey, result);
     console.log(`Cached transaction data for high volume wallet ${address}`);
-    
+
     return result;
   } catch (error) {
     console.error('Error fetching Alchemy transactions:', error);
@@ -644,10 +644,10 @@ function MonadTestnetStats() {
     cipherBalance: "0",
     totalNfts: 0
   });
-  
+
   // Add ref for search section scrolling
   const searchSectionRef = useRef<HTMLDivElement>(null);
-  
+
   // Function to scroll to search section
   const scrollToSearchSection = () => {
     searchSectionRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -667,21 +667,21 @@ function MonadTestnetStats() {
       is1MillionNadHolder: false,
       isSecondNftHolder: false,
       nadBalance: "0",
-      cipherBalance: "0", 
+      cipherBalance: "0",
       totalNfts: 0
     });
-    
+
     try {
       // Create a callback to update loading status
       const statusCallback = (status: string) => {
         console.log("Status update:", status);
         setLoadingStatus(status);
       };
-      
+
       // Fetch the SocialScan profile data first
       statusCallback('Fetching wallet profile...');
       const profileData = await fetchWalletProfile(address);
-      
+
       // Fetch the native balance using ethers.js
       statusCallback('Fetching wallet balance...');
       let formattedBalance = "0";
@@ -705,9 +705,9 @@ function MonadTestnetStats() {
       statusCallback('Checking NFT holdings...');
       const nftOwnershipData = await checkDirectNftOwnership(address);
       setNftOwnership(nftOwnershipData);
-      
+
       let statsData: MonadTestnetStats;
-      
+
       // Check if this is likely to be a high transaction count wallet
       // First try to get the RPC transaction count to see if we need Alchemy API
       try {
@@ -716,53 +716,53 @@ function MonadTestnetStats() {
         const provider = new JsonRpcProvider(rpcUrl);
         const txCount = await provider.getTransactionCount(address);
         console.log(`Transaction count for address ${address}: ${txCount}`);
-        
+
         // Use Alchemy API if transaction count is high (above 9900)
         if (txCount > 9900) {
           statusCallback(`Processing high transaction volume wallet...`);
-          
+
           // Use Alchemy API to fetch detailed transaction data
           const alchemyData = await fetchAlchemyTransactions(address, statusCallback);
-          
-                                      // Construct the stats object with the Alchemy data
+
+          // Construct the stats object with the Alchemy data
           statsData = {
             address: address,
             transactions: alchemyData.transactions || [],
             totalTransactions: txCount, // Use the actual transaction count instead of just the fetched transactions
             contractsCreated: alchemyData.contractsCreated,
-          contractsInteracted: {
-            addresses: alchemyData.contractsInteracted.addresses,
-            interactionCounts: alchemyData.contractsInteracted.interactionCounts,
-            timestamps: alchemyData.contractsInteracted.timestamps,
-            total: alchemyData.contractsInteracted.total,
-            list: alchemyData.contractsInteracted.addresses.map(addr => ({
-              address: addr,
-              timestamp: alchemyData.contractsInteracted.timestamps[addr] || 0,
-              formattedTimestamp: new Date((alchemyData.contractsInteracted.timestamps[addr] || 0) * 1000).toLocaleString()
-            }))
-          },
-          tokens: [], // Will be populated separately
-          nfts: [], // Will be populated separately
-          erc1155Tokens: [], // Will be populated separately
-          // Add missing required fields from MonadTestnetStats interface
-          activityScore: 0,
-          volumeScore: 0,
-          nftScore: 0,
-          tokenScore: 0,
-          contractScore: 0,
-          totalVolume: alchemyData.totalVolume,
-          activityByDay: alchemyData.activityByDay,
-          activityByWeek: alchemyData.activityByWeek,
-          activityByMonth: alchemyData.activityByMonth,
-          score: 0 // Score will be calculated later
+            contractsInteracted: {
+              addresses: alchemyData.contractsInteracted.addresses,
+              interactionCounts: alchemyData.contractsInteracted.interactionCounts,
+              timestamps: alchemyData.contractsInteracted.timestamps,
+              total: alchemyData.contractsInteracted.total,
+              list: alchemyData.contractsInteracted.addresses.map(addr => ({
+                address: addr,
+                timestamp: alchemyData.contractsInteracted.timestamps[addr] || 0,
+                formattedTimestamp: new Date((alchemyData.contractsInteracted.timestamps[addr] || 0) * 1000).toLocaleString()
+              }))
+            },
+            tokens: [], // Will be populated separately
+            nfts: [], // Will be populated separately
+            erc1155Tokens: [], // Will be populated separately
+            // Add missing required fields from MonadTestnetStats interface
+            activityScore: 0,
+            volumeScore: 0,
+            nftScore: 0,
+            tokenScore: 0,
+            contractScore: 0,
+            totalVolume: alchemyData.totalVolume,
+            activityByDay: alchemyData.activityByDay,
+            activityByWeek: alchemyData.activityByWeek,
+            activityByMonth: alchemyData.activityByMonth,
+            score: 0 // Score will be calculated later
           };
-          
+
           // Calculate base score components
           const transactionPoints = Math.min(statsData.totalTransactions, 500) * 0.01;
           const consistencyPoints = statsData.activityByDay * 0.1 + statsData.activityByWeek * 0.25 + statsData.activityByMonth * 0.5;
           const contractPoints = Math.min(statsData.contractsInteracted.total, 30) * 0.03 + Math.min(statsData.contractsCreated.addresses.length, 20) * 0.025;
           const volumePoints = Math.min(parseFloat(statsData.totalVolume) / 1000, 1);
-          
+
           // Calculate score based on activity - sum of all components
           statsData.score = transactionPoints + consistencyPoints + contractPoints + volumePoints;
         } else {
@@ -776,65 +776,65 @@ function MonadTestnetStats() {
         statusCallback('Fetching wallet stats...');
         statsData = await fetchMonadTestnetStats(address, statusCallback) as MonadTestnetStats;
       }
-      
+
       // Add the balance and profile data to the stats object
       statsData.nativeBalance = formattedBalance;
       statsData.profileData = profileData;
 
       // Calculate additional score points based on NFT holdings and early user status
       let additionalPoints = 0;
-      
+
       // Add 5 points for holding 1 Million Nad NFT (regardless of quantity)
       if (nftOwnershipData.is1MillionNadHolder) {
         additionalPoints += 5;
       }
-      
+
       // Add 5 points for holding Monad Cipher SBT (regardless of quantity)
       if (nftOwnershipData.isSecondNftHolder) {
         additionalPoints += 5;
       }
-      
+
       // Check if user is an early user (before February 26th, 2025)
       // Use SocialScan data for more accurate first transaction check if available
       let firstTxDate: Date | null = null;
-      
+
       if (profileData) {
         // Get timestamps from both first_transaction and funding_transaction
-        const firstTxTime = profileData.first_transaction?.block_timestamp 
+        const firstTxTime = profileData.first_transaction?.block_timestamp
           ? new Date(profileData.first_transaction.block_timestamp).getTime()
           : Number.MAX_SAFE_INTEGER;
-        
+
         const fundingTxTime = profileData.funding_transaction?.block_timestamp
           ? new Date(profileData.funding_transaction.block_timestamp).getTime()
           : Number.MAX_SAFE_INTEGER;
-        
+
         // Use the earlier timestamp (first activity on the wallet)
         const earliestTimestamp = Math.min(firstTxTime, fundingTxTime);
-        
+
         if (earliestTimestamp !== Number.MAX_SAFE_INTEGER) {
           firstTxDate = new Date(earliestTimestamp);
         }
       } else if (statsData.transactions && statsData.transactions.length > 0) {
-        const earliestTx = statsData.transactions.reduce((earliest, tx) => 
+        const earliestTx = statsData.transactions.reduce((earliest, tx) =>
           tx.block_timestamp < earliest.block_timestamp ? tx : earliest, statsData.transactions[0]);
         firstTxDate = new Date(earliestTx.block_timestamp * 1000);
       }
-      
+
       const cutoffDate = new Date('2025-02-26T23:59:59Z'); // February 26th, 2025 cutoff
-      
+
       // Add 5 points for being an early user
       if (firstTxDate && firstTxDate < cutoffDate) {
         additionalPoints += 5;
       }
-      
+
       // Update the final score with the additional points
       statsData.score += additionalPoints;
-      
+
       setStats(statsData);
       setTransactionPage(1); // Reset transaction page when loading new data
       setNftPage(1); // Reset NFT page when loading new data
       setErc1155Page(1); // Reset ERC1155 page when loading new data
-      
+
       // Fetch tokens, NFTs, and ERC1155 tokens separately even when using Alchemy API
       if (statsData.tokens?.length === 0 || !statsData.tokens) {
         // For high volume wallets, we still need token data - fetch it separately
@@ -849,12 +849,12 @@ function MonadTestnetStats() {
           console.error('Error fetching token data:', err);
         }
       }
-      
+
       // Set token data from the stats
       setTokens(statsData.tokens || []);
       setNfts(statsData.nfts || []);
       setErc1155Tokens(statsData.erc1155Tokens || []);
-      
+
     } catch (error: any) {
       console.error('Error fetching stats:', error);
       setError(error.message || 'An error occurred while fetching data. Please try again.');
@@ -866,89 +866,89 @@ function MonadTestnetStats() {
   // Update getTweetUrl function to use SocialScan data for more accurate early user detection
   const getTweetUrl = () => {
     if (!stats) return '';
-    
+
     // Check if user is an early user using profileData if available
     let isEarlyUser = false;
     let earliestTxDate: Date | null = null;
-    
+
     if (stats.profileData) {
       // Get timestamps from both first_transaction and funding_transaction
-      const firstTxTime = stats.profileData.first_transaction?.block_timestamp 
+      const firstTxTime = stats.profileData.first_transaction?.block_timestamp
         ? new Date(stats.profileData.first_transaction.block_timestamp).getTime()
         : Number.MAX_SAFE_INTEGER;
-      
+
       const fundingTxTime = stats.profileData.funding_transaction?.block_timestamp
         ? new Date(stats.profileData.funding_transaction.block_timestamp).getTime()
         : Number.MAX_SAFE_INTEGER;
-      
+
       // Use the earlier timestamp (first activity on the wallet)
       const earliestTimestamp = Math.min(firstTxTime, fundingTxTime);
-      
+
       if (earliestTimestamp !== Number.MAX_SAFE_INTEGER) {
         earliestTxDate = new Date(earliestTimestamp);
         const cutoffDate = new Date('2025-02-26T23:59:59Z'); // February 26th, 2025 cutoff
         isEarlyUser = earliestTxDate < cutoffDate;
       }
     } else if (stats.transactions && stats.transactions.length > 0) {
-      const earliestTx = stats.transactions.reduce((earliest, tx) => 
+      const earliestTx = stats.transactions.reduce((earliest, tx) =>
         tx.block_timestamp < earliest.block_timestamp ? tx : earliest, stats.transactions[0]);
       earliestTxDate = new Date(earliestTx.block_timestamp * 1000);
       const cutoffDate = new Date('2025-02-26T23:59:59Z'); // February 26th, 2025 cutoff
       isEarlyUser = earliestTxDate < cutoffDate;
     }
-    
+
     const score = (
       Math.min(stats.totalTransactions, 500) * 0.01 +
       (stats.activityByDay * 0.1 + stats.activityByWeek * 0.25 + stats.activityByMonth * 0.5) +
       (Math.min(stats.contractsCreated.addresses.length, 20) * 0.025 + Math.min(stats.contractsInteracted.total, 30) * 0.03) +
       Math.min(parseFloat(stats.totalVolume) / 1000, 1) +
-      (nftOwnership.is1MillionNadHolder ? 5 : 0) + 
-      (nftOwnership.isSecondNftHolder ? 5 : 0) + 
+      (nftOwnership.is1MillionNadHolder ? 5 : 0) +
+      (nftOwnership.isSecondNftHolder ? 5 : 0) +
       (isEarlyUser ? 5 : 0)
     ).toFixed(2);
-    
+
     // Use the direct NFT ownership checks
     const is1MillionNadHolder = nftOwnership.is1MillionNadHolder;
     const isSecondNftHolder = nftOwnership.isSecondNftHolder;
-    
+
     let text = `🚀 Just checked my wallet stats on Monad Testnet!\n\n` +
       `🏆 Wallet Score: ${score}\n` +
       `💰 ${getNativeBalance(stats)} MON\n` +
       `📊 ${stats.totalTransactions.toLocaleString()} total transactions\n` +
       `💸 ${parseFloat(stats.totalVolume).toFixed(2)} MON volume\n`;
-      
+
     // Add badges with the new point values
     if (is1MillionNadHolder) {
       text += `✅ 1 Million Nad Holder (+5 pts) ${parseInt(nftOwnership.nadBalance) > 1 ? `x${nftOwnership.nadBalance}` : ''}\n`;
     }
-    
+
     if (isSecondNftHolder) {
       text += `✅ Monad Cipher SBT Holder (+5 pts) ${parseInt(nftOwnership.cipherBalance) > 1 ? `x${nftOwnership.cipherBalance}` : ''}\n`;
     }
-    
+
     if (isEarlyUser && earliestTxDate) {
       text += `⏰ Early Monad User (+5 pts) since ${earliestTxDate.toLocaleDateString()}\n`;
     }
-    
+
     // Add blank line and website
     text += `\nCheck your stats - cryptowalletsx.com/monad-testnet\n\n` +
       `#Monad #MonadTestnet #Airdrop $MON`;
-    
+
     return `https://x.com/intent/tweet?text=${encodeURIComponent(text)}`;
   };
 
   // Get total contract interactions
-const getTotalInteractions = () => {
-  if (!stats) return 0;
-  return stats.contractsInteracted.addresses.reduce((sum: number, contract: string) => {
-    return sum + (stats.contractsInteracted.interactionCounts[contract] || 0);
-  }, 0);
-};
+  const getTotalInteractions = () => {
+    if (!stats) return 0;
+    return stats.contractsInteracted.addresses.reduce((sum: number, contract: string) => {
+      return sum + (stats.contractsInteracted.interactionCounts[contract] || 0);
+    }, 0);
+  };
 
   // Update the getLastTransaction function to use SocialScan data if available
   const getLastTransaction = () => {
     if (!stats) return { hash: null, date: 'N/A' };
-    
+
     // Use SocialScan data if available - last_transaction is actually the most recent transaction
     if (stats.profileData?.last_transaction) {
       const lastTx = stats.profileData.last_transaction;
@@ -961,16 +961,16 @@ const getTotalInteractions = () => {
         })
       };
     }
-    
+
     // Fallback to traditional calculation
     if (!stats.transactions || stats.transactions.length === 0) return { hash: null, date: 'N/A' };
-    
+
     // Find the latest transaction by timestamp
     const latestTx = stats.transactions.reduce((latest: any, current: any) => {
       return current.block_timestamp > latest.block_timestamp ? current : latest;
     }, stats.transactions[0]);
-    
-    return { 
+
+    return {
       hash: latestTx.hash,
       date: new Date(latestTx.block_timestamp * 1000).toLocaleDateString('en-US', {
         year: 'numeric',
@@ -1044,27 +1044,27 @@ const getTotalInteractions = () => {
     <>
       <Head>
         <title>Monad Testnet Stats Checker | Check Monad Rank & Wallet Status</title>
-        <meta 
-          name="description" 
-          content="Analyze your wallet rank on Monad Testnet. Use our Monad Checker for free stats, transaction history, and ranking. Check wallet status and activity score." 
+        <meta
+          name="description"
+          content="Analyze your wallet rank on Monad Testnet. Use our Monad Checker for free stats, transaction history, and ranking. Check wallet status and activity score."
         />
-        <meta 
-          name="keywords" 
-          content="Monad Testnet rank checker, monad stats checker, monad testnet stats, check monad rank, monad wallet checker, monad transaction checker, monad testnet ranking, monad wallet stats" 
+        <meta
+          name="keywords"
+          content="Monad Testnet rank checker, monad stats checker, monad testnet stats, check monad rank, monad wallet checker, monad transaction checker, monad testnet ranking, monad wallet stats"
         />
-        
+
         {/* Open Graph / Facebook */}
         <meta property="og:type" content="website" />
         <meta property="og:url" content="https://cryptowalletsx.com/monad-testnet" />
         <meta property="og:title" content="Monad Testnet Stats & Wallet Checker | Transaction Analysis Tool" />
         <meta property="og:description" content="Check your Monad wallet status, rank, and transaction history. Free Monad Testnet stats checker with detailed activity scoring." />
-        
+
         {/* Twitter */}
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:url" content="https://cryptowalletsx.com/monad-testnet" />
         <meta name="twitter:title" content="Monad Testnet Stats & Wallet Checker | Transaction Analysis Tool" />
         <meta name="twitter:description" content="Check your Monad wallet status, rank, and transaction history. Free Monad Testnet stats checker with detailed activity scoring." />
-        
+
         {/* Structured data for rich results */}
         <script type="application/ld+json">{`
           {
@@ -1160,14 +1160,14 @@ const getTotalInteractions = () => {
                   <span className="font-medium">{loadingStatus}</span>
                 </div>
                 <div className="mt-3 h-2 w-full bg-gray-200 rounded-full overflow-hidden">
-                  <div 
+                  <div
                     className="h-full bg-gradient-to-r from-purple-500 to-indigo-600 rounded-full transition-all duration-300"
-                    style={{ 
-                      width: `${loadingStatus.includes('Processing wallet data') ? 
-                        parseInt(loadingStatus.split('%')[0].split('...')[1].trim()) : 
-                        loadingStatus.includes('Found') || loadingStatus.includes('Checking NFT') ? 100 : 
-                        loadingStatus.includes('Analysis complete') ? 100 :
-                        loadingStatus.includes('High transaction count') ? 50 : 30}%` 
+                    style={{
+                      width: `${loadingStatus.includes('Processing wallet data') ?
+                        parseInt(loadingStatus.split('%')[0].split('...')[1].trim()) :
+                        loadingStatus.includes('Found') || loadingStatus.includes('Checking NFT') ? 100 :
+                          loadingStatus.includes('Analysis complete') ? 100 :
+                            loadingStatus.includes('High transaction count') ? 50 : 30}%`
                     }}
                   ></div>
                 </div>
@@ -1236,7 +1236,7 @@ const getTotalInteractions = () => {
               <div className="absolute top-0 right-0 opacity-10">
                 <Wallet size={180} strokeWidth={1} />
               </div>
-              
+
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 relative z-10">
                 <div>
                   <h2 className="text-2xl sm:text-3xl font-bold mb-1">Wallet Stats</h2>
@@ -1267,50 +1267,50 @@ const getTotalInteractions = () => {
                           (stats.activityByDay * 0.1 + stats.activityByWeek * 0.25 + stats.activityByMonth * 0.5) +
                           (Math.min(stats.contractsCreated.addresses.length, 20) * 0.025 + Math.min(stats.contractsInteracted.total, 30) * 0.03) +
                           Math.min(parseFloat(stats.totalVolume) / 1000, 1) +
-                          (nftOwnership.is1MillionNadHolder ? 5 : 0) + 
-                          (nftOwnership.isSecondNftHolder ? 5 : 0) + 
+                          (nftOwnership.is1MillionNadHolder ? 5 : 0) +
+                          (nftOwnership.isSecondNftHolder ? 5 : 0) +
                           (() => {
                             // Calculate if user is an early user
                             let isEarlyUser = false;
-                            
+
                             if (stats.profileData) {
-                              const firstTxTime = stats.profileData.first_transaction?.block_timestamp 
+                              const firstTxTime = stats.profileData.first_transaction?.block_timestamp
                                 ? new Date(stats.profileData.first_transaction.block_timestamp).getTime()
                                 : Number.MAX_SAFE_INTEGER;
-                              
+
                               const fundingTxTime = stats.profileData.funding_transaction?.block_timestamp
                                 ? new Date(stats.profileData.funding_transaction.block_timestamp).getTime()
                                 : Number.MAX_SAFE_INTEGER;
-                              
+
                               const earliestTimestamp = Math.min(firstTxTime, fundingTxTime);
-                              
+
                               if (earliestTimestamp !== Number.MAX_SAFE_INTEGER) {
                                 const cutoffDate = new Date('2025-02-26T23:59:59Z');
                                 isEarlyUser = new Date(earliestTimestamp) < cutoffDate;
                               }
                             } else if (stats.transactions && stats.transactions.length > 0) {
-                              const earliestTx = stats.transactions.reduce((earliest, tx) => 
+                              const earliestTx = stats.transactions.reduce((earliest, tx) =>
                                 tx.block_timestamp < earliest.block_timestamp ? tx : earliest, stats.transactions[0]);
                               const cutoffDate = new Date('2025-02-26T23:59:59Z');
                               isEarlyUser = new Date(earliestTx.block_timestamp * 1000) < cutoffDate;
                             }
-                            
+
                             return isEarlyUser ? 5 : 0;
                           })()
                         ).toFixed(2)}
                       </h3>
                     </div>
                     <div className="mt-2 flex flex-col sm:flex-row gap-2">
-                      <a 
-                        href="/how-monad-stats-score-works" 
+                      <a
+                        href="/how-monad-stats-score-works"
                         target="_blank"
                         className="text-white/90 hover:text-white text-sm font-medium flex items-center bg-white/10 backdrop-blur-sm px-3 py-1.5 rounded-lg transition-colors"
                       >
                         <span>How Monad Score Works</span>
                         <ArrowRight size={14} className="ml-1" />
                       </a>
-                      <a 
-                        href="https://t.me/cryptowalletsx" 
+                      <a
+                        href="https://t.me/cryptowalletsx"
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-white/90 hover:text-white text-sm font-medium flex items-center bg-white/10 backdrop-blur-sm px-3 py-1.5 rounded-lg transition-colors"
@@ -1320,7 +1320,7 @@ const getTotalInteractions = () => {
                       </a>
                     </div>
                   </div>
-                  
+
                   {(() => {
                     // Determine the earliest transaction, either from SocialScan API or RPC data
                     let firstTxHash = "";
@@ -1330,14 +1330,14 @@ const getTotalInteractions = () => {
                     // Check SocialScan data first
                     if (stats.profileData) {
                       // Get timestamps from both first_transaction and funding_transaction
-                      const firstOutgoingTxTime = stats.profileData.first_transaction?.block_timestamp 
+                      const firstOutgoingTxTime = stats.profileData.first_transaction?.block_timestamp
                         ? new Date(stats.profileData.first_transaction.block_timestamp).getTime()
                         : Number.MAX_SAFE_INTEGER;
-                      
+
                       const firstIncomingTxTime = stats.profileData.funding_transaction?.block_timestamp
                         ? new Date(stats.profileData.funding_transaction.block_timestamp).getTime()
                         : Number.MAX_SAFE_INTEGER;
-                      
+
                       // Determine which transaction was first
                       if (firstOutgoingTxTime < firstIncomingTxTime && firstOutgoingTxTime !== Number.MAX_SAFE_INTEGER) {
                         // First outgoing transaction was earlier
@@ -1348,46 +1348,46 @@ const getTotalInteractions = () => {
                         firstTxHash = stats.profileData.funding_transaction!.transaction_hash;
                         displayDate = new Date(firstIncomingTxTime).toLocaleDateString();
                       }
-                    } 
+                    }
                     // Fall back to RPC data if needed
                     else if (stats.transactions && stats.transactions.length > 0) {
                       // Find earliest transaction
-                      const earliestTx = stats.transactions.reduce((earliest, tx) => 
+                      const earliestTx = stats.transactions.reduce((earliest, tx) =>
                         tx.block_timestamp < earliest.block_timestamp ? tx : earliest, stats.transactions[0]);
-                      
+
                       firstTxHash = earliestTx.hash;
                       displayDate = new Date(earliestTx.block_timestamp * 1000).toLocaleDateString();
                     }
 
                     // Only render if we have a transaction hash
                     return firstTxHash ? (
-                    <div className="flex flex-col text-sm bg-white/10 rounded-lg p-3">
-                      <span className="text-purple-100">First Activity</span>
-                      <a
+                      <div className="flex flex-col text-sm bg-white/10 rounded-lg p-3">
+                        <span className="text-purple-100">First Activity</span>
+                        <a
                           href={`https://testnet.monadexplorer.com/tx/${firstTxHash}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-white hover:text-purple-200 transition-colors inline-flex items-center mt-1"
-                      >
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-white hover:text-purple-200 transition-colors inline-flex items-center mt-1"
+                        >
                           {truncateAddress(firstTxHash)}
-                        <ExternalLink size={12} className="ml-1" />
-                      </a>
-                      <span className="text-white font-medium mt-1">
+                          <ExternalLink size={12} className="ml-1" />
+                        </a>
+                        <span className="text-white font-medium mt-1">
                           {displayDate}
-                      </span>
-                      <span className="text-purple-200 text-xs mt-1">
-                        {calculateWalletAge(stats).days} days ago
-                      </span>
-                    </div>
+                        </span>
+                        <span className="text-purple-200 text-xs mt-1">
+                          {calculateWalletAge(stats).days} days ago
+                        </span>
+                      </div>
                     ) : null;
                   })()}
                 </div>
               </div>
-              
+
               {/* Score Breakdown Section */}
               <div className="bg-white/15 backdrop-blur-sm rounded-xl p-5 mb-6 shadow-lg border border-white/20">
                 <h4 className="text-xl text-white font-bold mb-3">Score Breakdown</h4>
-                
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-3">
                   <div className="bg-white/10 p-3 rounded-lg">
                     <div className="flex justify-between items-center">
@@ -1398,7 +1398,7 @@ const getTotalInteractions = () => {
                       {Math.min(stats.totalTransactions, 500)} / 500 transactions (0.01 points each)
                     </div>
                   </div>
-                  
+
                   <div className="bg-white/10 p-3 rounded-lg">
                     <div className="flex justify-between items-center">
                       <span className="text-purple-100">Consistency Metrics</span>
@@ -1411,14 +1411,14 @@ const getTotalInteractions = () => {
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-3">
                   <div className="bg-white/10 p-3 rounded-lg">
                     <div className="flex justify-between items-center">
                       <span className="text-purple-100">Contract Activity</span>
                       <span className="font-medium">
-                        {(Math.min(stats.contractsCreated.addresses.length, 20) * 0.025 + 
-                         Math.min(stats.contractsInteracted.total, 30) * 0.03).toFixed(2)} points
+                        {(Math.min(stats.contractsCreated.addresses.length, 20) * 0.025 +
+                          Math.min(stats.contractsInteracted.total, 30) * 0.03).toFixed(2)} points
                       </span>
                     </div>
                     <div className="flex flex-wrap justify-between text-xs text-white/70 mt-1">
@@ -1426,7 +1426,7 @@ const getTotalInteractions = () => {
                       <span>Interacted: {Math.min(stats.contractsInteracted.total, 30)} × 0.03 = {(Math.min(stats.contractsInteracted.total, 30) * 0.03).toFixed(2)}</span>
                     </div>
                   </div>
-                  
+
                   <div className="bg-white/10 p-3 rounded-lg">
                     <div className="flex justify-between items-center">
                       <span className="text-purple-100">Volume Score</span>
@@ -1439,7 +1439,7 @@ const getTotalInteractions = () => {
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                   <div className="bg-white/10 p-3 rounded-lg">
                     <div className="flex justify-between items-center">
@@ -1449,34 +1449,34 @@ const getTotalInteractions = () => {
                       </span>
                     </div>
                     <div className="text-xs text-white/70 mt-1">
-                      {nftOwnership.is1MillionNadHolder ? "1M Nad NFT (+5 pts)" : "No 1M Nad NFT (0 pts)"} • 
+                      {nftOwnership.is1MillionNadHolder ? "1M Nad NFT (+5 pts)" : "No 1M Nad NFT (0 pts)"} •
                       {nftOwnership.isSecondNftHolder ? " Cipher SBT (+5 pts)" : " No Cipher SBT (0 pts)"}
                     </div>
                   </div>
-                  
+
                   {(() => {
                     // Calculate if user is an early user
                     let isEarlyUser = false;
                     let earliestTxDate: Date | null = null;
-                    
+
                     if (stats.profileData) {
-                      const firstTxTime = stats.profileData.first_transaction?.block_timestamp 
+                      const firstTxTime = stats.profileData.first_transaction?.block_timestamp
                         ? new Date(stats.profileData.first_transaction.block_timestamp).getTime()
                         : Number.MAX_SAFE_INTEGER;
-                      
+
                       const fundingTxTime = stats.profileData.funding_transaction?.block_timestamp
                         ? new Date(stats.profileData.funding_transaction.block_timestamp).getTime()
                         : Number.MAX_SAFE_INTEGER;
-                      
+
                       const earliestTimestamp = Math.min(firstTxTime, fundingTxTime);
-                      
+
                       if (earliestTimestamp !== Number.MAX_SAFE_INTEGER) {
                         earliestTxDate = new Date(earliestTimestamp);
                         const cutoffDate = new Date('2025-02-26T23:59:59Z');
                         isEarlyUser = earliestTxDate < cutoffDate;
                       }
                     } else if (stats.transactions && stats.transactions.length > 0) {
-                      const earliestTx = stats.transactions.reduce((earliest, tx) => 
+                      const earliestTx = stats.transactions.reduce((earliest, tx) =>
                         tx.block_timestamp < earliest.block_timestamp ? tx : earliest, stats.transactions[0]);
                       earliestTxDate = new Date(earliestTx.block_timestamp * 1000);
                       const cutoffDate = new Date('2025-02-26T23:59:59Z');
@@ -1492,8 +1492,8 @@ const getTotalInteractions = () => {
                           </span>
                         </div>
                         <div className="text-xs text-white/70 mt-1">
-                          {isEarlyUser 
-                            ? `Wallet active before Feb 26, 2025 (${earliestTxDate?.toLocaleDateString()})` 
+                          {isEarlyUser
+                            ? `Wallet active before Feb 26, 2025 (${earliestTxDate?.toLocaleDateString()})`
                             : "Wallet not active before Feb 26, 2025"}
                         </div>
                       </div>
@@ -1510,163 +1510,163 @@ const getTotalInteractions = () => {
                         (stats.activityByDay * 0.1 + stats.activityByWeek * 0.25 + stats.activityByMonth * 0.5) +
                         (Math.min(stats.contractsCreated.addresses.length, 20) * 0.025 + Math.min(stats.contractsInteracted.total, 30) * 0.03) +
                         Math.min(parseFloat(stats.totalVolume) / 1000, 1) +
-                        (nftOwnership.is1MillionNadHolder ? 5 : 0) + 
-                        (nftOwnership.isSecondNftHolder ? 5 : 0) + 
+                        (nftOwnership.is1MillionNadHolder ? 5 : 0) +
+                        (nftOwnership.isSecondNftHolder ? 5 : 0) +
                         (() => {
                           // Calculate if user is an early user
                           let isEarlyUser = false;
-                          
+
                           if (stats.profileData) {
-                            const firstTxTime = stats.profileData.first_transaction?.block_timestamp 
+                            const firstTxTime = stats.profileData.first_transaction?.block_timestamp
                               ? new Date(stats.profileData.first_transaction.block_timestamp).getTime()
                               : Number.MAX_SAFE_INTEGER;
-                            
+
                             const fundingTxTime = stats.profileData.funding_transaction?.block_timestamp
                               ? new Date(stats.profileData.funding_transaction.block_timestamp).getTime()
                               : Number.MAX_SAFE_INTEGER;
-                            
+
                             const earliestTimestamp = Math.min(firstTxTime, fundingTxTime);
-                            
+
                             if (earliestTimestamp !== Number.MAX_SAFE_INTEGER) {
                               const cutoffDate = new Date('2025-02-26T23:59:59Z');
                               isEarlyUser = new Date(earliestTimestamp) < cutoffDate;
                             }
                           } else if (stats.transactions && stats.transactions.length > 0) {
-                            const earliestTx = stats.transactions.reduce((earliest, tx) => 
+                            const earliestTx = stats.transactions.reduce((earliest, tx) =>
                               tx.block_timestamp < earliest.block_timestamp ? tx : earliest, stats.transactions[0]);
                             const cutoffDate = new Date('2025-02-26T23:59:59Z');
                             isEarlyUser = new Date(earliestTx.block_timestamp * 1000) < cutoffDate;
                           }
-                          
+
                           return isEarlyUser ? 5 : 0;
                         })()
                       ).toFixed(2)} points
                     </span>
                   </div>
                 </div>
-                
+
 
               </div>
-              
+
               {/* 1 Million Nad Holder Badge */}
               <div className="mb-4">
                 {stats && (() => {
                   // Use the direct API check result rather than inferring from tokens
                   const is1MillionNadHolder = nftOwnership.is1MillionNadHolder;
-                  
+
                   return is1MillionNadHolder ? (
-                  <div className="bg-green-600 backdrop-blur-sm rounded-xl p-4 border border-green-500 shadow-lg flex items-center justify-between">
-                    <div className="flex items-center">
-                      <div className="p-3 bg-white/15 rounded-xl mr-4 flex items-center justify-center">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-white stroke-current">
-                          <path d="M20 6L9 17L4 12" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                        </svg>
-                      </div>
-                      <div>
-                        <p className="text-white font-bold text-lg">1 Million Nad Holder</p>
-                        <p className="text-white/90 text-sm">Congratulations! You've earned +5 bonus points!</p>
-                        <p className="text-white/80 text-xs mt-1">Holding: {nftOwnership.nadBalance} NFT{parseInt(nftOwnership.nadBalance) !== 1 ? 's' : ''}</p>
-                      </div>
-                    </div>
-                    <div className="hidden sm:flex">
-                      <Image className="text-white" size={24} />
-                    </div>
-                  </div>
-                ) : (
-                  <div className="bg-gradient-to-r from-red-600/80 to-red-500/80 backdrop-blur-sm rounded-xl p-4 border border-red-300/20 shadow-lg flex items-center justify-between">
-                    <div className="flex items-center">
-                      <div className="p-3 bg-white/15 rounded-xl mr-4 relative">
-                        <Image className="text-white/70" size={24} />
-                        <div className="absolute inset-0 flex items-center justify-center">
-                          <svg width="30" height="30" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-red-200 stroke-current">
-                            <path d="M18 6L6 18" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                            <path d="M6 6L18 18" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    <div className="bg-green-600 backdrop-blur-sm rounded-xl p-4 border border-green-500 shadow-lg flex items-center justify-between">
+                      <div className="flex items-center">
+                        <div className="p-3 bg-white/15 rounded-xl mr-4 flex items-center justify-center">
+                          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-white stroke-current">
+                            <path d="M20 6L9 17L4 12" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                           </svg>
                         </div>
+                        <div>
+                          <p className="text-white font-bold text-lg">1 Million Nad Holder</p>
+                          <p className="text-white/90 text-sm">Congratulations! You've earned +5 bonus points!</p>
+                          <p className="text-white/80 text-xs mt-1">Holding: {nftOwnership.nadBalance} NFT{parseInt(nftOwnership.nadBalance) !== 1 ? 's' : ''}</p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="text-white font-bold text-lg">Not a 1 Million Nad Holder</p>
-                        <p className="text-white/90 text-sm">Get this NFT to earn +5 bonus points!</p>
+                      <div className="hidden sm:flex">
+                        <Image className="text-white" size={24} />
                       </div>
                     </div>
-                    <div className="hidden sm:flex">
-                      <span className="text-3xl">❌</span>
+                  ) : (
+                    <div className="bg-gradient-to-r from-red-600/80 to-red-500/80 backdrop-blur-sm rounded-xl p-4 border border-red-300/20 shadow-lg flex items-center justify-between">
+                      <div className="flex items-center">
+                        <div className="p-3 bg-white/15 rounded-xl mr-4 relative">
+                          <Image className="text-white/70" size={24} />
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <svg width="30" height="30" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-red-200 stroke-current">
+                              <path d="M18 6L6 18" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                              <path d="M6 6L18 18" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                            </svg>
+                          </div>
+                        </div>
+                        <div>
+                          <p className="text-white font-bold text-lg">Not a 1 Million Nad Holder</p>
+                          <p className="text-white/90 text-sm">Get this NFT to earn +5 bonus points!</p>
+                        </div>
+                      </div>
+                      <div className="hidden sm:flex">
+                        <span className="text-3xl">❌</span>
+                      </div>
                     </div>
-                  </div>
                   );
                 })()}
               </div>
-              
+
               {/* Second NFT Holder Badge */}
               <div className="mb-4">
                 {stats && (() => {
                   // Use the direct API check result for the second NFT
                   const isSecondNftHolder = nftOwnership.isSecondNftHolder;
-                  
+
                   return isSecondNftHolder ? (
-                  <div className="bg-green-600 backdrop-blur-sm rounded-xl p-4 border border-green-500 shadow-lg flex items-center justify-between">
-                    <div className="flex items-center">
-                      <div className="p-3 bg-white/15 rounded-xl mr-4 flex items-center justify-center">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-white stroke-current">
-                          <path d="M20 6L9 17L4 12" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                        </svg>
-                      </div>
-                      <div>
-                        <p className="text-white font-bold text-lg">Monad Games Cipher SBT Holder</p>
-                        <p className="text-white/90 text-sm">Congratulations! You've earned +5 bonus points!</p>
-                        <p className="text-white/80 text-xs mt-1">Holding: {nftOwnership.cipherBalance} NFT{parseInt(nftOwnership.cipherBalance) !== 1 ? 's' : ''}</p>
-                      </div>
-                    </div>
-                    <div className="hidden sm:flex">
-                      <Image className="text-white" size={24} />
-                    </div>
-                  </div>
-                ) : (
-                  <div className="bg-gradient-to-r from-red-600/80 to-red-500/80 backdrop-blur-sm rounded-xl p-4 border border-red-300/20 shadow-lg flex items-center justify-between">
-                    <div className="flex items-center">
-                      <div className="p-3 bg-white/15 rounded-xl mr-4 relative">
-                        <Image className="text-white/70" size={24} />
-                        <div className="absolute inset-0 flex items-center justify-center">
-                          <svg width="30" height="30" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-red-200 stroke-current">
-                            <path d="M18 6L6 18" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                            <path d="M6 6L18 18" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    <div className="bg-green-600 backdrop-blur-sm rounded-xl p-4 border border-green-500 shadow-lg flex items-center justify-between">
+                      <div className="flex items-center">
+                        <div className="p-3 bg-white/15 rounded-xl mr-4 flex items-center justify-center">
+                          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-white stroke-current">
+                            <path d="M20 6L9 17L4 12" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                           </svg>
                         </div>
+                        <div>
+                          <p className="text-white font-bold text-lg">Monad Games Cipher SBT Holder</p>
+                          <p className="text-white/90 text-sm">Congratulations! You've earned +5 bonus points!</p>
+                          <p className="text-white/80 text-xs mt-1">Holding: {nftOwnership.cipherBalance} NFT{parseInt(nftOwnership.cipherBalance) !== 1 ? 's' : ''}</p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="text-white font-bold text-lg">Not a Monad Games Cipher SBT Holder</p>
-                        <p className="text-white/90 text-sm">Get this NFT to earn +5 bonus points!</p>
+                      <div className="hidden sm:flex">
+                        <Image className="text-white" size={24} />
                       </div>
                     </div>
-                    <div className="hidden sm:flex">
-                      <span className="text-3xl">❌</span>
+                  ) : (
+                    <div className="bg-gradient-to-r from-red-600/80 to-red-500/80 backdrop-blur-sm rounded-xl p-4 border border-red-300/20 shadow-lg flex items-center justify-between">
+                      <div className="flex items-center">
+                        <div className="p-3 bg-white/15 rounded-xl mr-4 relative">
+                          <Image className="text-white/70" size={24} />
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <svg width="30" height="30" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-red-200 stroke-current">
+                              <path d="M18 6L6 18" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                              <path d="M6 6L18 18" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                            </svg>
+                          </div>
+                        </div>
+                        <div>
+                          <p className="text-white font-bold text-lg">Not a Monad Games Cipher SBT Holder</p>
+                          <p className="text-white/90 text-sm">Get this NFT to earn +5 bonus points!</p>
+                        </div>
+                      </div>
+                      <div className="hidden sm:flex">
+                        <span className="text-3xl">❌</span>
+                      </div>
                     </div>
-                  </div>
                   );
                 })()}
               </div>
-              
+
               {/* Early User Badge */}
               <div className="mb-4">
                 {stats && (() => {
                   // Use SocialScan data for early user detection if available
                   let earliestTxDate: Date | null = null;
-                  
+
                   if (stats.profileData?.first_transaction?.block_timestamp) {
                     earliestTxDate = new Date(stats.profileData.first_transaction.block_timestamp);
                   } else if (stats.transactions && stats.transactions.length > 0) {
-                    const earliestTx = stats.transactions.reduce((earliest, tx) => 
+                    const earliestTx = stats.transactions.reduce((earliest, tx) =>
                       tx.block_timestamp < earliest.block_timestamp ? tx : earliest, stats.transactions[0]);
                     earliestTxDate = new Date(earliestTx.block_timestamp * 1000);
                   }
-                  
+
                   const cutoffDate = new Date('2025-02-26T23:59:59Z'); // February 26th, 2025 cutoff
                   const isEarlyUser = earliestTxDate && earliestTxDate < cutoffDate;
-                  
+
                   if (!earliestTxDate) {
                     return null; // Don't show the badge if we can't determine first transaction
                   }
-                  
+
                   return isEarlyUser ? (
                     <div className="bg-green-600 backdrop-blur-sm rounded-xl p-4 border border-green-500 shadow-lg flex items-center justify-between">
                       <div className="flex items-center">
@@ -1710,7 +1710,7 @@ const getTotalInteractions = () => {
                   );
                 })()}
               </div>
-              
+
               {/* Row 1: Balance and Last Transaction */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                 {/* Balance Card */}
@@ -1819,7 +1819,7 @@ const getTotalInteractions = () => {
                   <h3 className="text-2xl font-bold text-gray-900 mb-2">Share Your Stats</h3>
                   <p className="text-gray-600 max-w-md mx-auto">Show off your Monad Testnet activity and ranking!</p>
                 </div>
-                
+
                 <a
                   href={getTweetUrl()}
                   target="_blank"
@@ -1927,8 +1927,8 @@ const getTotalInteractions = () => {
                   <div>
                     <h2 className="text-2xl font-bold text-gray-900">Contracts Interacted</h2>
                     <p className="text-gray-600">
-                      {stats.contractsInteracted.total} unique contracts with {getTotalInteractions()} interactions 
-                      {stats.totalTransactions > stats.transactions?.length ? 
+                      {stats.contractsInteracted.total} unique contracts with {getTotalInteractions()} interactions
+                      {stats.totalTransactions > stats.transactions?.length ?
                         ` (based on ${stats.transactions?.length || 0} of ${stats.totalTransactions} total transactions)` : ''}
                     </p>
                   </div>
@@ -1951,7 +1951,7 @@ const getTotalInteractions = () => {
                         <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Last Interaction</th>
                       </tr>
                     </thead>
-                
+
                     <tbody className="bg-white divide-y divide-gray-200">
                       {stats.contractsInteracted.addresses.map((contract: string) => (
                         <tr key={contract} className="hover:bg-gray-50 transition-colors">
@@ -1998,11 +1998,11 @@ const getTotalInteractions = () => {
                   </div>
                   <div>
                     <h2 className="text-2xl font-bold text-gray-900">Transactions</h2>
-                              <p className="text-gray-600">
-            {stats.totalTransactions > stats.transactions?.length ? 
-              `Showing ${stats.transactions?.length.toLocaleString()} of ${stats.totalTransactions.toLocaleString()} total transactions` : 
-              `${stats.transactions?.length.toLocaleString()} transactions`}
-          </p>
+                    <p className="text-gray-600">
+                      {stats.totalTransactions > stats.transactions?.length ?
+                        `Showing ${stats.transactions?.length.toLocaleString()} of ${stats.totalTransactions.toLocaleString()} total transactions` :
+                        `${stats.transactions?.length.toLocaleString()} transactions`}
+                    </p>
                   </div>
                 </div>
                 <button
@@ -2041,8 +2041,8 @@ const getTotalInteractions = () => {
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             <span className="px-2.5 py-1 bg-purple-50 text-purple-700 rounded-md text-xs font-medium">
-                              {tx.function_selector ? 
-                                (tx.function_selector.length > 2 ? tx.function_selector.substring(0, 10) : 'Transfer') 
+                              {tx.function_selector ?
+                                (tx.function_selector.length > 2 ? tx.function_selector.substring(0, 10) : 'Transfer')
                                 : 'Transfer'}
                             </span>
                           </td>
@@ -2063,7 +2063,7 @@ const getTotalInteractions = () => {
                       ))}
                     </tbody>
                   </table>
-                  
+
                   {hasMoreTransactions() && (
                     <div className="text-center pt-6 pb-2">
                       <button
@@ -2236,7 +2236,7 @@ const getTotalInteractions = () => {
                       </div>
                     ))}
                   </div>
-                  
+
                   {nfts.length > 0 && hasMoreNFTs() && (
                     <div className="text-center mt-8">
                       <button
@@ -2252,7 +2252,7 @@ const getTotalInteractions = () => {
                   )}
                 </React.Fragment>
               )}
-              
+
               {showERC721 && nfts.length === 0 && (
                 <div className="text-center py-10 bg-gray-50 rounded-xl border border-gray-100">
                   <p className="text-gray-500">No ERC721 tokens found for this address</p>
@@ -2337,7 +2337,7 @@ const getTotalInteractions = () => {
                       </div>
                     ))}
                   </div>
-                  
+
                   {erc1155Tokens.length > 0 && hasMoreERC1155() && (
                     <div className="text-center mt-8">
                       <button
@@ -2353,14 +2353,14 @@ const getTotalInteractions = () => {
                   )}
                 </React.Fragment>
               )}
-              
+
               {showERC1155 && erc1155Tokens.length === 0 && (
                 <div className="text-center py-10 bg-gray-50 rounded-xl border border-gray-100">
                   <p className="text-gray-500">No ERC1155 tokens found for this address</p>
                 </div>
               )}
             </div>
-            
+
             {/* Tips for increasing wallet score - Shows below results */}
             <div className="mt-8 bg-gradient-to-r from-purple-50 to-indigo-50 rounded-2xl p-6 shadow-lg border border-purple-100">
               <h3 className="text-2xl font-bold text-center text-purple-800 mb-6 flex items-center justify-center">
@@ -2435,18 +2435,18 @@ const getTotalInteractions = () => {
           Get started now and watch your wallet score grow! 🚀
         </button>
       </div>
-      
+
       {/* Enhanced Feature Section with High CPC Keywords */}
       <div className="max-w-4xl mx-auto px-4 py-10 bg-gradient-to-b from-white to-purple-50 rounded-2xl shadow-lg mb-16">
         <h2 className="text-3xl md:text-4xl font-extrabold text-center text-transparent bg-clip-text bg-gradient-to-r from-purple-800 to-indigo-700 mb-8">
           The Ultimate Analytics for Monad Blockchain
         </h2>
-        
+
         <p className="text-lg text-gray-700 text-center max-w-3xl mx-auto mb-10 font-light leading-relaxed">
-          Monad combines the security of <span className="font-semibold text-indigo-700">Bitcoin</span> with the programmability of <span className="font-semibold text-indigo-700">Ethereum</span>, 
+          Monad combines the security of <span className="font-semibold text-indigo-700">Bitcoin</span> with the programmability of <span className="font-semibold text-indigo-700">Ethereum</span>,
           delivering a revolutionary <span className="font-semibold text-indigo-700">blockchain</span> experience with 10,000 TPS.
         </p>
-        
+
         {/* Feature Cards Row 1 */}
         <div className="grid md:grid-cols-2 gap-8 mb-12">
           <div className="bg-white p-8 rounded-xl shadow-md transform transition-all duration-300 hover:scale-105 border-t-4 border-purple-600">
@@ -2459,7 +2459,7 @@ const getTotalInteractions = () => {
               <div>
                 <h3 className="text-2xl font-bold text-gray-800 mb-2">Comprehensive Wallet Scoring</h3>
                 <p className="text-gray-700 leading-relaxed">
-                  Our proprietary algorithm analyzes your on-chain activity to calculate your Monad score, similar to how 
+                  Our proprietary algorithm analyzes your on-chain activity to calculate your Monad score, similar to how
                   <span className="font-medium text-indigo-700"> EVM & other chains like Solana , Bitcoin</span> wallets are ranked in the cryptocurrency ecosystem.
                 </p>
               </div>
@@ -2475,7 +2475,7 @@ const getTotalInteractions = () => {
               </li>
             </ul>
           </div>
-          
+
           <div className="bg-white p-8 rounded-xl shadow-md transform transition-all duration-300 hover:scale-105 border-t-4 border-indigo-600">
             <div className="flex items-start mb-4">
               <div className="bg-gradient-to-br from-indigo-600 to-blue-600 p-3 rounded-lg text-white mr-4">
@@ -2486,7 +2486,7 @@ const getTotalInteractions = () => {
               <div>
                 <h3 className="text-2xl font-bold text-gray-800 mb-2">Smart Contract Analysis</h3>
                 <p className="text-gray-700 leading-relaxed">
-                  Track your smart contract interactions with granular detail, leveraging the 
+                  Track your smart contract interactions with granular detail, leveraging the
                   <span className="font-medium text-indigo-700"> Ethereum</span>-compatible features of Monad's architecture.
                 </p>
               </div>
@@ -2503,7 +2503,7 @@ const getTotalInteractions = () => {
             </ul>
           </div>
         </div>
-        
+
         {/* Feature Cards Row 2 */}
         <div className="grid md:grid-cols-2 gap-8 mb-12">
           <div className="bg-white p-8 rounded-xl shadow-md transform transition-all duration-300 hover:scale-105 border-t-4 border-blue-600">
@@ -2516,7 +2516,7 @@ const getTotalInteractions = () => {
               <div>
                 <h3 className="text-2xl font-bold text-gray-800 mb-2">Digital Asset Portfolio</h3>
                 <p className="text-gray-700 leading-relaxed">
-                  Visualize your entire Monad token portfolio in one place, similar to leading 
+                  Visualize your entire Monad token portfolio in one place, similar to leading
                   <span className="font-medium text-indigo-700"> crypto</span> portfolio trackers for major chains.
                 </p>
               </div>
@@ -2532,7 +2532,7 @@ const getTotalInteractions = () => {
               </li>
             </ul>
           </div>
-          
+
           <div className="bg-white p-8 rounded-xl shadow-md transform transition-all duration-300 hover:scale-105 border-t-4 border-cyan-600">
             <div className="flex items-start mb-4">
               <div className="bg-gradient-to-br from-cyan-600 to-teal-600 p-3 rounded-lg text-white mr-4">
@@ -2543,7 +2543,7 @@ const getTotalInteractions = () => {
               <div>
                 <h3 className="text-2xl font-bold text-gray-800 mb-2">Transaction History</h3>
                 <p className="text-gray-700 leading-relaxed">
-                  Audit your full transaction history with detailed analytics leveraging the transparency of 
+                  Audit your full transaction history with detailed analytics leveraging the transparency of
                   <span className="font-medium text-indigo-700"> blockchain</span> technology.
                 </p>
               </div>
@@ -2560,14 +2560,14 @@ const getTotalInteractions = () => {
             </ul>
           </div>
         </div>
-        
+
         {/* Monad Technology Section */}
         <div className="bg-white p-8 rounded-xl shadow-md mb-12 border-l-4 border-purple-600">
           <h3 className="text-2xl font-bold text-gray-800 mb-4">Why Monad Is the Future of Blockchain</h3>
           <div className="grid md:grid-cols-2 gap-6">
             <div>
               <p className="text-gray-700 leading-relaxed mb-4">
-                Monad combines <span className="font-medium text-indigo-700">Ethereum</span> compatibility with groundbreaking performance innovations, 
+                Monad combines <span className="font-medium text-indigo-700">Ethereum</span> compatibility with groundbreaking performance innovations,
                 achieving what other Layer 1 <span className="font-medium text-indigo-700">blockchain</span> platforms couldn't:
               </p>
               <ul className="space-y-2 text-gray-700">
@@ -2593,7 +2593,7 @@ const getTotalInteractions = () => {
             </div>
             <div>
               <p className="text-gray-700 leading-relaxed mb-4">
-                The Monad Testnet is currently live, featuring revolutionary technology similar to what transformed 
+                The Monad Testnet is currently live, featuring revolutionary technology similar to what transformed
                 <span className="font-medium text-indigo-700"> Bitcoin</span> and <span className="font-medium text-indigo-700">crypto</span> markets:
               </p>
               <ul className="space-y-2 text-gray-700">

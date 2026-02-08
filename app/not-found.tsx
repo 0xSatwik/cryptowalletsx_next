@@ -1,6 +1,6 @@
 'use client';
 
-import Link from 'next/link';
+import Link from '@/app/components/Link';
 import { Home, Search, BarChart2, Newspaper, ArrowLeft, Compass, Rocket } from 'lucide-react';
 
 export default function NotFound() {
@@ -32,7 +32,7 @@ export default function NotFound() {
           <div className="absolute inset-0 flex items-center justify-center opacity-10">
             <div className="text-[20rem] font-extrabold text-purple-600 select-none">404</div>
           </div>
-          
+
           <div className="relative z-10 py-16">
             <div className="mb-8 inline-block p-6 bg-white rounded-full shadow-xl">
               <Compass className="h-16 w-16 text-purple-600" />

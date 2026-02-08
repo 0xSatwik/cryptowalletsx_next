@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { formatDistanceToNow, format, parseISO, differenceInMonths } from 'date-fns';
 import { ExternalLink, Eye, EyeOff, Info, Twitter, Share2, Award, Star, Shield, FileText, Activity, ArrowUp, Cpu, Zap, Wallet, Calendar, Image, Package, Coins, Search } from 'lucide-react';
 import { JsonRpcProvider, ethers } from 'ethers';
-import Link from 'next/link';
+import Link from '@/app/components/Link';
 
 // Constants for API and Explorer
 const SAHARA_COUNTERS_API_URL = '/api/sahara-ai/addresses'; // Placeholder, will be updated
@@ -95,7 +95,7 @@ export default function SaharaAiStatsChecker() {
       value: string;
     } | null;
   }
-  
+
   // Modified Transaction interface to align with Sahara API and Somnia structure
   interface Transaction {
     hash: string;
@@ -172,17 +172,17 @@ export default function SaharaAiStatsChecker() {
 
     // Volume: 0.01 points per 1 SAHARA volume, max 1000 points
     const volumeScore = Math.min(walletData.totalVolume * 0.01, 1000);
-    
-    const totalScore = 
-      transactionsScore + 
-      uniqueDaysScore + 
-      uniqueWeeksScore + 
-      uniqueMonthsScore + 
+
+    const totalScore =
+      transactionsScore +
+      uniqueDaysScore +
+      uniqueWeeksScore +
+      uniqueMonthsScore +
       walletAgeBonusScore +
-      contractInteractionScore + 
-      contractCreationScore + 
+      contractInteractionScore +
+      contractCreationScore +
       volumeScore;
-    
+
     return {
       totalScore,
       transactionsScore,
@@ -205,7 +205,7 @@ export default function SaharaAiStatsChecker() {
     setWalletAddress(address);
     setIsValidAddress(address === '' || isValidEthAddress(address));
   };
-  
+
   const fetchBalance = async (address: string): Promise<string> => {
     try {
       const provider = new JsonRpcProvider(SAHARA_RPC_URL);
@@ -217,7 +217,7 @@ export default function SaharaAiStatsChecker() {
       throw error;
     }
   };
-  
+
   const fetchAccountCounters = async (address: string): Promise<CountersResponse> => {
     try {
       const url = `${SAHARA_EXPLORER_URL}/api/v2/addresses/${address}/counters`;
@@ -248,7 +248,7 @@ export default function SaharaAiStatsChecker() {
     do {
       // Base URL for fetching transactions
       url = `${SAHARA_EXPLORER_URL}/api/v2/addresses/${address}/transactions?filter=to%20%7C%20from`;
-      
+
       if (!firstRequest && nextPageParamsFromApi) {
         // Construct query parameters from nextPageParamsFromApi for subsequent requests
         const params = new URLSearchParams();
@@ -258,12 +258,12 @@ export default function SaharaAiStatsChecker() {
         params.append('index', String(nextPageParamsFromApi.index));
         params.append('inserted_at', nextPageParamsFromApi.inserted_at);
         // The API includes items_count in next_page_params, so we pass it along.
-        params.append('items_count', String(nextPageParamsFromApi.items_count)); 
+        params.append('items_count', String(nextPageParamsFromApi.items_count));
         params.append('value', nextPageParamsFromApi.value);
 
         url += `&${params.toString()}`;
       }
-      
+
       try {
         const response = await fetch(url);
         if (!response.ok) {
@@ -273,17 +273,17 @@ export default function SaharaAiStatsChecker() {
         }
         const data: SaharaTransactionResponse = await response.json();
         setApiDebugInfo(prev => (prev ?? '') + `\nTransactions API URL: ${url}\nTransactions Page Response: ${JSON.stringify(data, null, 2)}`);
-        
+
         if (data.items && data.items.length > 0) {
           allItems = allItems.concat(data.items);
         }
-        
-        nextPageParamsFromApi = data.next_page_params; 
-        firstRequest = false; 
+
+        nextPageParamsFromApi = data.next_page_params;
+        firstRequest = false;
 
         // Add a small delay to be polite to the API if there are more pages
         if (nextPageParamsFromApi) {
-            await new Promise(resolve => setTimeout(resolve, 200)); 
+          await new Promise(resolve => setTimeout(resolve, 200));
         }
 
       } catch (error) {
@@ -317,7 +317,7 @@ export default function SaharaAiStatsChecker() {
       method: saharaTx.method,
     };
   };
-  
+
   const fetchAllTransactions = async (address: string): Promise<Transaction[]> => {
     const saharaTransactions = await fetchSaharaTransactions(address);
     return saharaTransactions.map(adaptSaharaTransaction);
@@ -367,7 +367,7 @@ export default function SaharaAiStatsChecker() {
       // Only add to volume if the transaction is outgoing from the wallet or incoming to the wallet.
       // For Sahara, value is already in the smallest unit.
       if (tx.from.toLowerCase() === address.toLowerCase() || (tx.to && tx.to.toLowerCase() === address.toLowerCase())) {
-         totalVolume += parseFloat(ethers.formatUnits(tx.value, CHAIN_DECIMALS));
+        totalVolume += parseFloat(ethers.formatUnits(tx.value, CHAIN_DECIMALS));
       }
 
       // Calculate gas spent (gasUsed * gasPrice, assuming both are in wei or smallest unit)
@@ -386,15 +386,15 @@ export default function SaharaAiStatsChecker() {
       if (tx.to) { // Ensure 'to' is not null
         const toAddressLower = tx.to.toLowerCase();
         if (tx.input !== '0x' && tx.input !== '' && toAddressLower !== address.toLowerCase()) {
-            // A more robust check for contract interaction would be to see if 'to' is a known contract
-            // or if the transaction receipt indicates a contract interaction.
-            // For Sahara, we rely on `tx.to.is_contract` or method. If `method` exists, it's an interaction.
-            // The provided Sahara data does not directly give `is_contract` for `to` in the `TransactionItem`.
-            // We infer interaction if there's a method or input data.
-             if (tx.method || (tx.input && tx.input !== '0x')) {
-                contractsInteracted.add(toAddressLower);
-                contractInteractionCounts.set(toAddressLower, (contractInteractionCounts.get(toAddressLower) || 0) + 1);
-            }
+          // A more robust check for contract interaction would be to see if 'to' is a known contract
+          // or if the transaction receipt indicates a contract interaction.
+          // For Sahara, we rely on `tx.to.is_contract` or method. If `method` exists, it's an interaction.
+          // The provided Sahara data does not directly give `is_contract` for `to` in the `TransactionItem`.
+          // We infer interaction if there's a method or input data.
+          if (tx.method || (tx.input && tx.input !== '0x')) {
+            contractsInteracted.add(toAddressLower);
+            contractInteractionCounts.set(toAddressLower, (contractInteractionCounts.get(toAddressLower) || 0) + 1);
+          }
         }
       }
     });
@@ -423,20 +423,20 @@ export default function SaharaAiStatsChecker() {
       isOlderThan3Months,
     };
   };
-  
+
   // Helper to parse timestamp if it comes in a different format, Sahara is ISO 8601
   const parseTimestamp = (timestamp: string): Date | number => {
-      // Sahara provides ISO 8601 like "2025-05-27T06:45:16.000000Z"
-      const date = parseISO(timestamp);
-      if (!isNaN(date.getTime())) {
-          return date;
-      }
-      // Fallback for Unix timestamp (seconds or milliseconds)
-      const num = Number(timestamp);
-      if (!isNaN(num)) {
-          return num.toString().length === 10 ? num * 1000 : num;
-      }
-      return new Date(); // Should not happen with Sahara
+    // Sahara provides ISO 8601 like "2025-05-27T06:45:16.000000Z"
+    const date = parseISO(timestamp);
+    if (!isNaN(date.getTime())) {
+      return date;
+    }
+    // Fallback for Unix timestamp (seconds or milliseconds)
+    const num = Number(timestamp);
+    if (!isNaN(num)) {
+      return num.toString().length === 10 ? num * 1000 : num;
+    }
+    return new Date(); // Should not happen with Sahara
   };
 
 
@@ -464,24 +464,24 @@ export default function SaharaAiStatsChecker() {
     try {
       const balance = await fetchBalance(walletAddress);
       setApiDebugInfo(prev => prev + `Balance: ${balance} ${CHAIN_SYMBOL}\n`);
-      
+
       const counters = await fetchAccountCounters(walletAddress);
       setApiDebugInfo(prev => prev + `Counters: Tx=${counters.transactions_count}, Tokens=${counters.token_transfers_count}, Gas=${counters.gas_usage_count}\n`);
-      
+
       const transactionsCount = parseInt(counters.transactions_count, 10);
       const tokenTransfersCount = parseInt(counters.token_transfers_count, 10); // Assuming this is from Sahara
       const gasUsageCount = counters.gas_usage_count;
-      
+
       setTotalTxCount(transactionsCount);
 
       const allTransactions = await fetchAllTransactions(walletAddress);
       setApiDebugInfo(prev => prev + `Total transactions fetched: ${allTransactions.length}\n`);
 
       if (allTransactions.length === 0 && transactionsCount > 0) {
-         console.warn(`Mismatch: Counters API shows ${transactionsCount} txs, but explorer API returned 0.`);
-         setApiDebugInfo(prev => prev + `WARNING: Tx count mismatch. Counters: ${transactionsCount}, Explorer: 0.\nCheck explorer API for address: ${SAHARA_EXPLORER_URL}/address/${walletAddress}\n`);
+        console.warn(`Mismatch: Counters API shows ${transactionsCount} txs, but explorer API returned 0.`);
+        setApiDebugInfo(prev => prev + `WARNING: Tx count mismatch. Counters: ${transactionsCount}, Explorer: 0.\nCheck explorer API for address: ${SAHARA_EXPLORER_URL}/address/${walletAddress}\n`);
       }
-       if (allTransactions.length !== transactionsCount && transactionsCount > 0) {
+      if (allTransactions.length !== transactionsCount && transactionsCount > 0) {
         console.warn(`Tx count discrepancy: Counters API reports ${transactionsCount}, but fetched ${allTransactions.length} from explorer.`);
         setApiDebugInfo(prev => prev + `WARNING: Tx count discrepancy. Counters: ${transactionsCount}, Explorer: ${allTransactions.length}. Using explorer count for details.\n`);
       }
@@ -509,7 +509,7 @@ export default function SaharaAiStatsChecker() {
         contractInteractionCounts: processedData.contractInteractionCounts ?? new Map<string, number>(),
         isOlderThan3Months: processedData.isOlderThan3Months ?? false,
       };
-      
+
       setWalletData(fullWalletData);
 
       if (fullWalletData.allTransactions.length > 0 || fullWalletData.contractsCreated.length > 0 || fullWalletData.contractsInteracted.size > 0) {
@@ -518,7 +518,7 @@ export default function SaharaAiStatsChecker() {
         setApiDebugInfo(prev => prev + `Wallet Score Calculated: ${JSON.stringify(score, null, 2)}\n`);
       } else {
         setWalletScore(null);
-         setApiDebugInfo(prev => prev + `No score calculated due to no activity.\n`);
+        setApiDebugInfo(prev => prev + `No score calculated due to no activity.\n`);
       }
 
     } catch (err) {
@@ -536,9 +536,9 @@ export default function SaharaAiStatsChecker() {
     if (walletAddress && isValidAddress) {
       fetchWalletData();
     } else if (!isValidAddress) {
-        setError("Invalid wallet address format.");
+      setError("Invalid wallet address format.");
     } else {
-        setError("Please enter a wallet address.");
+      setError("Please enter a wallet address.");
     }
   };
 
@@ -550,14 +550,14 @@ export default function SaharaAiStatsChecker() {
   const formatDate = (timestamp: string | number) => {
     if (!timestamp) return 'N/A';
     try {
-        const date = typeof timestamp === 'string' && timestamp.includes('T') ? parseISO(timestamp) : new Date(Number(timestamp) * 1000);
-        return format(date, 'PPpp');
+      const date = typeof timestamp === 'string' && timestamp.includes('T') ? parseISO(timestamp) : new Date(Number(timestamp) * 1000);
+      return format(date, 'PPpp');
     } catch (e) {
-        console.error("Error formatting date:", timestamp, e);
-        return "Invalid Date";
+      console.error("Error formatting date:", timestamp, e);
+      return "Invalid Date";
     }
   };
-  
+
   const generateTwitterShareText = () => {
     if (!walletData || !walletScore) return '';
     const text = `Check out my ${CHAIN_NAME} stats! 🚀
@@ -566,7 +566,7 @@ Transactions: ${walletData.transactionsCount}
 Volume: ${walletData.totalVolume.toFixed(2)} ${CHAIN_SYMBOL}
 Score: ${walletScore.totalScore.toFixed(2)}
 Full details: https://cryptowalletsx.com/sahara-ai-stats-checker?address=${walletData.address}
-#${CHAIN_NAME.replace(/\s+/g, '')} #SaharaAI #${CHAIN_SYMBOL.replace('$','')} #CryptoWalletsX`;
+#${CHAIN_NAME.replace(/\s+/g, '')} #SaharaAI #${CHAIN_SYMBOL.replace('$', '')} #CryptoWalletsX`;
     return encodeURIComponent(text);
   };
 
@@ -574,7 +574,7 @@ Full details: https://cryptowalletsx.com/sahara-ai-stats-checker?address=${walle
     const twitterUrl = `https://twitter.com/intent/tweet?text=${generateTwitterShareText()}`;
     window.open(twitterUrl, '_blank');
   };
-  
+
   // Auto-fetch data if address is in URL query params
   useEffect(() => {
     const queryParams = new URLSearchParams(window.location.search);
@@ -585,7 +585,7 @@ Full details: https://cryptowalletsx.com/sahara-ai-stats-checker?address=${walle
       // Trigger fetch: Wrap in a timeout to ensure state update for walletAddress is processed
       setTimeout(() => fetchWalletData(), 0);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Empty dependency array ensures this runs only once on mount.
 
   return (
@@ -607,9 +607,8 @@ Full details: https://cryptowalletsx.com/sahara-ai-stats-checker?address=${walle
               value={walletAddress}
               onChange={handleAddressChange}
               placeholder="Enter 0x... wallet address"
-              className={`w-full px-4 py-3 rounded-lg bg-white text-gray-700 border ${
-                isValidAddress ? 'border-gray-300' : 'border-red-500'
-              } focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition-all duration-300 shadow-sm placeholder-gray-400`}
+              className={`w-full px-4 py-3 rounded-lg bg-white text-gray-700 border ${isValidAddress ? 'border-gray-300' : 'border-red-500'
+                } focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition-all duration-300 shadow-sm placeholder-gray-400`}
             />
             {!isValidAddress && walletAddress && (
               <p className="text-red-500 text-xs mt-1 absolute -bottom-5 left-0">Invalid address format.</p>
@@ -662,13 +661,13 @@ Full details: https://cryptowalletsx.com/sahara-ai-stats-checker?address=${walle
                   <Wallet size={24} /> Wallet Overview
                 </h2>
                 <a
-                    href={`${SAHARA_EXPLORER_URL}/address/${walletData.address}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-sm text-green-600 hover:text-green-500 transition-colors flex items-center gap-1"
-                    title="View on Explorer"
+                  href={`${SAHARA_EXPLORER_URL}/address/${walletData.address}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm text-green-600 hover:text-green-500 transition-colors flex items-center gap-1"
+                  title="View on Explorer"
                 >
-                    View on Explorer <ExternalLink size={14} />
+                  View on Explorer <ExternalLink size={14} />
                 </a>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 text-sm">
@@ -685,16 +684,16 @@ Full details: https://cryptowalletsx.com/sahara-ai-stats-checker?address=${walle
                   </span>
                 </div>
                 {walletData.firstTxDate !== 'N/A' && (
-                    <>
-                        <div className="flex justify-between items-center py-2 border-b border-gray-200">
-                        <span className="text-gray-500">First Transaction:</span>
-                        <span className="text-gray-700">{walletData.firstTxDate}</span>
-                        </div>
-                        <div className="flex justify-between items-center py-2 border-b border-gray-200">
-                        <span className="text-gray-500">Wallet Age:</span>
-                        <span className="text-gray-700">{walletData.walletAge}</span>
-                        </div>
-                    </>
+                  <>
+                    <div className="flex justify-between items-center py-2 border-b border-gray-200">
+                      <span className="text-gray-500">First Transaction:</span>
+                      <span className="text-gray-700">{walletData.firstTxDate}</span>
+                    </div>
+                    <div className="flex justify-between items-center py-2 border-b border-gray-200">
+                      <span className="text-gray-500">Wallet Age:</span>
+                      <span className="text-gray-700">{walletData.walletAge}</span>
+                    </div>
+                  </>
                 )}
               </div>
             </section>
@@ -702,21 +701,21 @@ Full details: https://cryptowalletsx.com/sahara-ai-stats-checker?address=${walle
             {/* Score Section */}
             {walletScore && (
               <section className="bg-gray-50 p-6 rounded-xl shadow-lg border border-gray-200">
-                 <div className="flex justify-between items-center mb-6">
-                    <h2 className="text-2xl font-semibold text-green-700 flex items-center gap-2">
-                        <Award size={24} /> Wallet Score
-                    </h2>
-                    <button 
-                        onClick={shareOnTwitter}
-                        className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1.5 rounded-md text-xs font-medium flex items-center gap-1 transition-colors"
-                        title="Share your score on Twitter"
-                    >
-                        <Twitter size={14} /> Share
-                    </button>
+                <div className="flex justify-between items-center mb-6">
+                  <h2 className="text-2xl font-semibold text-green-700 flex items-center gap-2">
+                    <Award size={24} /> Wallet Score
+                  </h2>
+                  <button
+                    onClick={shareOnTwitter}
+                    className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1.5 rounded-md text-xs font-medium flex items-center gap-1 transition-colors"
+                    title="Share your score on Twitter"
+                  >
+                    <Twitter size={14} /> Share
+                  </button>
                 </div>
                 <div className="text-center mb-4">
                   <p className="text-6xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-green-500 via-green-600 to-green-700">
-                    {walletScore.totalScore.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                    {walletScore.totalScore.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </p>
                 </div>
                 <div className="text-center mb-6">
@@ -726,7 +725,7 @@ Full details: https://cryptowalletsx.com/sahara-ai-stats-checker?address=${walle
                     </a>
                   </Link>
                 </div>
-                
+
                 <h3 className="text-lg font-semibold text-gray-700 mb-3 mt-6 pt-4 border-t border-gray-200">Score Breakdown:</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 text-sm">
                   {[
@@ -745,7 +744,7 @@ Full details: https://cryptowalletsx.com/sahara-ai-stats-checker?address=${walle
                         <span className="text-gray-600">{item.label}:</span>
                       </div>
                       <span className="font-semibold text-gray-800 bg-green-50 px-2 py-1 rounded-md border border-green-200">
-                        {item.score.toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 2})} pts
+                        {item.score.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })} pts
                       </span>
                     </div>
                   ))}
@@ -881,7 +880,7 @@ Full details: https://cryptowalletsx.com/sahara-ai-stats-checker?address=${walle
                             </td>
                             <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700 text-center">
                               <span className="bg-green-100 text-green-700 px-2 py-0.5 rounded-full text-xs font-medium border border-green-200">
-                               {walletData.contractInteractionCounts.get(address) || 0}
+                                {walletData.contractInteractionCounts.get(address) || 0}
                               </span>
                             </td>
                             <td className="px-4 py-3 whitespace-nowrap text-right text-sm">
@@ -902,78 +901,78 @@ Full details: https://cryptowalletsx.com/sahara-ai-stats-checker?address=${walle
                 )
               )}
             </section>
-            
+
             {/* All Transactions Section */}
             {walletData.allTransactions.length > 0 && (
               <section className="bg-gray-50 p-6 rounded-xl shadow-lg border border-gray-200">
                 <div className="flex justify-between items-center mb-4">
-                    <h2 className="text-xl font-semibold text-green-700 flex items-center gap-2">
-                        <FileText size={20} /> All Transactions ({totalTxCount > walletData.allTransactions.length ? `${walletData.allTransactions.length} shown / ${totalTxCount} total` : walletData.allTransactions.length})
-                    </h2>
-                    <button onClick={() => setShowAllTransactions(!showAllTransactions)} className="text-sm text-green-600 hover:text-green-500 transition-colors flex items-center gap-1 bg-green-50 hover:bg-green-100 px-3 py-1.5 rounded-md border border-green-200">
-                        {showAllTransactions ? <EyeOff size={16} /> : <Eye size={16} />} {showAllTransactions ? 'Hide' : 'Show All'}
-                    </button>
+                  <h2 className="text-xl font-semibold text-green-700 flex items-center gap-2">
+                    <FileText size={20} /> All Transactions ({totalTxCount > walletData.allTransactions.length ? `${walletData.allTransactions.length} shown / ${totalTxCount} total` : walletData.allTransactions.length})
+                  </h2>
+                  <button onClick={() => setShowAllTransactions(!showAllTransactions)} className="text-sm text-green-600 hover:text-green-500 transition-colors flex items-center gap-1 bg-green-50 hover:bg-green-100 px-3 py-1.5 rounded-md border border-green-200">
+                    {showAllTransactions ? <EyeOff size={16} /> : <Eye size={16} />} {showAllTransactions ? 'Hide' : 'Show All'}
+                  </button>
                 </div>
                 {totalTxCount > walletData.allTransactions.length && walletData.allTransactions.length < 50 && (
-                     <p className="text-xs text-yellow-500 mb-2 p-2 bg-yellow-50 border border-yellow-200 rounded-md">
-                        Note: Explorer API returned fewer transactions ({walletData.allTransactions.length}) than reported by counters ({totalTxCount}). Displaying available data.
-                        This can happen with new wallets or if the explorer API has indexing delays.
-                    </p>
+                  <p className="text-xs text-yellow-500 mb-2 p-2 bg-yellow-50 border border-yellow-200 rounded-md">
+                    Note: Explorer API returned fewer transactions ({walletData.allTransactions.length}) than reported by counters ({totalTxCount}). Displaying available data.
+                    This can happen with new wallets or if the explorer API has indexing delays.
+                  </p>
                 )}
-                 {walletData.allTransactions.length >= 50 && totalTxCount > walletData.allTransactions.length && (
-                    <p className="text-xs text-yellow-500 mb-2 p-2 bg-yellow-50 border border-yellow-200 rounded-md">
-                        Displaying the latest {walletData.allTransactions.length} transactions out of {totalTxCount} total. Full history on explorer.
-                    </p>
+                {walletData.allTransactions.length >= 50 && totalTxCount > walletData.allTransactions.length && (
+                  <p className="text-xs text-yellow-500 mb-2 p-2 bg-yellow-50 border border-yellow-200 rounded-md">
+                    Displaying the latest {walletData.allTransactions.length} transactions out of {totalTxCount} total. Full history on explorer.
+                  </p>
                 )}
                 {showAllTransactions && (
                   <div className="space-y-3 text-xs max-h-96 overflow-y-auto pr-2 custom-scrollbar-light">
                     {walletData.allTransactions.slice(0).reverse().map((tx, index) => ( // Reverse to show latest first
                       <div key={tx.hash + index} className={`p-3 rounded-lg ${tx.isError === '1' || tx.txreceipt_status === '0' ? 'bg-red-50 border border-red-200' : 'bg-white border border-gray-200 shadow-sm'}`}>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1">
-                            <div className="flex justify-between items-center">
-                                <span className="text-gray-500">Hash:</span>
-                                <div className="flex items-center gap-1">
-                                <span className="font-mono text-gray-700" title={tx.hash}>{formatAddress(tx.hash)}</span>
-                                <a href={`${SAHARA_EXPLORER_URL}/tx/${tx.hash}`} target="_blank" rel="noopener noreferrer" className="text-green-600 hover:text-green-500">
-                                    <ExternalLink size={12} />
-                                </a>
-                                </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-gray-500">Hash:</span>
+                            <div className="flex items-center gap-1">
+                              <span className="font-mono text-gray-700" title={tx.hash}>{formatAddress(tx.hash)}</span>
+                              <a href={`${SAHARA_EXPLORER_URL}/tx/${tx.hash}`} target="_blank" rel="noopener noreferrer" className="text-green-600 hover:text-green-500">
+                                <ExternalLink size={12} />
+                              </a>
                             </div>
-                            <div className="flex justify-between items-center">
-                                <span className="text-gray-500">Date:</span>
-                                <span className="text-gray-700">{formatDate(tx.timeStamp)}</span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-gray-500">Date:</span>
+                            <span className="text-gray-700">{formatDate(tx.timeStamp)}</span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-gray-500">From:</span>
+                            <span className={`font-mono ${tx.from.toLowerCase() === walletData.address.toLowerCase() ? 'text-orange-500' : 'text-gray-700'}`} title={tx.from}>
+                              {formatAddress(tx.from)}
+                            </span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-gray-500">To:</span>
+                            <span className={`font-mono ${tx.to && tx.to.toLowerCase() === walletData.address.toLowerCase() ? 'text-teal-500' : 'text-gray-700'}`} title={tx.to ?? 'N/A'}>
+                              {tx.to ? formatAddress(tx.to) : (tx.contractAddress ? 'Contract Deployed' : 'N/A')}
+                            </span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-gray-500">Value:</span>
+                            <span className="text-gray-800 font-semibold">{parseFloat(ethers.formatUnits(tx.value, CHAIN_DECIMALS)).toFixed(6)} {CHAIN_SYMBOL}</span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-gray-500">Gas Fee:</span>
+                            <span className="text-gray-700">{parseFloat(ethers.formatUnits(BigInt(tx.gasUsed) * BigInt(tx.gasPrice), CHAIN_DECIMALS)).toFixed(8)} {CHAIN_SYMBOL}</span>
+                          </div>
+                          {tx.method && (
+                            <div className="flex justify-between items-center col-span-full sm:col-span-1">
+                              <span className="text-gray-500">Method:</span>
+                              <span className="text-gray-700 truncate max-w-[150px] sm:max-w-[200px]" title={tx.method}>{tx.method}</span>
                             </div>
-                            <div className="flex justify-between items-center">
-                                <span className="text-gray-500">From:</span>
-                                <span className={`font-mono ${tx.from.toLowerCase() === walletData.address.toLowerCase() ? 'text-orange-500' : 'text-gray-700'}`} title={tx.from}>
-                                {formatAddress(tx.from)}
-                                </span>
+                          )}
+                          {(tx.isError === '1' || tx.txreceipt_status === '0') && (
+                            <div className="col-span-full text-center text-red-600 text-[11px] font-semibold p-1 bg-red-100 rounded-b-md border-t border-red-200">
+                              Failed Transaction
                             </div>
-                            <div className="flex justify-between items-center">
-                                <span className="text-gray-500">To:</span>
-                                <span className={`font-mono ${tx.to && tx.to.toLowerCase() === walletData.address.toLowerCase() ? 'text-teal-500' : 'text-gray-700'}`} title={tx.to ?? 'N/A'}>
-                                {tx.to ? formatAddress(tx.to) : (tx.contractAddress ? 'Contract Deployed' : 'N/A')}
-                                </span>
-                            </div>
-                             <div className="flex justify-between items-center">
-                                <span className="text-gray-500">Value:</span>
-                                <span className="text-gray-800 font-semibold">{parseFloat(ethers.formatUnits(tx.value, CHAIN_DECIMALS)).toFixed(6)} {CHAIN_SYMBOL}</span>
-                            </div>
-                            <div className="flex justify-between items-center">
-                                <span className="text-gray-500">Gas Fee:</span>
-                                <span className="text-gray-700">{parseFloat(ethers.formatUnits(BigInt(tx.gasUsed) * BigInt(tx.gasPrice), CHAIN_DECIMALS)).toFixed(8)} {CHAIN_SYMBOL}</span>
-                            </div>
-                             {tx.method && (
-                                <div className="flex justify-between items-center col-span-full sm:col-span-1">
-                                    <span className="text-gray-500">Method:</span>
-                                    <span className="text-gray-700 truncate max-w-[150px] sm:max-w-[200px]" title={tx.method}>{tx.method}</span>
-                                </div>
-                            )}
-                            {(tx.isError === '1' || tx.txreceipt_status === '0') && (
-                                <div className="col-span-full text-center text-red-600 text-[11px] font-semibold p-1 bg-red-100 rounded-b-md border-t border-red-200">
-                                Failed Transaction
-                                </div>
-                            )}
+                          )}
                         </div>
                       </div>
                     ))}
@@ -981,30 +980,30 @@ Full details: https://cryptowalletsx.com/sahara-ai-stats-checker?address=${walle
                 )}
               </section>
             )}
-            
+
             {walletData.allTransactions.length === 0 && walletData.transactionsCount > 0 && !isLoading && (
-                <section className="bg-yellow-50 p-6 rounded-xl shadow-lg border border-yellow-200 text-center">
-                    <Info size={24} className="mx-auto text-yellow-500 mb-2" />
-                    <p className="text-yellow-700">
-                        The Counters API indicates {walletData.transactionsCount} transactions, but the Explorer API did not return detailed transaction data for this address.
-                    </p>
-                    <p className="text-xs text-gray-500 mt-1">
-                        This can sometimes happen for very new wallets or if the explorer is experiencing indexing delays. You can check directly on the <a href={`${SAHARA_EXPLORER_URL}/address/${walletData.address}`} target="_blank" rel="noopener noreferrer" className="text-green-600 hover:underline">Sahara AI Explorer</a>.
-                    </p>
-                </section>
+              <section className="bg-yellow-50 p-6 rounded-xl shadow-lg border border-yellow-200 text-center">
+                <Info size={24} className="mx-auto text-yellow-500 mb-2" />
+                <p className="text-yellow-700">
+                  The Counters API indicates {walletData.transactionsCount} transactions, but the Explorer API did not return detailed transaction data for this address.
+                </p>
+                <p className="text-xs text-gray-500 mt-1">
+                  This can sometimes happen for very new wallets or if the explorer is experiencing indexing delays. You can check directly on the <a href={`${SAHARA_EXPLORER_URL}/address/${walletData.address}`} target="_blank" rel="noopener noreferrer" className="text-green-600 hover:underline">Sahara AI Explorer</a>.
+                </p>
+              </section>
             )}
-            
+
             {walletData.allTransactions.length === 0 && walletData.transactionsCount === 0 && !isLoading && (
-                 <section className="bg-gray-100 p-6 rounded-xl shadow-lg border border-gray-200 text-center">
-                    <Info size={24} className="mx-auto text-gray-500 mb-2" />
-                    <p className="text-gray-700">No transactions found for this address on {CHAIN_NAME}.</p>
-                 </section>
+              <section className="bg-gray-100 p-6 rounded-xl shadow-lg border border-gray-200 text-center">
+                <Info size={24} className="mx-auto text-gray-500 mb-2" />
+                <p className="text-gray-700">No transactions found for this address on {CHAIN_NAME}.</p>
+              </section>
             )}
 
           </div>
         )}
       </div>
-     
+
       <style jsx global>{`
         .custom-scrollbar-light::-webkit-scrollbar {
           width: 8px;

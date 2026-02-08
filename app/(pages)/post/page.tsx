@@ -1,5 +1,5 @@
 import React from 'react';
-import Link from 'next/link';
+import Link from '@/app/components/Link';
 import { Metadata } from 'next';
 import Image from 'next/image';
 

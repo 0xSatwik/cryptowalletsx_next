@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, Fragment } from 'react';
-import Link from 'next/link';
+import Link from '@/app/components/Link';
 import { usePathname } from 'next/navigation';
 import { Menu, X, Wallet, BarChart2, Wrench, Home, Zap, Shield, Database, FileText, ChevronDown, Layers, Gift, Coins, Activity, Globe, Send } from 'lucide-react';
 

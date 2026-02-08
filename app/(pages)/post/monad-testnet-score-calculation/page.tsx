@@ -1,5 +1,5 @@
 import { Clock, User, Calendar, ArrowLeft, Tag, Share2 } from 'lucide-react';
-import Link from 'next/link';
+import Link from '@/app/components/Link';
 import { Metadata } from 'next';
 import SocialShareButtons from '@/app/components/SocialShareButtons';
 
@@ -68,9 +68,9 @@ export default function MonadScoreCalculationArticle() {
           <div className="flex-grow"></div>
           <div className="flex items-center gap-2">
             <Share2 size={16} />
-            <SocialShareButtons 
+            <SocialShareButtons
               title={articleMetadata.title}
-              url="https://cryptowalletsx.com/post/monad-testnet-score-calculation" 
+              url="https://cryptowalletsx.com/post/monad-testnet-score-calculation"
             />
           </div>
         </div>
@@ -78,11 +78,11 @@ export default function MonadScoreCalculationArticle() {
         {/* Article content */}
         <div className="p-6 sm:p-8 prose prose-lg max-w-none">
           <h2 className="text-2xl font-bold text-purple-800 mt-0">Understanding the Monad Testnet Score</h2>
-          
+
           <p>
             The Monad Testnet wallet score is a comprehensive metric designed to evaluate your participation and activity on the Monad blockchain. This score helps users understand their engagement level and potentially positions them for future incentives or airdrops. In this article, we'll break down exactly how this score is calculated and what you can do to improve it.
           </p>
-          
+
           <p>
             Our proprietary scoring algorithm analyzes multiple dimensions of on-chain activity, with each component carefully weighted to reward genuine, consistent participation rather than one-time or artificial interactions. We've recently updated our scoring system to better reflect valuable community contributions and long-term engagement.
           </p>
@@ -101,13 +101,13 @@ export default function MonadScoreCalculationArticle() {
           </div>
 
           <h2 className="text-2xl font-bold text-purple-800">Detailed Breakdown of Score Components</h2>
-          
+
           <h3 className="text-xl font-semibold text-gray-800">1. Transaction Activity (Up to 5 Points)</h3>
-          
+
           <p>
             Each transaction on the Monad Testnet earns you 0.01 points, encouraging regular blockchain usage. To prevent manipulation by wallets with excessive transactions, we cap this component at 500 transactions (5 points maximum).
           </p>
-          
+
           <div className="overflow-x-auto my-6">
             <table className="min-w-full bg-white border border-gray-200 rounded-lg">
               <thead className="bg-purple-50">
@@ -138,27 +138,27 @@ export default function MonadScoreCalculationArticle() {
           </div>
 
           <h3 className="text-xl font-semibold text-gray-800">2. Consistency Metrics</h3>
-          
+
           <p>
             Regular, consistent activity is valued more highly than sporadic bursts. Points are awarded based on the number of unique days, weeks, and months you've been active on the network:
           </p>
-          
+
           <ul className="list-disc pl-5 space-y-2 mb-6">
             <li><strong>Unique Days</strong>: 0.1 points per unique day of activity</li>
             <li><strong>Unique Weeks</strong>: 0.25 points per unique week of activity</li>
             <li><strong>Unique Months</strong>: 0.5 points per unique month of activity</li>
           </ul>
-          
+
           <p>
             This means a wallet that has been active for 10 unique days (1.0 points), across 4 unique weeks (1.0 points), and 2 unique months (1.0 points) would earn a total of 3.0 points from consistency metrics.
           </p>
 
           <h3 className="text-xl font-semibold text-gray-800">3. Volume-Based Points (Up to 1 Point)</h3>
-          
+
           <p>
             The total volume of MON transferred in your transactions contributes to your score, with a tiered system that rewards higher volumes:
           </p>
-          
+
           <div className="bg-gradient-to-r from-purple-50 to-indigo-50 p-6 rounded-lg my-6">
             <ul className="list-none space-y-3">
               <li className="flex items-center">
@@ -181,26 +181,26 @@ export default function MonadScoreCalculationArticle() {
           </div>
 
           <h3 className="text-xl font-semibold text-gray-800">4. Contract Interaction Points</h3>
-          
+
           <p>
             Creating and interacting with smart contracts demonstrates deeper engagement with the Monad ecosystem:
           </p>
-          
+
           <ul className="list-disc pl-5 space-y-2 mb-6">
             <li><strong>Contract Creation</strong>: 0.025 points per contract created (capped at 20 contracts for a maximum of 0.5 points)</li>
             <li><strong>Contract Interaction</strong>: 0.03 points per unique contract interacted with (capped at 30 contracts for a maximum of 0.9 points)</li>
           </ul>
-          
+
           <p>
             This rewards both developers who deploy contracts and users who engage with the Monad ecosystem's applications. Our updated scoring system now accurately counts total interaction counts rather than just unique contracts, providing a more comprehensive picture of your ecosystem engagement.
           </p>
 
           <h3 className="text-xl font-semibold text-gray-800">5. Special NFT Bonuses</h3>
-          
+
           <p>
             Holding certain special NFTs can significantly boost your score with our newly updated bonus point values:
           </p>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 my-8">
             <div className="bg-white border border-purple-200 rounded-xl p-6 shadow-md">
               <h4 className="text-lg font-bold text-purple-800 mb-3">1 Million Nad NFT</h4>
@@ -219,43 +219,43 @@ export default function MonadScoreCalculationArticle() {
           </div>
 
           <h3 className="text-xl font-semibold text-gray-800">6. Early User Bonus</h3>
-          
+
           <p>
             We've added a significant bonus for early adopters who have been supporting the Monad ecosystem from the beginning:
           </p>
-          
+
           <div className="bg-green-50 border-l-4 border-green-500 p-6 my-6 rounded-r-lg">
             <p className="text-green-800 font-medium">
               If your wallet had its first transaction before February 26th, 2025, you'll receive a 5-point early user bonus.
             </p>
           </div>
-          
+
           <p>
             Our improved wallet age calculation now uses the earlier timestamp between first outgoing transaction and first incoming transaction, ensuring accurate identification of early users using data from multiple sources.
           </p>
 
           <h3 className="text-xl font-semibold text-gray-800">7. Inactivity Penalty</h3>
-          
+
           <p>
             To encourage ongoing participation, an inactivity penalty is applied if your wallet hasn't had any transactions for 5 or more days:
           </p>
-          
+
           <div className="bg-red-50 border-l-4 border-red-500 p-6 my-6 rounded-r-lg">
             <p className="text-red-800 font-medium">
               If your most recent transaction was 5 or more days ago, a 0.5 point penalty is applied to your total score.
             </p>
           </div>
-          
+
           <p>
             This ensures that scores reflect current activity levels and encourages regular participation in the testnet.
           </p>
 
           <h2 className="text-2xl font-bold text-purple-800">Score Calculation Formula</h2>
-          
+
           <p>
             The final score is calculated by combining all the components:
           </p>
-          
+
           <div className="bg-gray-100 p-6 rounded-lg my-6 overflow-x-auto">
             <pre className="text-sm">
               Score = TransactionPoints + ActivityPoints + VolumePoints + ContractPoints + NFTBonuses + EarlyUserBonus - InactivityPenalty
@@ -273,7 +273,7 @@ export default function MonadScoreCalculationArticle() {
           </div>
 
           <h2 className="text-2xl font-bold text-purple-800">Strategies to Maximize Your Score</h2>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 my-8">
             <div className="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-xl p-6">
               <h4 className="text-lg font-bold text-purple-800 mb-3">1. Be Consistent</h4>
@@ -302,11 +302,11 @@ export default function MonadScoreCalculationArticle() {
           </div>
 
           <h2 className="text-2xl font-bold text-purple-800">Monitoring Your Score</h2>
-          
+
           <p>
             You can track your Monad Testnet score in real-time using the <a href="/monad-testnet" className="text-purple-600 hover:text-purple-800 font-medium">WalletsX Monad Testnet Stats Checker</a>. This tool provides a comprehensive breakdown of all score components and offers personalized suggestions for improvement. Our system now features improved caching for high-volume wallets and API key rotation to ensure reliable performance.
           </p>
-          
+
           <div className="bg-blue-50 border-l-4 border-blue-500 p-6 my-8 rounded-r-lg">
             <h4 className="text-lg font-bold text-blue-800 mb-2">Pro Tip</h4>
             <p className="text-blue-800">
@@ -315,15 +315,15 @@ export default function MonadScoreCalculationArticle() {
           </div>
 
           <h2 className="text-2xl font-bold text-purple-800">Conclusion</h2>
-          
+
           <p>
             The Monad Testnet score is designed to reward genuine, consistent participation in the ecosystem. By understanding how the score is calculated, you can optimize your on-chain activity to maximize your ranking. Remember that the scoring system values consistency, diversity of interactions, and long-term engagement over short bursts of activity.
           </p>
-          
+
           <p>
             With our recent scoring updates emphasizing early adoption, NFT ownership, and true engagement metrics, the WalletsX scoring system provides the most comprehensive and accurate assessment of your contribution to the Monad ecosystem.
           </p>
-          
+
           <div className="border-t border-gray-200 mt-8 pt-8">
             <p className="text-sm text-gray-600 italic">
               Last updated: June 15, 2025. This scoring system is subject to change as the Monad Testnet evolves. The WalletsX team will update this article with any significant changes to the scoring algorithm.
@@ -335,7 +335,7 @@ export default function MonadScoreCalculationArticle() {
         <div className="px-6 py-4 border-t border-gray-200">
           <div className="flex flex-wrap gap-2">
             {articleMetadata.tags.map((tag, index) => (
-              <span 
+              <span
                 key={index}
                 className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-purple-100 text-purple-800"
               >
@@ -362,8 +362,8 @@ export default function MonadScoreCalculationArticle() {
 
       {/* Back to articles button */}
       <div className="mt-8 text-center">
-        <Link 
-          href="/post" 
+        <Link
+          href="/post"
           className="inline-flex items-center px-4 py-2 rounded-lg bg-purple-600 text-white hover:bg-purple-700 transition-colors"
         >
           <ArrowLeft className="mr-2 h-4 w-4" />

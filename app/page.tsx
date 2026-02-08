@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import Link from 'next/link';
+import Link from '@/app/components/Link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { Search, ArrowRight, BarChart2, Gift, Zap, Coins, ChevronDown, ChevronUp, Check, Globe, Layers, Shield, Activity, Wallet, Wrench } from 'lucide-react';

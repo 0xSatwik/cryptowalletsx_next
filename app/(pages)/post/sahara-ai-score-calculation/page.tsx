@@ -1,5 +1,5 @@
 import { Clock, User, Calendar, ArrowLeft, Tag, Share2, TrendingUp, Zap, Cpu, Coins, Gift, Eye, FileText } from 'lucide-react';
-import Link from 'next/link';
+import Link from '@/app/components/Link';
 import { Metadata } from 'next';
 import SocialShareButtons from '@/app/components/SocialShareButtons';
 
@@ -91,9 +91,9 @@ export default function SaharaAiScoreCalculationArticle() {
           <div className="flex-grow"></div>
           <div className="flex items-center gap-2">
             <Share2 size={16} className="text-gray-600" />
-            <SocialShareButtons 
+            <SocialShareButtons
               title={articleMetadata.title}
-              url={`https://cryptowalletsx.com/post/sahara-ai-score-calculation`} 
+              url={`https://cryptowalletsx.com/post/sahara-ai-score-calculation`}
             />
           </div>
         </div>
@@ -102,7 +102,7 @@ export default function SaharaAiScoreCalculationArticle() {
           <p className="lead text-xl text-gray-600">
             The {CHAIN_NAME} is buzzing with activity, and understanding how your engagement translates into a quantifiable score is key. This guide breaks down the WalletsX scoring system for {TOKEN_SYMBOL} wallets, helping you optimize your on-chain presence.
           </p>
-          
+
           <h2 className="flex items-center"><TrendingUp size={28} className="mr-3 text-green-600" />Understanding Your Score</h2>
           <p>
             Our scoring algorithm is designed to reward genuine and consistent participation on the {CHAIN_NAME}. It considers a variety of on-chain metrics, each weighted to reflect meaningful contributions to the ecosystem.
@@ -172,11 +172,11 @@ export default function SaharaAiScoreCalculationArticle() {
             <li>Maximum points from volume: <strong>1000 points</strong> (i.e., capped at 100,000 {TOKEN_SYMBOL} volume)</li>
           </ul>
           <p><em>Example: A total volume of 5,000 {TOKEN_SYMBOL} would yield 50 points.</em></p>
-          
+
           <h2 className="flex items-center"><TrendingUp size={28} className="mr-3 text-green-600" />Score Calculation Formula Summary</h2>
           <div className="bg-gray-100 p-6 rounded-lg my-6 shadow-inner overflow-x-auto">
             <pre className="text-sm whitespace-pre-wrap break-words">{
-`Score = 
+              `Score = 
   MIN(TotalTransactions * 0.1, 100) +
   (UniqueDays * 0.5) +
   (UniqueWeeks * 0.7) +
@@ -190,7 +190,7 @@ export default function SaharaAiScoreCalculationArticle() {
 
           <h2 className="flex items-center"><Eye size={28} className="mr-3 text-green-600" />Monitoring Your Score</h2>
           <p>
-            Stay updated on your {CHAIN_NAME} performance by using the <Link href="/sahara-ai-stats-checker">WalletsX {CHAIN_NAME} Stats Checker</Link>. 
+            Stay updated on your {CHAIN_NAME} performance by using the <Link href="/sahara-ai-stats-checker">WalletsX {CHAIN_NAME} Stats Checker</Link>.
             Our tool provides a detailed breakdown of your score components, helping you identify areas for improvement. We regularly update our platform to ensure accuracy and provide the best insights into your on-chain activity.
           </p>
 
@@ -205,7 +205,7 @@ export default function SaharaAiScoreCalculationArticle() {
           <p>
             Understanding the WalletsX {CHAIN_NAME} score can help you tailor your testnet activities for better engagement. By focusing on consistent transactions, diverse contract interactions, responsible volume, and long-term participation, you can effectively enhance your on-chain footprint.
           </p>
-          
+
           <div className="border-t border-gray-200 mt-10 pt-8">
             <p className="text-sm text-gray-500 italic">
               Last updated: {new Date(articleMetadata.date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}. The WalletsX team will strive to keep this guide current with any significant adjustments to the scoring algorithm.
@@ -217,7 +217,7 @@ export default function SaharaAiScoreCalculationArticle() {
           <h3 className="text-md font-semibold text-gray-700 mb-3">Tags:</h3>
           <div className="flex flex-wrap gap-2">
             {articleMetadata.tags.map((tag) => (
-              <span 
+              <span
                 key={tag}
                 className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700 border border-green-200 shadow-sm"
               >
@@ -230,8 +230,8 @@ export default function SaharaAiScoreCalculationArticle() {
       </article>
 
       <div className="mt-10 text-center">
-        <Link 
-          href="/post" 
+        <Link
+          href="/post"
           className="inline-flex items-center px-6 py-3 rounded-lg bg-green-600 text-white hover:bg-green-700 transition-colors shadow-md hover:shadow-lg transform hover:-translate-y-0.5">
           <ArrowLeft className="mr-2 h-5 w-5" />
           View All Blog Posts
