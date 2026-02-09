@@ -129,14 +129,21 @@ export default {
         if (finalData.theme && finalData.words.length > 0) {
             const today = new Date().toISOString().split("T")[0];
 
-            // Delete existing data for today to avoid stale merges if re-run
-            // actually, REPLACE INTO handles it row by row. But if we want to be clean...
-            // We'll stick to INSERT OR REPLACE as per original logic.
+            // Delete existing data for the day to ensure we overwrite old data (even if theme changed)
+            try {
+                await env.DB.prepare("DELETE FROM wodl_data WHERE publish_date = ?")
+                    .bind(today)
+                    .run();
+                console.log(`Deleted existing data for ${today}`);
+            } catch (e: any) {
+                console.error(`Error deleting old data for ${today}:`, e);
+                // Continue execution, maybe it was just empty or locked?
+            }
 
             for (const entry of finalData.words) {
                 try {
                     await env.DB.prepare(
-                        "INSERT OR REPLACE INTO wodl_data (publish_date, theme, word_length, words, correct_answers) VALUES (?, ?, ?, ?, ?)"
+                        "INSERT INTO wodl_data (publish_date, theme, word_length, words, correct_answers) VALUES (?, ?, ?, ?, ?)"
                     )
                         .bind(today, finalData.theme, entry.length, JSON.stringify(entry.words), JSON.stringify(entry.correctAnswers))
                         .run();
