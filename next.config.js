@@ -87,6 +87,11 @@ const nextConfig = {
         destination: '/binance-wotd-answer-today',
         permanent: true,
       },
+      {
+        source: '/city-holder-trivia-answer-today',
+        destination: '/city-holder-answer-today',
+        permanent: true,
+      },
     ];
   },
   // Add rewrites to ensure direct API access

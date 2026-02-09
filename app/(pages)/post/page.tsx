@@ -30,6 +30,11 @@ const posts = [
     slug: '/binance-word-of-the-day-answer-today',
     title: "Binance Word of the Day Answer Today (Confirmed)",
     image: "https://images.unsplash.com/photo-1621416894569-0f39ed31d247?ixlib=rb-4.0.3&auto=format&fit=crop&w=2069&q=80",
+  },
+  {
+    slug: '/city-holder-trivia-answer-today',
+    title: "City Holder Trivia Answer Today (100% Verified)",
+    image: "https://images.unsplash.com/photo-1541872703-74c5e443d1f5?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80",
   }
 ];
 

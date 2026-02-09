@@ -1,0 +1,15 @@
+{
+    "name": "city-holder-daily",
+    "version": "1.0.0",
+    "description": "City Holder Daily Quiz API with D1 Database",
+    "scripts": {
+        "dev": "wrangler dev",
+        "deploy": "wrangler deploy",
+        "extract": "node extract-and-seed.js"
+    },
+    "devDependencies": {
+        "@cloudflare/workers-types": "^4.20240208.0",
+        "wrangler": "^3.0.0"
+    },
+    "dependencies": {}
+}
