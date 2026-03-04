@@ -306,7 +306,7 @@ export default function Solver() {
 
                                 {currentWord.length === wordLength && (
                                     <p className="text-center text-xs text-slate-500 font-medium mb-4">
-                                        Tap tiles to change colors: Grey -> Yellow -> Green
+                                        Tap tiles to change colors: Grey {'->'} Yellow {'->'} Green
                                     </p>
                                 )}
 
