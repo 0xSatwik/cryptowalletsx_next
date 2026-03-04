@@ -37,7 +37,7 @@ export default function Solver() {
             if (!res.ok) throw new Error('Search failed');
             const data: SearchResponse = await res.json();
             setResults(data.questions);
-        } catch (err) {
+        } catch {
             setResults([]);
         } finally {
             setLoading(false);
@@ -59,12 +59,14 @@ export default function Solver() {
     };
 
     return (
-        <section className="max-w-4xl mx-auto px-4 pb-16">
+        <section id="city-holder-solver" className="max-w-4xl mx-auto px-4 pb-16">
             <div className="bg-white rounded-2xl border border-slate-200 shadow-xl overflow-hidden">
                 {/* Header */}
                 <div className="bg-gradient-to-r from-slate-800 to-slate-900 p-6 md:p-8">
                     <h2 className="text-2xl md:text-3xl font-black text-white mb-2 flex items-center gap-3">
-                        <span className="w-10 h-10 bg-gradient-to-r from-violet-500 to-purple-500 rounded-xl flex items-center justify-center text-lg">🔍</span>
+                        <span className="w-10 h-10 bg-gradient-to-r from-violet-500 to-purple-500 rounded-xl flex items-center justify-center text-[11px] font-bold uppercase tracking-wider">
+                            Find
+                        </span>
                         City Holder Solver
                     </h2>
                     <p className="text-slate-400">Search any question to find the correct answer</p>
@@ -95,7 +97,7 @@ export default function Solver() {
                 <div className="p-6">
                     {!searched && (
                         <div className="text-center py-12">
-                            <div className="text-6xl mb-4">🎯</div>
+                            <div className="text-xs font-bold uppercase tracking-[0.24em] text-violet-500 mb-4">Ready</div>
                             <p className="text-slate-500 font-medium">Enter a search term to find answers</p>
                             <p className="text-slate-400 text-sm mt-1">Try searching &quot;Matrix&quot; or &quot;MTV&quot;</p>
                         </div>
@@ -103,7 +105,7 @@ export default function Solver() {
 
                     {searched && results.length === 0 && !loading && (
                         <div className="text-center py-12">
-                            <div className="text-6xl mb-4">😕</div>
+                            <div className="text-xs font-bold uppercase tracking-[0.24em] text-slate-400 mb-4">No Match</div>
                             <p className="text-slate-600 font-medium">No results found for &quot;{query}&quot;</p>
                             <p className="text-slate-400 text-sm mt-1">Try a different search term</p>
                         </div>
@@ -124,7 +126,7 @@ export default function Solver() {
                                             Day {r.day_number}
                                         </span>
                                         <span className="text-xs text-slate-500">
-                                            {formatDate(r.date)} • Q{r.question_number}
+                                            {formatDate(r.date)} | Q{r.question_number}
                                         </span>
                                     </div>
                                     <h4 className="font-bold text-slate-800 mb-2">{r.question}</h4>

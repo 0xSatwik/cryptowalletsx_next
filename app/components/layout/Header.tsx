@@ -113,7 +113,7 @@ const Header = () => {
         }`}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center py-4">
+        <div className="flex flex-wrap items-center gap-4 py-4">
           {/* Logo */}
           <div className="flex justify-start flex-shrink-0">
             <Link href="/" className="flex items-center group">
@@ -136,7 +136,7 @@ const Header = () => {
           </div>
 
           {/* Mobile menu button */}
-          <div className="flex items-center lg:hidden ml-4">
+          <div className="flex items-center lg:hidden ml-auto">
             <button
               type="button"
               className={`rounded-xl p-3 inline-flex items-center justify-center shadow-lg ${scrolled
@@ -151,8 +151,8 @@ const Header = () => {
           </div>
 
           {/* Desktop navigation */}
-          <div className="hidden lg:flex flex-1 justify-center">
-            <nav className="flex items-center space-x-1 xl:space-x-2 bg-white/10 backdrop-blur-sm rounded-2xl px-2 py-1 border border-white/20">
+          <div className="hidden lg:block order-3 basis-full min-w-0">
+            <nav className="mx-auto flex max-w-full flex-wrap items-center justify-center gap-1 xl:gap-2 bg-white/10 backdrop-blur-sm rounded-2xl px-2 py-1 border border-white/20">
               {navigation.map((item) => {
                 const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`) ||
                   (item.dropdownItems && item.dropdownItems.some(subItem => pathname === subItem.href || pathname.startsWith(`${subItem.href}/`)));
@@ -225,7 +225,7 @@ const Header = () => {
           </div>
 
           {/* Desktop CTA button */}
-          <div className="hidden lg:flex items-center flex-shrink-0">
+          <div className="hidden lg:flex items-center flex-shrink-0 ml-auto">
             <a
               href="https://t.me/cwxstats"
               target="_blank"

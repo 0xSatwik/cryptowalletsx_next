@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { getBinanceDateInfo } from '@/app/utils/seo';
 
 interface WodlEntry {
     publish_date: string;
@@ -15,6 +16,7 @@ export default function AnswerDisplay() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [revealed, setRevealed] = useState<{ [key: number]: boolean }>({});
+    const [displayDate, setDisplayDate] = useState(() => getBinanceDateInfo().ordinalLongDate);
 
 
 
@@ -34,6 +36,14 @@ export default function AnswerDisplay() {
             });
     }, []);
 
+    useEffect(() => {
+        const intervalId = window.setInterval(() => {
+            setDisplayDate(getBinanceDateInfo().ordinalLongDate);
+        }, 60000);
+
+        return () => window.clearInterval(intervalId);
+    }, []);
+
     const toggleReveal = (len: number) => {
         setRevealed((prev) => ({ ...prev, [len]: !prev[len] }));
     };
@@ -42,7 +52,7 @@ export default function AnswerDisplay() {
 
     if (loading) {
         return (
-            <div className="min-h-screen bg-[#F8F9FA] text-[#0B0E11] flex items-center justify-center p-6">
+            <div className="min-h-[40vh] bg-[#F8F9FA] text-[#0B0E11] flex items-center justify-center p-6">
                 <div className="animate-pulse flex flex-col items-center">
                     <div className="h-12 w-64 bg-gray-200 rounded mb-4"></div>
                     <div className="h-4 w-48 bg-gray-200 rounded"></div>
@@ -53,9 +63,9 @@ export default function AnswerDisplay() {
 
     if (error || data.length === 0) {
         return (
-            <div className="min-h-screen bg-[#F8F9FA] text-[#0B0E11] flex items-center justify-center p-6 text-center">
+            <div className="min-h-[40vh] bg-[#F8F9FA] text-[#0B0E11] flex items-center justify-center p-6 text-center">
                 <div>
-                    <h1 className="text-2xl font-bold text-red-600 mb-2">Oops!</h1>
+                    <h2 className="text-2xl font-bold text-red-600 mb-2">Oops!</h2>
                     <p className="text-gray-600">{error || "No data available for today yet. Please check back later."}</p>
                 </div>
             </div>
@@ -63,18 +73,18 @@ export default function AnswerDisplay() {
     }
 
     return (
-        <main className="min-h-screen bg-[#F8F9FA] text-[#0B0E11] font-sans selection:bg-[#FCD535] selection:text-black">
-            <div className="max-w-4xl mx-auto px-4 py-16">
+        <section className="bg-[#F8F9FA] text-[#0B0E11] font-sans selection:bg-[#FCD535] selection:text-black">
+            <div className="max-w-4xl mx-auto px-4 py-10">
                 {/* Header Section */}
-                <header className="text-center mb-16">
-                    <div className="inline-block px-4 py-1.5 rounded-full bg-[#FCD535]/10 border border-[#FCD535]/30 text-[#D49E00] text-sm font-bold mb-6 animate-fade-in uppercase tracking-wider">
-                        Binance WODL Answer Today
+                <header className="mb-10 rounded-3xl border border-[#E6E8EA] bg-white p-6 text-center shadow-sm md:p-8">
+                    <div className="inline-flex px-4 py-1.5 rounded-full bg-[#FCD535]/10 border border-[#FCD535]/30 text-[#D49E00] text-xs font-bold mb-5 uppercase tracking-[0.2em]">
+                        Live Binance WODL
                     </div>
-                    <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight mb-4 text-[#0B0E11]">
-                        Today&#39;s Theme: <span className="bg-gradient-to-r from-[#FCD535] to-[#F3BA2F] bg-clip-text text-transparent capitalize">{themeName}</span>
-                    </h1>
-                    <p className="text-gray-600 text-lg md:text-xl max-w-2xl mx-auto font-medium">
-                        Get the correct answers for today&#39;s Binance Word of the Day puzzle. Verified and updated regularly.
+                    <h2 className="text-2xl md:text-3xl font-extrabold tracking-tight mb-3 text-[#0B0E11]">
+                        Active Theme: <span className="bg-gradient-to-r from-[#FCD535] to-[#F3BA2F] bg-clip-text text-transparent capitalize">{themeName}</span>
+                    </h2>
+                    <p className="text-gray-600 text-sm md:text-base max-w-2xl mx-auto font-medium">
+                        Answer set for {displayDate}. Choose the matching word length below and reveal only the puzzle you need.
                     </p>
                 </header>
 
@@ -83,7 +93,6 @@ export default function AnswerDisplay() {
                     {[3, 4, 5, 6, 7, 8].map((len) => {
                         const entry = data.find((d) => d.word_length === len);
                         const words: string[] = entry ? JSON.parse(entry.words) : [];
-                        const correctAnswers: string[] = entry && entry.correct_answers ? JSON.parse(entry.correct_answers) : [];
                         const isRevealed = revealed[len];
 
                         return (
@@ -140,7 +149,7 @@ export default function AnswerDisplay() {
                 </div>
 
                 {/* Footer Info */}
-                <footer className="mt-20 pt-10 border-t border-[#E6E8EA] text-center text-gray-500 text-sm">
+                <footer className="mt-12 pt-8 border-t border-[#E6E8EA] text-center text-gray-500 text-sm">
                     <p className="font-medium">
                         Binance WODL Answer Today is for educational purposes.
                         All names, trademarks and images are copyright of Binance.
@@ -164,6 +173,6 @@ export default function AnswerDisplay() {
           animation: fade-in 0.6s ease-out forwards;
         }
       `}</style>
-        </main>
+        </section>
     );
 }

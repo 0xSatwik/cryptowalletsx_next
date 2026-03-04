@@ -306,7 +306,7 @@ export default function Solver() {
 
                                 {currentWord.length === wordLength && (
                                     <p className="text-center text-xs text-slate-500 font-medium mb-4">
-                                        👆 Tap tiles to change colors: Grey → Yellow → Green
+                                        Tap tiles to change colors: Grey -> Yellow -> Green
                                     </p>
                                 )}
 
@@ -367,7 +367,7 @@ export default function Solver() {
 
                         {guesses.length === 0 && startingWords.length > 0 && (
                             <div className="mb-4 p-4 rounded-xl bg-gradient-to-r from-emerald-50 to-green-50 border border-emerald-100">
-                                <p className="text-xs font-bold text-emerald-700 uppercase tracking-wider mb-2 text-center">⭐ Recommended Starters</p>
+                                <p className="text-xs font-bold text-emerald-700 uppercase tracking-wider mb-2 text-center">Recommended Starters</p>
                                 <div className="flex flex-wrap justify-center gap-2">
                                     {startingWords.map((s, idx) => (
                                         <button

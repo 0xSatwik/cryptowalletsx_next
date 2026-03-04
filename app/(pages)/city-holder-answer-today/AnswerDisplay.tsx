@@ -229,7 +229,7 @@ export default function AnswerDisplay() {
 
     if (loading) {
         return (
-            <div className="min-h-[60vh] flex items-center justify-center p-6">
+            <div className="min-h-[40vh] flex items-center justify-center p-6">
                 <div className="animate-pulse flex flex-col items-center">
                     <div className="h-12 w-64 bg-slate-200 rounded mb-4"></div>
                     <div className="h-4 w-48 bg-slate-200 rounded"></div>
@@ -240,9 +240,9 @@ export default function AnswerDisplay() {
 
     if (error || !data) {
         return (
-            <div className="min-h-[60vh] flex items-center justify-center p-6 text-center">
+            <div className="min-h-[40vh] flex items-center justify-center p-6 text-center">
                 <div>
-                    <h1 className="text-2xl font-bold text-red-600 mb-2">Oops!</h1>
+                    <h2 className="text-2xl font-bold text-red-600 mb-2">Oops!</h2>
                     <p className="text-slate-600 mb-6">{error || "No data available for this date."}</p>
                     <button
                         onClick={() => setShowCalendar(true)}
@@ -262,21 +262,21 @@ export default function AnswerDisplay() {
     }
 
     return (
-        <main className="min-h-screen bg-gradient-to-b from-slate-50 to-white font-sans">
+        <section className="bg-gradient-to-b from-slate-50 to-white font-sans">
             {/* Hero Section */}
             <div className="relative overflow-hidden bg-gradient-to-r from-violet-600 via-purple-500 to-fuchsia-500">
                 <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(circle at 20% 50%, rgba(255,255,255,0.3) 0%, transparent 50%), radial-gradient(circle at 80% 50%, rgba(255,255,255,0.2) 0%, transparent 50%)' }} />
-                <div className="max-w-4xl mx-auto px-4 py-12 md:py-16 relative">
+                <div className="max-w-4xl mx-auto px-4 py-10 md:py-12 relative">
                     <div className="text-center">
                         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/20 backdrop-blur-sm text-white text-xs font-medium mb-4">
                             <span className="w-1.5 h-1.5 bg-yellow-400 rounded-full animate-pulse" />
                             Day {data.day_number}
                         </div>
-                        <h1 className="text-3xl md:text-5xl font-black text-white mb-3 tracking-tight">
-                            City Holder Answer for <span className="bg-gradient-to-r from-yellow-300 to-orange-300 bg-clip-text text-transparent">{dateTitle}</span>
-                        </h1>
+                        <h2 className="text-2xl md:text-4xl font-black text-white mb-3 tracking-tight">
+                            Questions for <span className="bg-gradient-to-r from-yellow-300 to-orange-300 bg-clip-text text-transparent">{dateTitle}</span>
+                        </h2>
                         <p className="text-base md:text-lg text-white/90 max-w-xl mx-auto mb-6">
-                            Get all {data.total_questions} correct answers for today&apos;s City Holder trivia
+                            Reveal all {data.total_questions} City Holder answers, open the archive, or switch to another date.
                         </p>
                         <div className="flex justify-center gap-3">
                             <button
@@ -375,6 +375,6 @@ export default function AnswerDisplay() {
                     animation: reveal 0.3s ease-out forwards;
                 }
             `}</style>
-        </main>
+        </section>
     );
 }

@@ -1,157 +1,276 @@
+import Link from 'next/link';
 import type { Metadata } from 'next';
 import AnswerDisplay from './AnswerDisplay';
 import Solver from './Solver';
+import { SITE_URL, getSeoDateInfo } from '@/app/utils/seo';
 
-// Generate dynamic date for SEO
-const today = new Date();
-const day = today.getDate();
-const getOrdinalSuffix = (d: number) => {
-    if (d > 3 && d < 21) return 'th';
-    switch (d % 10) {
-        case 1: return 'st';
-        case 2: return 'nd';
-        case 3: return 'rd';
-        default: return 'th';
-    }
-};
-const monthName = today.toLocaleDateString('en-US', { month: 'long' });
-const year = today.getFullYear();
-const formattedDate = `${day}${getOrdinalSuffix(day)} ${monthName}, ${year}`;
+const PAGE_URL = `${SITE_URL}/city-holder-answer-today`;
+const KEYWORDS = [
+  'city holder answer today',
+  'city holder answers',
+  'city holder trivia answers',
+  'city holder daily answers',
+  'city holder solver',
+  'city holder answer archive',
+];
 
-export const metadata: Metadata = {
-    title: `City Holder Answer Today ${formattedDate} | All 10 Trivia Answers`,
-    description: `Get all 10 correct City Holder answers for ${formattedDate}. Daily updated trivia answers with archive access to all previous days. 100% verified City Holder answers.`,
-    keywords: 'city holder answer today, city holder answers, city holder trivia, city holder game, city holder daily answers, city holder solver',
-    openGraph: {
-        title: `City Holder Answer Today ${formattedDate}`,
-        description: `All 10 correct City Holder trivia answers for ${formattedDate}. Includes full answer archive and question solver.`,
-        url: 'https://cryptowalletsx.com/city-holder-answer-today',
-        type: 'article',
-    }
-};
+export const dynamic = 'force-dynamic';
 
-const faqSchema = {
-    "@context": "https://schema.org",
-    "@type": "FAQPage",
-    "mainEntity": [
-        {
-            "@type": "Question",
-            "name": "What is City Holder?",
-            "acceptedAnswer": {
-                "@type": "Answer",
-                "text": "City Holder is a popular trivia game where players answer 10 daily questions on various topics. Each day features a different theme with questions about movies, music, history, and pop culture."
-            }
-        },
-        {
-            "@type": "Question",
-            "name": "How many questions are in City Holder?",
-            "acceptedAnswer": {
-                "@type": "Answer",
-                "text": "City Holder features 10 trivia questions per day. Each question has 4 multiple choice options with one correct answer."
-            }
-        },
-        {
-            "@type": "Question",
-            "name": "How do I find old City Holder answers?",
-            "acceptedAnswer": {
-                "@type": "Answer",
-                "text": "You can access the archive by clicking the Calendar button on this page. Select any past date to view all 10 questions and answers from that day."
-            }
-        },
-        {
-            "@type": "Question",
-            "name": "Are these City Holder answers verified?",
-            "acceptedAnswer": {
-                "@type": "Answer",
-                "text": "Yes! All City Holder answers on this page are 100% verified. We update daily and maintain an archive of all past answers."
-            }
-        }
-    ]
-};
+export function generateMetadata(): Metadata {
+  const { shortDate } = getSeoDateInfo();
+  const title = `City Holder Answer Today for ${shortDate} | 10 Trivia Answers`;
+  const description = `Get the City Holder answer today for ${shortDate}, review all 10 trivia answers, and use the City Holder solver to search archived questions faster.`;
 
-const softwareSchema = {
-    "@context": "https://schema.org",
-    "@type": "SoftwareApplication",
-    "name": "City Holder Answer Solver",
-    "applicationCategory": "WebApplication",
-    "operatingSystem": "Any",
-    "offers": {
-        "@type": "Offer",
-        "price": "0",
-        "priceCurrency": "USD"
+  return {
+    title,
+    description,
+    keywords: KEYWORDS,
+    alternates: {
+      canonical: PAGE_URL,
     },
-    "description": "Free online tool to find City Holder trivia answers. Search any question to get the correct answer instantly."
-};
+    robots: {
+      index: true,
+      follow: true,
+      googleBot: {
+        index: true,
+        follow: true,
+        'max-snippet': -1,
+        'max-image-preview': 'large',
+        'max-video-preview': -1,
+      },
+    },
+    openGraph: {
+      title,
+      description,
+      url: PAGE_URL,
+      type: 'website',
+      siteName: 'WalletsX',
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+    },
+  };
+}
 
 export default function CityHolderAnswerTodayPage() {
-    return (
-        <>
-            <script
-                type="application/ld+json"
-                dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
-            />
-            <script
-                type="application/ld+json"
-                dangerouslySetInnerHTML={{ __html: JSON.stringify(softwareSchema) }}
-            />
-            <AnswerDisplay />
-            <Solver />
+  const { isoDate, shortDate, longDate } = getSeoDateInfo();
 
-            {/* SEO Content Section */}
-            <section className="max-w-4xl mx-auto px-4 pb-16">
-                {/* What is City Holder */}
-                <div className="bg-white rounded-2xl border border-slate-200 p-8 mb-8 shadow-sm">
-                    <h2 className="text-2xl font-bold text-slate-900 mb-4">
-                        What is City Holder?
-                    </h2>
-                    <p className="text-slate-700 leading-relaxed mb-4">
-                        <strong>City Holder</strong> is an exciting daily trivia game that tests your knowledge across a wide range of topics.
-                        Each day, players answer 10 multiple-choice questions on themes ranging from movies and music to history and pop culture.
-                    </p>
-                    <p className="text-slate-700 leading-relaxed">
-                        The game updates daily with new questions and themes. Our page provides <strong>100% verified answers</strong> updated
-                        every day, plus access to our complete archive of all past questions and answers!
-                    </p>
-                </div>
+  const faqSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    '@id': `${PAGE_URL}#faq`,
+    mainEntity: [
+      {
+        '@type': 'Question',
+        name: 'How many answers are published on the City Holder answer page?',
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: 'The page is designed around the standard City Holder set of 10 daily trivia answers and also provides archive access for older dates.',
+        },
+      },
+      {
+        '@type': 'Question',
+        name: 'Can I look up past City Holder questions?',
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: 'Yes. The archive controls and the search tool on this page let you move through previous dates and search older questions when you need a past answer.',
+        },
+      },
+      {
+        '@type': 'Question',
+        name: 'What does the City Holder solver do?',
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: 'The City Holder solver searches the stored question archive so you can type part of a question or answer and quickly find the matching result.',
+        },
+      },
+    ],
+  };
 
-                {/* How to Use */}
-                <div className="bg-gradient-to-r from-violet-50 to-purple-50 rounded-2xl border border-violet-200 p-8 mb-8">
-                    <h2 className="text-2xl font-bold text-slate-900 mb-4">
-                        How to Use This Page
-                    </h2>
-                    <ol className="list-decimal list-inside space-y-3 text-slate-700">
-                        <li><strong>View Today&apos;s Answers</strong> &mdash; Click &quot;Reveal Answer&quot; on any question to see the correct answer</li>
-                        <li><strong>Access Archive</strong> &mdash; Click the Calendar button to browse answers from any previous day</li>
-                        <li><strong>Search Questions</strong> &mdash; Use the Solver below to search for any question and find its answer</li>
-                        <li><strong>Reveal All</strong> &mdash; Click &quot;Reveal All&quot; to show all 10 answers at once</li>
-                    </ol>
-                </div>
+  const softwareSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'SoftwareApplication',
+    '@id': `${PAGE_URL}#software`,
+    name: 'City Holder Answer Solver',
+    applicationCategory: 'WebApplication',
+    applicationSubCategory: 'Trivia Answer Finder',
+    operatingSystem: 'Any',
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'USD',
+    },
+    featureList: [
+      'Daily City Holder answer lookup',
+      'Archive access by date',
+      'Question and answer search',
+      'Quick reveal for all 10 trivia answers',
+    ],
+    description:
+      'Free web tool for browsing daily City Holder trivia answers and searching archived questions.',
+    url: PAGE_URL,
+    mainEntityOfPage: {
+      '@id': `${PAGE_URL}#collection`,
+    },
+  };
 
-                {/* Why Use This Page */}
-                <div className="bg-white rounded-2xl border border-slate-200 p-8 shadow-sm">
-                    <h2 className="text-2xl font-bold text-slate-900 mb-4">
-                        Why Use Our City Holder Answers?
-                    </h2>
-                    <ul className="space-y-3 text-slate-700">
-                        <li className="flex items-start gap-3">
-                            <span className="text-emerald-500 font-bold">✓</span>
-                            <span><strong>100% Verified</strong> &mdash; All answers are confirmed and tested before publishing</span>
-                        </li>
-                        <li className="flex items-start gap-3">
-                            <span className="text-emerald-500 font-bold">✓</span>
-                            <span><strong>Daily Updates</strong> &mdash; Fresh answers every day, available as soon as the new questions go live</span>
-                        </li>
-                        <li className="flex items-start gap-3">
-                            <span className="text-emerald-500 font-bold">✓</span>
-                            <span><strong>Complete Archive</strong> &mdash; Access answers from any past day using our calendar</span>
-                        </li>
-                        <li className="flex items-start gap-3">
-                            <span className="text-emerald-500 font-bold">✓</span>
-                            <span><strong>Powerful Solver</strong> &mdash; Can&apos;t find a question? Search our database of all past questions</span>
-                        </li>
-                    </ul>
-                </div>
-            </section>
-        </>
-    );
+  const webPageSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'CollectionPage',
+    '@id': `${PAGE_URL}#collection`,
+    name: `City Holder Answer Today for ${shortDate}`,
+    description:
+      'Daily City Holder answer page with archived trivia answers and a built-in search tool.',
+    url: PAGE_URL,
+    dateModified: isoDate,
+    inLanguage: 'en',
+    mainEntity: {
+      '@id': `${PAGE_URL}#software`,
+    },
+    about: {
+      '@type': 'Thing',
+      name: 'City Holder daily trivia',
+    },
+  };
+
+  const breadcrumbSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    '@id': `${PAGE_URL}#breadcrumb`,
+    itemListElement: [
+      {
+        '@type': 'ListItem',
+        position: 1,
+        name: 'Home',
+        item: SITE_URL,
+      },
+      {
+        '@type': 'ListItem',
+        position: 2,
+        name: 'City Holder Answer Today',
+        item: PAGE_URL,
+      },
+    ],
+  };
+
+  const howToSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'HowTo',
+    '@id': `${PAGE_URL}#howto`,
+    name: 'How to use the City Holder answer page',
+    description:
+      'Quick steps for checking today\'s City Holder answers, opening the archive, and searching older questions.',
+    totalTime: 'PT2M',
+    tool: [
+      {
+        '@type': 'HowToTool',
+        name: 'WalletsX City Holder answer page',
+      },
+    ],
+    step: [
+      {
+        '@type': 'HowToStep',
+        position: 1,
+        name: 'Open the current day',
+        text: 'View the current City Holder set and reveal the exact answer you need, or use the reveal-all button for the full list.',
+      },
+      {
+        '@type': 'HowToStep',
+        position: 2,
+        name: 'Use the archive calendar',
+        text: 'If you need a previous day, open the calendar and choose the date you want to load.',
+      },
+      {
+        '@type': 'HowToStep',
+        position: 3,
+        name: 'Search older questions',
+        text: 'Use the solver search box when you remember only part of a question or answer and want the closest historical match.',
+      },
+    ],
+  };
+
+  return (
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(softwareSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(webPageSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(howToSchema) }}
+      />
+
+      <section className="max-w-4xl mx-auto px-4 pt-10 pb-8" aria-labelledby="city-holder-answer-title">
+        <div className="rounded-3xl border border-violet-100 bg-gradient-to-br from-violet-50 via-white to-fuchsia-50 px-6 py-8 shadow-sm md:px-8">
+          <p className="text-xs font-bold uppercase tracking-[0.22em] text-violet-700">
+            Updated for <time dateTime={isoDate}>{longDate}</time>
+          </p>
+          <h1 id="city-holder-answer-title" className="mt-2 text-3xl md:text-4xl font-black tracking-tight text-slate-900">
+            City Holder Answer Today
+          </h1>
+          <p className="mt-4 max-w-3xl text-base leading-8 text-slate-700">
+            This page is a utility hub for the daily City Holder game. You can review all 10 active answers, open the archive for older dates, and use the built-in <a href="#city-holder-solver" className="font-semibold text-violet-700 underline underline-offset-4">City Holder solver</a> to search past questions without manually digging through older entries.
+          </p>
+        </div>
+      </section>
+
+      <AnswerDisplay />
+      <Solver />
+
+      <section className="max-w-4xl mx-auto px-4 pb-16" aria-labelledby="city-holder-answer-guide">
+        <div className="space-y-8">
+          <div className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
+            <h2 id="city-holder-answer-guide" className="text-2xl md:text-3xl font-black text-slate-900">
+              How this City Holder page is structured
+            </h2>
+            <div className="mt-5 space-y-4 text-slate-700 leading-8">
+              <p>
+                City Holder is a daily trivia format, so the strongest version of this page is one that handles both immediate answers and older lookups. The live answer section is built for quick checking when you need the current set, while the archive controls help users move back to a previous day without leaving the page. That is a better experience than a simple text list because the page works for both "today" intent and archive intent.
+              </p>
+              <p>
+                If you know the exact date, the archive is usually the fastest route. If you only remember part of a question, the search tool below is better because it can pull the matching result from older entries without forcing you to browse day by day.
+              </p>
+            </div>
+          </div>
+
+          <div className="grid gap-6 md:grid-cols-2">
+            <div className="rounded-2xl border border-violet-100 bg-violet-50 p-8">
+              <h2 className="text-2xl font-bold text-slate-900">Best way to use the archive</h2>
+              <p className="mt-4 text-slate-700 leading-8">
+                If you are looking for a past City Holder answer, start with the calendar in the answer panel above. That is the fastest way to jump directly to a known date. If you only remember part of the question, use the search tool below instead. The archive and search features together cover the two main user paths for this type of game page.
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-emerald-100 bg-emerald-50 p-8">
+              <h2 className="text-2xl font-bold text-slate-900">Why the solver matters</h2>
+              <p className="mt-4 text-slate-700 leading-8">
+                A searchable solver increases the value of the page because it turns the archive into a practical tool. Instead of scrolling through multiple days, users can search a keyword, movie title, person name, or partial answer and land on the most relevant match. That keeps the page useful after the daily round has changed.
+              </p>
+            </div>
+          </div>
+
+          <div className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
+            <h2 className="text-2xl font-bold text-slate-900">Related navigation</h2>
+            <p className="mt-4 text-slate-700 leading-8">
+              If you are also working on Binance daily puzzles, the <Link href="/binance-wotd-solver" className="font-semibold text-violet-700 underline underline-offset-4">Binance WOTD solver</Link> and <Link href="/binance-wotd-answer-today" className="font-semibold text-violet-700 underline underline-offset-4">Binance Word of the Day answer page</Link> are available as dedicated utility pages as well.
+            </p>
+          </div>
+        </div>
+      </section>
+    </>
+  );
 }
