@@ -19,7 +19,7 @@ export const dynamic = 'force-dynamic';
 export function generateMetadata(): Metadata {
   const { shortDate } = getSeoDateInfo();
   const title = `Binance WOTD Solver for ${shortDate} | Binance Word of the Day Answer`;
-  const description = `Use the Binance WOTD solver for ${shortDate} to narrow down 3 to 8 letter Binance Word of the Day puzzles, compare likely answers, and move to today's answer page when you need a faster reveal.`;
+  const description = `Use the Binance WOTD solver for ${shortDate} to filter 3 to 8 letter answers, test likely words, and solve the daily puzzle faster.`;
 
   return {
     title,

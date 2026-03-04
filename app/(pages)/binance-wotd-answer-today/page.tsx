@@ -19,7 +19,7 @@ export const dynamic = 'force-dynamic';
 export function generateMetadata(): Metadata {
   const { ordinalLongDate } = getBinanceDateInfo();
   const title = `Binance Word of the Day Answer for ${ordinalLongDate}`;
-  const description = `See the Binance Word of the Day answer for ${ordinalLongDate}, review all supported 3 to 8 letter answers, and jump to the Binance WOTD solver if you want guided hints instead of an instant reveal.`;
+  const description = `Get the Binance Word of the Day answer for ${ordinalLongDate}. See all 3 to 8 letter answers and use the Binance WOTD solver for hints.`;
 
   return {
     title,
