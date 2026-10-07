@@ -35,4 +35,13 @@ workers/
 # Build artifacts
 build/
 netlify/
+.next/node_modules/
 .next/
+.wrangler/
+target/
+__pycache__/
+dist/
+build/
+.svelte-kit/
+coverage/
+.cache/
